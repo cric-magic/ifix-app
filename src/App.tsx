@@ -32,7 +32,20 @@ function AppViewport({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#1677ff' } }}>
+    <ConfigProvider theme={{
+      token: {
+        colorPrimary: '#000000',
+        colorLink: '#000000',
+        colorInfo: '#000000',
+      },
+      components: {
+        Menu: {
+          itemSelectedBg: '#f0f0f0',
+          itemSelectedColor: '#000000',
+          itemActiveBg: '#f5f5f5',
+        },
+      },
+    }}>
       <AuthProvider>
         <DevToolsProvider>
           <AppViewport>

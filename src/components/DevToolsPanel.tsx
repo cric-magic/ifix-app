@@ -9,8 +9,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { MOCK_USERS } from '../constants/roles'
 import type { DeviceSize } from '../contexts/DevToolsContext'
 
-const ROLE_COLOR: Record<string, string> = { admin: '#1677ff', retail: '#52c41a' }
-
 const DEVICE_ICONS: Record<DeviceSize, React.ReactNode> = {
   desktop: <DesktopOutlined />,
   tablet:  <TabletOutlined />,
@@ -40,16 +38,17 @@ export function DevToolsPanel() {
         onClick={() => setCollapsed(p => !p)}
         style={{
           pointerEvents: 'all',
-          background: '#1a1a2e',
-          border: 'none',
+          background: '#111',
+          border: '1px solid #111',
           borderRadius: 20,
-          color: '#aaa',
+          color: '#fff',
           fontSize: 11,
           padding: '3px 12px',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           gap: 4,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
         }}
       >
         {collapsed ? <UpOutlined style={{ fontSize: 9 }} /> : <MinusOutlined style={{ fontSize: 9 }} />}
@@ -60,19 +59,19 @@ export function DevToolsPanel() {
       {!collapsed && (
         <div style={{
           pointerEvents: 'all',
-          background: '#1a1a2e',
+          background: '#fff',
           borderRadius: 12,
           padding: '10px 16px',
           display: 'flex',
           alignItems: 'flex-start',
           gap: 20,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-          border: '1px solid #2e2e4e',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+          border: '1px solid #e8e8e8',
         }}>
 
           {/* Device switcher */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <Typography.Text style={{ color: '#666', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
+            <Typography.Text style={{ color: '#aaa', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
               Viewport
             </Typography.Text>
             <Space size={4}>
@@ -81,7 +80,7 @@ export function DevToolsPanel() {
                   <button
                     onClick={() => setDevice(d)}
                     style={{
-                      background: device === d ? '#1677ff' : '#2a2a44',
+                      background: device === d ? '#111' : '#f5f5f5',
                       border: 'none',
                       borderRadius: 6,
                       color: device === d ? '#fff' : '#888',
@@ -102,11 +101,11 @@ export function DevToolsPanel() {
             </Space>
           </div>
 
-          <div style={{ width: 1, height: 40, background: '#2e2e4e' }} />
+          <div style={{ width: 1, height: 40, background: '#eee' }} />
 
           {/* User switcher */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <Typography.Text style={{ color: '#666', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
+            <Typography.Text style={{ color: '#aaa', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
               User
             </Typography.Text>
             <Space size={6} wrap>
@@ -126,8 +125,8 @@ export function DevToolsPanel() {
                     <button
                       onClick={() => setUser(u)}
                       style={{
-                        background: isActive ? ROLE_COLOR[u.role] : '#2a2a44',
-                        border: isActive ? `1.5px solid ${ROLE_COLOR[u.role]}` : '1.5px solid transparent',
+                        background: isActive ? '#111' : '#ebebeb',
+                        border: isActive ? '1.5px solid #111' : '1.5px solid #ebebeb',
                         borderRadius: 20,
                         padding: '3px 10px 3px 4px',
                         cursor: 'pointer',
@@ -140,9 +139,9 @@ export function DevToolsPanel() {
                       <Avatar
                         icon={<UserOutlined />}
                         size={18}
-                        style={{ background: isActive ? 'rgba(255,255,255,0.3)' : '#3a3a5e', flexShrink: 0 }}
+                        style={{ background: isActive ? '#444' : '#ccc', color: isActive ? '#fff' : '#777', flexShrink: 0 }}
                       />
-                      <span style={{ color: isActive ? '#fff' : '#aaa', fontSize: 12, whiteSpace: 'nowrap' }}>
+                      <span style={{ color: isActive ? '#fff' : '#222', fontSize: 12, whiteSpace: 'nowrap' }}>
                         {u.name.split(' ')[0]}
                       </span>
                       <Tag
@@ -151,9 +150,9 @@ export function DevToolsPanel() {
                           fontSize: 10,
                           padding: '0 4px',
                           lineHeight: '16px',
-                          background: isActive ? 'rgba(255,255,255,0.2)' : '#3a3a5e',
+                          background: isActive ? '#333' : '#ddd',
                           border: 'none',
-                          color: isActive ? '#fff' : '#777',
+                          color: isActive ? '#eee' : '#444',
                           borderRadius: 3,
                         }}
                       >
@@ -166,22 +165,22 @@ export function DevToolsPanel() {
             </Space>
           </div>
 
-          <div style={{ width: 1, height: 40, background: '#2e2e4e' }} />
+          <div style={{ width: 1, height: 40, background: '#eee' }} />
 
           {/* Current state readout */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography.Text style={{ color: '#666', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
+            <Typography.Text style={{ color: '#aaa', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
               Active
             </Typography.Text>
-            <Typography.Text style={{ color: '#eee', fontSize: 12, whiteSpace: 'nowrap' }}>
+            <Typography.Text style={{ color: '#333', fontSize: 12, whiteSpace: 'nowrap' }}>
               {DEVICE_CONFIG[device].label}
               {device !== 'desktop' && (
-                <span style={{ color: '#666' }}> · {DEVICE_CONFIG[device].width}px</span>
+                <span style={{ color: '#aaa' }}> · {DEVICE_CONFIG[device].width}px</span>
               )}
             </Typography.Text>
-            <Typography.Text style={{ color: '#eee', fontSize: 12, whiteSpace: 'nowrap' }}>
+            <Typography.Text style={{ color: '#333', fontSize: 12, whiteSpace: 'nowrap' }}>
               {user.name}
-              <span style={{ color: '#666' }}> · {user.branch}</span>
+              <span style={{ color: '#aaa' }}> · {user.branch}</span>
             </Typography.Text>
           </div>
 
