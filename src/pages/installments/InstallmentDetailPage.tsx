@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Card, Result, Space, Tabs, message } from 'antd'
-import { EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons'
+import { Button, Result, Space, Tag, Tabs, message, theme } from 'antd'
+import { Pencil, Save, X, ArrowLeft } from 'lucide-react'
 import { MOCK_INSTALLMENTS, MOCK_CUSTOMERS, MOCK_SCHEDULES, MOCK_PAYMENTS } from '../../constants/mockData'
 import { canEditInstallment } from '../../constants/roles'
-import { useAuth } from '../../contexts/AuthContext'
-import { PageHeader } from '../../components/PageHeader'
+import { useCurrentUser } from '../../contexts/AuthContext'
 import { StatusBadge } from '../../components/StatusBadge'
 import { OverviewTab } from './detail/OverviewTab'
 import { CustomerTab } from './detail/CustomerTab'
@@ -15,8 +14,9 @@ import { ContractPreviewTab } from './detail/ContractPreviewTab'
 
 export function InstallmentDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { user } = useAuth()
+  const user = useCurrentUser()
   const navigate = useNavigate()
+  const { token } = theme.useToken()
   const [isEditing, setIsEditing] = useState(false)
 
   const record = MOCK_INSTALLMENTS.find(r => r.id === id)
@@ -43,30 +43,26 @@ export function InstallmentDetailPage() {
 
   const actions = isEditing ? (
     <Space>
-      <Button icon={<CloseOutlined />} onClick={() => setIsEditing(false)}>Cancel</Button>
-      <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>Save</Button>
+      <Button icon={<X size={16} strokeWidth={2.25} />} onClick={() => setIsEditing(false)}>Cancel</Button>
+      <Button type="primary" icon={<Save size={16} strokeWidth={2.25} />} onClick={handleSave}>Save</Button>
     </Space>
   ) : canEdit ? (
-    <Button icon={<EditOutlined />} onClick={() => setIsEditing(true)}>Edit</Button>
+    <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setIsEditing(true)}>Edit</Button>
   ) : null
 
   return (
     <div>
-      <PageHeader
-        showBack
-        title={
-          <Space size={8}>
-            {record.invoiceNumber}
-            <StatusBadge status={record.contractStatus} />
-            <StatusBadge status={record.paymentStatus} />
-          </Space>
-        }
-        subtitle={`${record.contractNumber} · ${record.branch}`}
-        actions={actions}
-      />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <Space size={8}>
+          <Button icon={<ArrowLeft size={16} strokeWidth={2.25} />} type="text" onClick={() => navigate(-1)} />
+          <StatusBadge status={record.contractStatus} />
+          <StatusBadge status={record.paymentStatus} />
+          <Tag style={{ margin: 0, color: token.colorTextSecondary }}>{record.contractNumber} · {record.branch}</Tag>
+        </Space>
+        {actions}
+      </div>
 
-      <Card>
-        <Tabs
+      <Tabs
           type="card"
           items={[
             {
@@ -96,7 +92,6 @@ export function InstallmentDetailPage() {
             },
           ]}
         />
-      </Card>
     </div>
   )
 }

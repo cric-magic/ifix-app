@@ -6,7 +6,6 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background-color: #fff;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -17,11 +16,529 @@ body {
   min-height: 100vh;
 }
 
-/* Table row highlight classes */
-.row-overdue td {
-  background-color: #fff1f0 !important;
+/* Dark scrollbars everywhere — the browser default (light track/thumb)
+   clashes hard against this app's black theme. Fallback values match
+   colorFillSecondary/colorFill in case a scrolling element sits outside the
+   ConfigProvider's cssVar scope (custom properties only inherit downward). */
+* {
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  scrollbar-width: thin;
 }
 
-.row-paid td {
-  background-color: #f6ffed !important;
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--ant-color-fill-secondary, rgba(255, 255, 255, 0.12));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ant-color-fill, rgba(255, 255, 255, 0.18));
+}
+
+/* Pagination: no stroke in any state. Default is secondary text with no
+   background; active/hover gets a fill background and steps up to primary
+   (near-white) text — same secondary/primary tiering used for icons. */
+.ant-pagination-item {
+  background: transparent !important;
+  border: none !important;
+}
+
+.ant-pagination-item a {
+  color: var(--ant-color-text-secondary) !important;
+}
+
+.ant-pagination-item-active,
+.ant-pagination-item:hover {
+  background: var(--ant-color-fill-secondary) !important;
+}
+
+.ant-pagination-item-active a,
+.ant-pagination-item:hover a {
+  color: var(--ant-color-text) !important;
+}
+
+/* Custom prevIcon/nextIcon render as a bare <li> (no <button> wrapper, even
+   when enabled) — style the li itself, using currentColor for the svg. */
+.ant-pagination-prev,
+.ant-pagination-next {
+  border: none !important;
+  background: transparent !important;
+  color: var(--ant-color-text-secondary) !important;
+}
+
+.ant-pagination-prev:not(.ant-pagination-disabled):hover,
+.ant-pagination-next:not(.ant-pagination-disabled):hover {
+  background: var(--ant-color-fill-secondary) !important;
+  color: var(--ant-color-text) !important;
+}
+
+.ant-pagination-disabled {
+  color: var(--ant-color-text-quaternary) !important;
+}
+
+/* SVG chevrons are inline-replaced elements and align to text baseline by
+   default (not centered) when there's no button wrapper, e.g. while
+   disabled — flex-center the li (and the button, when present) instead. */
+.ant-pagination-prev,
+.ant-pagination-next {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.ant-pagination-prev button,
+.ant-pagination-next button {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.ant-table-pagination {
+  padding: 0 !important;
+}
+
+.ant-pagination-total-text {
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+}
+
+/* Match the table header's font size (12px), tried as an experiment. */
+.ant-table-pagination.ant-pagination {
+  font-size: 12px;
+}
+
+.ant-table-thead > tr > th {
+  font-size: 12px;
+}
+
+/* AntD skips the divider on the first header cell by default, and separately
+   force-hides it (higher specificity than a plain :first-child rule) both
+   while it's the active sort column and on hover of any sortable header —
+   override all three so the first column always keeps its divider. */
+.ant-table-thead > tr > th:first-child::before,
+.ant-table-thead > tr > th:first-child.ant-table-column-sort::before,
+.ant-table-thead > tr > th:first-child.ant-table-column-has-sorters:hover::before {
+  background-color: var(--ant-color-border-secondary) !important;
+}
+
+/* No borders on body rows/cells — only the header keeps its default border. */
+.ant-table-tbody > tr > td {
+  border-bottom: none !important;
+}
+
+.ant-input-affix-wrapper .ant-input-prefix {
+  margin-inline-end: 8px !important;
+}
+
+/* Icon color convention: default = secondary, hover/focus = primary.
+   Solid/primary buttons are excluded — they keep their forced light-on-color icon.
+   Uses solid hex (not the alpha text tokens) — semi-transparent strokes double-render
+   at path intersections on icons like Package/Building2, showing a visible seam.
+   Keep in sync with src/constants/iconColors.ts. */
+.ant-input-prefix svg {
+  color: #A6A6A6;
+}
+
+.ant-input-affix-wrapper:focus-within .ant-input-prefix svg {
+  color: #E0E0E0;
+}
+
+.ant-btn:not(.ant-btn-variant-solid) .ant-btn-icon svg {
+  color: #A6A6A6;
+}
+
+.ant-btn:not(.ant-btn-variant-solid):hover .ant-btn-icon svg,
+.ant-btn:not(.ant-btn-variant-solid):focus-visible .ant-btn-icon svg {
+  color: #E0E0E0;
+}
+
+.ant-select-suffix {
+  color: #A6A6A6 !important;
+}
+
+.ant-select-focused .ant-select-suffix,
+.ant-select-open .ant-select-suffix {
+  color: #E0E0E0 !important;
+}
+
+.ant-picker-suffix,
+.ant-picker-clear {
+  color: #A6A6A6 !important;
+}
+
+.ant-picker-focused .ant-picker-suffix {
+  color: #E0E0E0 !important;
+}
+
+/* Segmented's border matches the panel's own (0.5px colorBorderSecondary),
+   not the heavier 1px colorBorder used by Input/Select — it reads more like
+   a track/panel than a text field, so the thinner panel-style hairline fits
+   better than the input treatment. */
+.ant-segmented {
+  border: 0.5px solid var(--ant-color-border-secondary);
+}
+
+/* Every input-like control gets the same panel drop shadow as the rest of
+   the app (table panels, dropdowns) — none of them had one before, just a
+   flat border, which read inconsistent against everything else that's
+   elevated with this shadow. */
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-number,
+.ant-select,
+.ant-picker,
+.ant-segmented,
+.ant-btn-default {
+  box-shadow: var(--ifix-panel-shadow) !important;
+}
+
+label[for="password"] {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+label[for="password"]::after {
+  display: none;
+}
+
+/* Main nav items' icons sit 16px from the sidebar edge by default (the Menu's
+   inlineIndent), which doesn't line up with the workspace icon, account
+   avatar, or the swap-nav chevron buttons — all trimmed to a 4.5px item inset
+   elsewhere for their own vertical-centering reasons. Match it here too so
+   every icon in the sidebar shares one left column. */
+.ifix-main-nav .ant-menu-item {
+  padding-left: 4.5px !important;
+}
+
+/* antd's default icon-to-label gap (13px, via margin-left on the title) is a
+   touch wider than the 10px gap used everywhere else in the sidebar (the
+   workspace row and the avatar row both use flex `gap: 10`) — match it. */
+.ifix-main-nav .ant-menu-item .ant-menu-title-content {
+  margin-left: 10px !important;
+}
+
+/* Dropdown floating panel: same border + shadow treatment as .ifix-table-panel
+   so it reads as a consistent elevated surface instead of relying on antd's
+   default (no border, a much softer default shadow) to separate it from the
+   page. */
+/* Every floating overlay panel (Dropdown menu, Select's option list, the
+   DatePicker calendar, etc.) gets the same border + shadow as .ifix-table-panel
+   — previously only .ant-dropdown-menu had it, so Select/Picker popups still
+   looked flat and un-elevated next to menus that had already been updated. */
+.ant-dropdown-menu,
+.ant-select-dropdown,
+.ant-picker-dropdown,
+.ant-cascader-dropdown {
+  border: 0.5px solid var(--ant-color-border-secondary);
+  box-shadow: var(--ifix-panel-shadow) !important;
+}
+
+/* Tag: a touch more breathing room than antd's default (0 top/bottom padding,
+   sized purely off line-height; ~7.5px sides) and explicitly normal weight. */
+.ant-tag {
+  padding: 2px 9.5px !important;
+  font-weight: normal;
+}
+
+/* The count pill inside a Segmented item sits alongside plain text at the
+   same line-height, so the Tag's own vertical padding (added above) reads as
+   too tall/unbalanced next to it — trim it back down here specifically.
+   Horizontal padding is excluded from the app-wide Tag bump for the same
+   reason — it stays at antd's original tighter side padding. */
+.ant-segmented .ant-tag {
+  padding: 0 7.5px !important;
+  color: var(--ant-color-text-secondary) !important;
+}
+
+/* Active segment's count pill: text bumped to the primary tier, background
+   left at the default Tag fill (no special treatment). */
+.ant-segmented-item-selected .ant-tag {
+  color: var(--ant-color-text) !important;
+}
+
+/* Sidebar dropdown menu items (workspace/account) match the nav items' radius,
+   icon size is set per-instance in JSX — this only aligns radius + default/hover color. */
+.ant-dropdown-menu-item {
+  border-radius: 8px !important;
+}
+
+.ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled) {
+  color: #A6A6A6 !important;
+}
+
+.ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled):hover {
+  color: #E0E0E0 !important;
+}
+
+/* Sidebar nav <-> settings swap: both directions slide+fade in from the left. */
+@keyframes ifix-nav-slide-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.ifix-nav-slide-fade {
+  animation: ifix-nav-slide-fade-in 0.22s ease;
+}
+
+/* Table/settings panel: solid background sits on the wrapper div (the
+   element that used to carry the border), not on .ant-table/row/cell itself —
+   so the 16px padding is part of the same surface instead of empty space
+   around a tighter inner card. Table/row/cell stay transparent (see Table
+   tokens in App.tsx) so this is the only background layer. #0a0a0a matches
+   token.colorBgContainer used elsewhere in the app. */
+.ifix-table-panel {
+  background: var(--ant-color-fill-quaternary);
+  border: 0.5px solid var(--ant-color-border-secondary);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--ifix-panel-shadow);
+}
+
+/* Drawer: solid panel (see Drawer.colorBgElevated in App.tsx), no dimmed mask —
+   the drawer's own border separates it from the page. Border matches the
+   sidebar's hairline (Sider uses token.colorSplit, which resolves to this
+   same rgba). */
+.ant-drawer-mask {
+  background: transparent !important;
+}
+
+.ant-drawer-section {
+  border-left: 0.5px solid var(--ant-color-split);
+}
+
+/* Footer buttons optically centered against the sidebar account row (64px tall,
+   bottom-pinned) rather than the footer's own default 36px-button padding. */
+.ant-drawer-footer {
+  padding: 8px 16px 14px !important;
+  border-top: 0.5px solid var(--ant-color-split) !important;
+}
+
+.ant-table-thead > tr > th {
+  background: transparent !important;
+}
+
+.ant-table-thead > tr > th:first-child,
+.ant-table-tbody > tr > td:first-child {
+  padding-left: 0 !important;
+}
+
+.ant-table-thead > tr > th:last-child,
+.ant-table-tbody > tr > td:last-child {
+  padding-right: 0 !important;
+}
+
+/* Force uniform cell padding regardless of the Table's `size` prop — antd's
+   own small/default sizes give different inline padding (8px vs 16px),
+   which is why the size="small" tables (e.g. UnitsTab) looked out of step
+   with the rest of the app's tables. Excludes antd's hidden measure row
+   (used internally to calculate column widths before the real rows render)
+   — it sets its own inline padding: 0 to stay collapsed to 0 height, which
+   this rule's !important was overriding, forcing a visible empty gap above
+   every table's first real row. */
+.ant-table-thead > tr > th,
+.ant-table-tbody > tr:not(.ant-table-measure-row) > td {
+  padding: 12px 16px !important;
+}
+
+/* No top padding on table headers. Text now sits flush against the top of
+   the cell instead of vertically centered in the full (padded) box, so the
+   column divider — which antd centers on the whole box by default — needs
+   re-anchoring to the top too, or it visually hangs below the text instead
+   of sitting next to it. Also drop both the header's bottom border and the
+   column dividers to a 0.5px hairline (App.tsx sets Table.lineWidth to 1
+   for row/border weight generally, but the header divider should stay thin). */
+.ant-table-thead > tr > th {
+  padding-top: 0 !important;
+  border-bottom: 0.5px solid var(--ant-color-border-secondary) !important;
+  white-space: nowrap !important;
+}
+
+.ant-table-thead > tr > th::before {
+  top: 0 !important;
+  transform: none !important;
+  height: 16px !important;
+  width: 0.5px !important;
+}
+
+/* Fixed (sticky) columns: antd's default treatment is a transparent cell plus
+   a gradient shadow on the trailing edge to hint at clipped content underneath.
+   That reads as a stray glow against this app's dark panels — swap it for a
+   solid elevated surface instead, which reads as its own layer above the
+   scrolling content without needing the shadow cue.
+   Body cells only — header cells stay transparent like every other header
+   cell (see the plain `background: transparent` rule above). Headers don't
+   scroll under anything, so they don't need the elevated-surface treatment;
+   applying it there just left a two-tone header row (some cells transparent,
+   some solid) on every table with fixed columns. */
+.ant-table-tbody > tr > td.ant-table-cell-fix-start,
+.ant-table-tbody > tr > td.ant-table-cell-fix-end {
+  background-color: var(--ant-color-bg-elevated) !important;
+  transition: background-color 0.2s !important;
+}
+
+.ant-table-cell-fix-start-shadow::after,
+.ant-table-cell-fix-end-shadow::after {
+  box-shadow: none !important;
+}
+
+/* The row hover fill (App.tsx Table.rowHoverBg) is a transparent overlay, so
+   it reads fine on the scrolling columns' transparent cells — but the fixed
+   columns' own opaque background above sits on top and blocks it, making the
+   hover look like it stops short at the fixed edges. --ifix-fixed-cell-hover-bg
+   (App.tsx) is colorFillTertiary pre-blended onto colorBgElevated as a solid
+   color — a plain gradient overlay would work visually too, but background-color
+   is what actually transitions smoothly; background-image (gradients) can't be
+   interpolated, so it'd snap instantly instead of fading like the rest of the
+   table.
+   Keyed on antd's own `.ant-table-cell-row-hover` class (which it already adds
+   to every td in the hovered row, JS-driven via onMouseEnter/Leave) rather than
+   a plain `tr:hover`: opening a row's action Dropdown portals the menu to
+   <body>, and if that portal renders on top of the fixed column, the browser
+   no longer hit-tests the cursor as being over that td, so real `:hover` drops
+   even though the row is still conceptually hovered — antd's class doesn't
+   have that problem, so matching it keeps the two mechanisms in sync. */
+.ant-table-tbody > tr > td.ant-table-cell-row-hover.ant-table-cell-fix-start,
+.ant-table-tbody > tr > td.ant-table-cell-row-hover.ant-table-cell-fix-end {
+  background-color: var(--ifix-fixed-cell-hover-bg) !important;
+}
+
+/* Expandable tables: the column right after the expand toggle sits close
+   enough to it already — drop its left padding so content isn't pushed an
+   extra 16px away from the toggle. Applies to any table with row expansion,
+   header and body alike, since antd tags both with this class. */
+.ant-table-row-expand-icon-cell + .ant-table-cell {
+  padding-left: 0 !important;
+}
+
+/* Full-bleed panel table: the table sits in a wrapper pulled out to the
+   panel's true edges (negative margin matching the panel's own padding), so
+   row hover/selection backgrounds span edge-to-edge instead of stopping at
+   the panel's padding. The visual inset that padding used to provide is
+   restored here, on the first/last cell and the pagination bar, instead.
+   Scoped with `>` to the table that's a direct child of .ifix-panel-table —
+   a plain descendant combinator would also match any table nested inside an
+   expanded row's cell several levels down, which isn't what we want here
+   (that case is handled separately below). */
+.ifix-panel-table > .ant-table-wrapper .ant-table-thead > tr > th:first-child,
+.ifix-panel-table > .ant-table-wrapper .ant-table-tbody > tr > td:first-child {
+  padding-left: 16px !important;
+}
+
+.ifix-panel-table > .ant-table-wrapper .ant-table-thead > tr > th:last-child,
+.ifix-panel-table > .ant-table-wrapper .ant-table-tbody > tr > td:last-child {
+  padding-right: 16px !important;
+}
+
+.ifix-panel-table > .ant-table-wrapper .ant-table-pagination {
+  padding: 0 16px !important;
+  margin-bottom: 0 !important;
+}
+
+
+/* Form.Item `help` text eats into the item's own bottom margin (antd cancels
+   it out with a negative margin-offset so error messages don't shift layout),
+   which leaves little to no visible gap before the next field's label. Add
+   it back so fields with help text are spaced the same as fields without. */
+.ant-form-item-additional {
+  margin-top: 6px;
+  padding-bottom: 22px;
+}
+
+.ant-form-item-explain {
+  font-size: 12px !important;
+}
+
+/* InputNumber with addonBefore/addonAfter (e.g. the ฿ price fields) gets
+   auto-wrapped by antd in a Space.Compact group, which is inline-flex by
+   default and shrinks to its content instead of filling the Form.Item —
+   the input's own width:100% has nothing to stretch against. */
+.ant-form-item-control-input-content > .ant-space-compact {
+  display: flex;
+  width: 100%;
+}
+
+/* PhotoUpload: stretch the picture-card tiles (upload button + thumbnails)
+   to fill the field's width instead of antd's fixed ~104px square, so it
+   reads as a full-width input like everything else on the form. */
+.ifix-photo-upload .ant-upload-select,
+.ifix-photo-upload .ant-upload-list-item-container {
+  width: 100% !important;
+  height: 120px !important;
+}
+
+.ifix-photo-upload .ant-upload-list {
+  display: block;
+}
+
+/* Nested/expandable table rows: the wrapper div passed to expandedRowRender
+   controls its own margin/padding/radius, so strip antd's default cell
+   padding to avoid compounding with it. */
+.ant-table-tbody > tr.ant-table-expanded-row > td {
+  padding: 4px 0 !important;
+  background: transparent !important;
+}
+
+/* The mini table rendered inside an expanded row shouldn't show a trailing
+   border under its last row — the rounded card edge already closes it off. */
+.ant-table-expanded-row .ant-table-tbody > tr:last-child > td {
+  border-bottom: none !important;
+}
+
+/* The nested table's inner container shrink-wraps to its content instead of
+   filling its wrapper (a table-layout:auto quirk when nested inside another
+   table's cell) — force it to stretch so rows reach the card's true edges,
+   then give its own first/last cell the matching 24px inset. antd also adds
+   its own default margin-left to nested-in-expanded-row tables (a built-in
+   visual nesting indent) — cancel that too, this card already supplies the
+   nesting cue via its own background/radius. */
+.ant-table-expanded-row .ant-table {
+  margin: 0 !important;
+}
+
+.ant-table-expanded-row .ant-table,
+.ant-table-expanded-row .ant-table-container,
+.ant-table-expanded-row .ant-table-content,
+.ant-table-expanded-row .ant-table-content > table {
+  width: 100% !important;
+}
+
+.ant-table-expanded-row .ant-table-thead > tr > th:first-child,
+.ant-table-expanded-row .ant-table-tbody > tr > td:first-child {
+  padding-left: 16px !important;
+}
+
+.ant-table-expanded-row .ant-table-thead > tr > th:last-child,
+.ant-table-expanded-row .ant-table-tbody > tr > td:last-child {
+  padding-right: 16px !important;
+}
+
+/* UnitsListPage's nested table additionally indents to align under the outer
+   table's expand-toggle column. That indent used to live on the wrapper div's
+   own padding, which inset the whole card (row hover included) instead of
+   just the content — moved onto the first cell's own padding instead, same
+   as the panel edge-bleed pattern, so hover still reaches the card's edges. */
+.ifix-nested-table-indent .ant-table-thead > tr > th:first-child,
+.ifix-nested-table-indent .ant-table-tbody > tr > td:first-child {
+  padding-left: 43px !important;
 }

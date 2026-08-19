@@ -1,18 +1,16 @@
 import { useState } from 'react'
-import { Card } from 'antd'
 import type { Dayjs } from 'dayjs'
 import { MOCK_INSTALLMENTS } from '../../constants/mockData'
 import { canEditInstallment, canViewBranchFilter } from '../../constants/roles'
-import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentUser } from '../../contexts/AuthContext'
 import type { StatusFilter } from '../../types/installment'
-import { PageHeader } from '../../components/PageHeader'
 import { SummaryCards } from './components/SummaryCards'
 import { InstallmentFilters } from './components/InstallmentFilters'
 import { StatusTabs } from './components/StatusTabs'
 import { InstallmentTable } from './components/InstallmentTable'
 
 export function InstallmentListPage() {
-  const { user } = useAuth()
+  const user = useCurrentUser()
   const isAdmin = canViewBranchFilter(user)
 
   const [searchText, setSearchText] = useState('')
@@ -48,12 +46,10 @@ export function InstallmentListPage() {
 
   return (
     <div>
-      <PageHeader title="Installment Overview" subtitle="Track payment status across all contracts" />
+<SummaryCards records={filtered} />
 
-      <SummaryCards records={filtered} />
-
-      <Card styles={{ body: { padding: 0 } }}>
-        <div style={{ padding: '16px 16px 0' }}>
+      <div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
           <InstallmentFilters
             isAdmin={isAdmin}
             onSearch={setSearchText}
@@ -66,7 +62,7 @@ export function InstallmentListPage() {
           records={filtered}
           canEdit={record => canEditInstallment(user, record)}
         />
-      </Card>
+      </div>
     </div>
   )
 }

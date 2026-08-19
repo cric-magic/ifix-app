@@ -1,5 +1,5 @@
 import { Button, Card, Descriptions, Divider, message, Space, Typography } from 'antd'
-import { PrinterOutlined, DownloadOutlined } from '@ant-design/icons'
+import { Printer, Download } from 'lucide-react'
 import type { InstallmentRecord } from '../../../types/installment'
 import type { CustomerInfo } from '../../../types/installment'
 
@@ -14,10 +14,10 @@ export function ContractPreviewTab({ record, customer }: Props) {
   return (
     <div>
       <Space style={{ marginBottom: 16 }}>
-        <Button icon={<PrinterOutlined />} onClick={() => window.print()}>
+        <Button icon={<Printer size={16} strokeWidth={2.25} />} onClick={() => window.print()}>
           Print
         </Button>
-        <Button icon={<DownloadOutlined />} onClick={() => message.info('PDF export coming soon')}>
+        <Button icon={<Download size={16} strokeWidth={2.25} />} onClick={() => message.info('PDF export coming soon')}>
           Download PDF
         </Button>
       </Space>

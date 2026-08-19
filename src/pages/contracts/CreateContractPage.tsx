@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  Steps, Card, Form, Input, InputNumber, Select, Button, Space,
+  Steps, Card, Form, Input, InputNumber, Button, Space,
   Row, Col, Descriptions, DatePicker, Typography, Divider, message,
 } from 'antd'
-import { CheckOutlined } from '@ant-design/icons'
+import { Check } from 'lucide-react'
+import { Select } from '../../components/AppSelect'
 import dayjs from 'dayjs'
-import { PageHeader } from '../../components/PageHeader'
-import { MOCK_PRODUCTS, MOCK_INSTALLMENTS, MOCK_CUSTOMERS, MOCK_SCHEDULES, MOCK_PAYMENTS } from '../../constants/mockData'
+import { MOCK_PRODUCTS, MOCK_INSTALLMENTS, MOCK_CUSTOMERS, MOCK_SCHEDULES, MOCK_PAYMENTS, BRANCHES } from '../../constants/mockData'
 import { calcFixRate } from '../../utils/calculator'
 import { StatusBadge } from '../../components/StatusBadge'
 import type { InstallmentRecord, CustomerInfo, ScheduleItem } from '../../types/installment'
-import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentUser } from '../../contexts/AuthContext'
 
 const THB = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 const PERIODS = [3, 6, 9, 12, 18, 24]
@@ -34,7 +34,7 @@ function generateContractNumber() {
 export function CreateContractPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { user } = useAuth()
+  const user = useCurrentUser()
   const [step, setStep] = useState(0)
   const [productForm] = Form.useForm()
   const [financingForm] = Form.useForm()
@@ -120,7 +120,7 @@ export function CreateContractPage() {
         contractNumber: generateContractNumber(),
         customerName: cVals.customerName,
         customerId,
-        branch: user.branch,
+        branch: user.branch ?? BRANCHES[0],
         contractStatus: 'normal',
         totalAmount: calcResult.totalPayable,
         paidAmount: 0,
@@ -163,9 +163,7 @@ export function CreateContractPage() {
 
   return (
     <div>
-      <PageHeader showBack title="New Contract" subtitle="Create a new installment contract" />
-
-      <Card style={{ marginBottom: 24 }}>
+<Card style={{ marginBottom: 24 }}>
         <Steps current={step} items={steps} style={{ marginBottom: 32 }} />
 
         {/* Step 1: Product */}
@@ -431,7 +429,7 @@ export function CreateContractPage() {
 
               <Space>
                 <Button onClick={() => setStep(2)}>Back</Button>
-                <Button type="primary" icon={<CheckOutlined />} onClick={handleSubmit}>
+                <Button type="primary" icon={<Check size={16} strokeWidth={2.25} />} onClick={handleSubmit}>
                   Confirm & Create Contract
                 </Button>
               </Space>

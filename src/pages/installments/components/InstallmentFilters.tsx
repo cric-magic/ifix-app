@@ -1,4 +1,5 @@
-import { Input, Select, DatePicker, Space } from 'antd'
+import { Input, DatePicker, Space } from 'antd'
+import { Select } from '../../../components/AppSelect'
 import type { Dayjs } from 'dayjs'
 import { BRANCHES } from '../../../constants/mockData'
 
@@ -13,7 +14,7 @@ interface Props {
 
 export function InstallmentFilters({ isAdmin, onSearch, onBranchChange, onDateRangeChange }: Props) {
   return (
-    <Space wrap style={{ marginBottom: 16 }}>
+    <Space wrap>
       <Input.Search
         placeholder="Search invoice / contract / customer"
         allowClear

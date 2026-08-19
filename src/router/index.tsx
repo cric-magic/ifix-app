@@ -1,22 +1,53 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { SlidersHorizontal } from 'lucide-react'
 import { AppLayout } from '../layouts/AppLayout'
+import { RequireAuth } from './RequireAuth'
+import { PlaceholderPage } from '../components/PlaceholderPage'
 import { InstallmentListPage } from '../pages/installments/InstallmentListPage'
 import { InstallmentDetailPage } from '../pages/installments/InstallmentDetailPage'
 import { PenaltySettingsPage } from '../pages/penalty/PenaltySettingsPage'
 import { SmartCalculatorPage } from '../pages/calculator/SmartCalculatorPage'
 import { CreateContractPage } from '../pages/contracts/CreateContractPage'
+import { ContractsListPage } from '../pages/contracts/ContractsListPage'
+import { ProductsPage } from '../pages/products/ProductsPage'
+import { ProductDetailPage } from '../pages/products/ProductDetailPage'
+import { UnitsListPage } from '../pages/products/UnitsListPage'
+import { CustomersPage } from '../pages/customers/CustomersPage'
+import { MerchantsPage } from '../pages/merchants/MerchantsPage'
+import { BranchesPage } from '../pages/branches/BranchesPage'
+import { UserListPage } from '../pages/users/UserListPage'
+import { AccountGeneralPage } from '../pages/account/AccountGeneralPage'
+import { SignInPage } from '../pages/auth/SignInPage'
+import { SetPasswordPage } from '../pages/auth/SetPasswordPage'
+import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage'
 
 export const router = createBrowserRouter([
+  { path: '/sign-in', element: <SignInPage /> },
+  { path: '/set-password', element: <SetPasswordPage /> },
+  { path: '/forgot-password', element: <ForgotPasswordPage /> },
   {
     path: '/',
-    element: <AppLayout />,
+    element: <RequireAuth><AppLayout /></RequireAuth>,
     children: [
-      { index: true, element: <Navigate to="/installments" replace /> },
+      { index: true, element: <Navigate to="/contracts" replace /> },
       { path: 'installments', element: <InstallmentListPage /> },
       { path: 'installments/:id', element: <InstallmentDetailPage /> },
       { path: 'penalty-settings', element: <PenaltySettingsPage /> },
       { path: 'calculator', element: <SmartCalculatorPage /> },
       { path: 'contracts/new', element: <CreateContractPage /> },
+      { path: 'contracts', element: <ContractsListPage /> },
+      { path: 'products', element: <Navigate to="/products/catalog" replace /> },
+      { path: 'products/catalog', element: <ProductsPage /> },
+      { path: 'products/catalog/:id', element: <ProductDetailPage /> },
+      { path: 'products/unit', element: <UnitsListPage /> },
+      { path: 'customers', element: <CustomersPage /> },
+      { path: 'merchants', element: <MerchantsPage /> },
+      { path: 'branches', element: <BranchesPage /> },
+      { path: 'settings', element: <Navigate to="/settings/general" replace /> },
+      { path: 'settings/general', element: <PlaceholderPage icon={<SlidersHorizontal size={26} strokeWidth={2} />} title="General" /> },
+      { path: 'settings/members', element: <UserListPage /> },
+      { path: 'account', element: <Navigate to="/account/general" replace /> },
+      { path: 'account/general', element: <AccountGeneralPage /> },
     ],
   },
 ])

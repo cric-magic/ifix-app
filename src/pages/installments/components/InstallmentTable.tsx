@@ -1,5 +1,5 @@
-import { Table, Button, Space } from 'antd'
-import { EyeOutlined, EditOutlined } from '@ant-design/icons'
+import { ConfigProvider, Table, Button, Space, theme } from 'antd'
+import { Eye, Pencil, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
 import type { InstallmentRecord } from '../../../types/installment'
@@ -15,14 +15,16 @@ interface Props {
 
 export function InstallmentTable({ records, canEdit }: Props) {
   const navigate = useNavigate()
+  const { token } = theme.useToken()
 
   const columns: ColumnsType<InstallmentRecord> = [
     {
-      title: 'Invoice No.',
+      title: <span style={{ color: token.colorText }}>Invoice No.</span>,
       dataIndex: 'invoiceNumber',
       key: 'invoiceNumber',
+      fixed: 'left',
       render: (val, record) => (
-        <a onClick={() => navigate(`/installments/${record.id}`)}>{val}</a>
+        <a onClick={() => navigate(`/installments/${record.id}`)} style={{ color: token.colorText }}>{val}</a>
       ),
     },
     {
@@ -38,6 +40,7 @@ export function InstallmentTable({ records, canEdit }: Props) {
     {
       title: 'Status',
       key: 'status',
+      fixed: 'right',
       render: (_, record) => (
         <Space size={4}>
           <StatusBadge status={record.contractStatus} />
@@ -50,21 +53,21 @@ export function InstallmentTable({ records, canEdit }: Props) {
       dataIndex: 'paidAmount',
       key: 'paidAmount',
       align: 'right',
-      render: val => <span style={{ color: '#52c41a' }}>{formatter.format(val)}</span>,
+      render: val => <span>{formatter.format(val)}</span>,
     },
     {
       title: 'Due',
       dataIndex: 'dueAmount',
       key: 'dueAmount',
       align: 'right',
-      render: val => val > 0 ? <span style={{ color: '#fa8c16' }}>{formatter.format(val)}</span> : <span style={{ color: '#bfbfbf' }}>—</span>,
+      render: val => val > 0 ? formatter.format(val) : <span style={{ color: token.colorTextDisabled }}>—</span>,
     },
     {
       title: 'Overdue',
       dataIndex: 'overdueAmount',
       key: 'overdueAmount',
       align: 'right',
-      render: val => val > 0 ? <span style={{ color: '#ff4d4f' }}>{formatter.format(val)}</span> : <span style={{ color: '#bfbfbf' }}>—</span>,
+      render: val => val > 0 ? formatter.format(val) : <span style={{ color: token.colorTextDisabled }}>—</span>,
     },
     {
       title: 'Remaining',
@@ -77,18 +80,20 @@ export function InstallmentTable({ records, canEdit }: Props) {
       title: '',
       key: 'actions',
       width: 80,
+      fixed: 'right',
+      align: 'right',
       render: (_, record) => (
         <Space size={4}>
           <Button
             type="text"
-            icon={<EyeOutlined />}
+            icon={<Eye size={16} strokeWidth={2.25} />}
             size="small"
             onClick={() => navigate(`/installments/${record.id}`)}
           />
           {canEdit(record) && (
             <Button
               type="text"
-              icon={<EditOutlined />}
+              icon={<Pencil size={16} strokeWidth={2.25} />}
               size="small"
               onClick={() => navigate(`/installments/${record.id}?edit=true`)}
             />
@@ -99,18 +104,42 @@ export function InstallmentTable({ records, canEdit }: Props) {
   ]
 
   return (
-    <Table
-      rowKey="id"
-      columns={columns}
-      dataSource={records}
-      pagination={{ pageSize: 10, showSizeChanger: false }}
-      onRow={record => ({
-        onClick: () => navigate(`/installments/${record.id}`),
-        style: { cursor: 'pointer' },
-      })}
-      rowClassName={record =>
-        record.paymentStatus === 'overdue' ? 'row-overdue' : ''
-      }
-    />
+    <ConfigProvider theme={{
+      components: {
+        Table: {
+          colorText: token.colorTextTertiary,
+          headerColor: token.colorTextTertiary,
+        },
+      },
+    }}>
+      <div className="ifix-table-panel">
+        <div style={{ padding: 16 }}>
+          <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
+            <Table
+              rowKey="id"
+              columns={columns}
+              dataSource={records}
+              scroll={{ x: 'max-content' }}
+              pagination={{
+                pageSize: 10,
+                size: 'small',
+                showSizeChanger: false,
+                prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
+                nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
+                showTotal: (total, range) => (
+                  <span style={{ color: token.colorTextTertiary }}>
+                    {range[0]}–{range[1]} of {total}
+                  </span>
+                ),
+              }}
+              onRow={record => ({
+                onClick: () => navigate(`/installments/${record.id}`),
+                style: { cursor: 'pointer' },
+              })}
+            />
+          </div>
+        </div>
+      </div>
+    </ConfigProvider>
   )
 }

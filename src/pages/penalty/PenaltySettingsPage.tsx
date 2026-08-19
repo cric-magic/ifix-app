@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import {
-  Card, Form, InputNumber, Radio, Button, Space, Table, Typography,
+  Form, InputNumber, Radio, Button, Space, Table, Typography,
   Divider, message, Alert, Tag,
 } from 'antd'
-import { SaveOutlined, HistoryOutlined } from '@ant-design/icons'
+import { Save, History, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
-import { PageHeader } from '../../components/PageHeader'
-import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentUser } from '../../contexts/AuthContext'
+import { canConfigurePenalty } from '../../constants/roles'
 import {
   DEFAULT_PENALTY_RULE,
   MOCK_AUDIT_LOGS,
@@ -33,17 +33,17 @@ const auditColumns: ColumnsType<PenaltyAuditLog> = [
 ]
 
 export function PenaltySettingsPage() {
-  const { user } = useAuth()
+  const user = useCurrentUser()
   const [form] = Form.useForm<PenaltyRule>()
   const [penaltyType, setPenaltyType] = useState<PenaltyRule['type']>(DEFAULT_PENALTY_RULE.type)
   const [logs, setLogs] = useState(MOCK_AUDIT_LOGS)
 
-  if (user.role !== 'admin') {
+  if (!canConfigurePenalty(user)) {
     return (
       <Alert
         type="error"
         message="Access Denied"
-        description="Penalty settings are only accessible to Admin users."
+        description="Penalty settings are only accessible to Merchant Admin and above."
         showIcon
       />
     )
@@ -105,13 +105,9 @@ export function PenaltySettingsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Penalty Settings"
-        subtitle="Configure overdue penalty rules applied to installment contracts"
-      />
-
-      <Space direction="vertical" size={24} style={{ width: '100%' }}>
-        <Card title="Penalty Rule Configuration">
+<Space direction="vertical" size={24} style={{ width: '100%' }}>
+        <div>
+          <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 16 }}>Penalty Rule Configuration</Typography.Title>
           <Form
             form={form}
             layout="vertical"
@@ -168,14 +164,17 @@ export function PenaltySettingsPage() {
             </Form.Item>
 
             <Form.Item style={{ marginTop: 32 }}>
-              <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+              <Button type="primary" htmlType="submit" icon={<Save size={16} strokeWidth={2.25} />}>
                 Save Settings
               </Button>
             </Form.Item>
           </Form>
-        </Card>
+        </div>
 
-        <Card title={<Space><HistoryOutlined /> Audit Log</Space>}>
+        <div>
+          <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 4 }}>
+            <Space><History size={17} strokeWidth={2.25} /> Audit Log</Space>
+          </Typography.Title>
           <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
             All changes to penalty settings are recorded below.
           </Typography.Text>
@@ -184,10 +183,16 @@ export function PenaltySettingsPage() {
             rowKey="id"
             columns={auditColumns}
             dataSource={logs}
-            pagination={{ pageSize: 10, showSizeChanger: false }}
+            pagination={{
+              pageSize: 10,
+              size: 'small',
+              showSizeChanger: false,
+              prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
+              nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
+            }}
             bordered
           />
-        </Card>
+        </div>
       </Space>
     </div>
   )

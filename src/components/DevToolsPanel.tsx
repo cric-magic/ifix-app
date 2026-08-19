@@ -1,24 +1,30 @@
 import { useState } from 'react'
-import { Avatar, Space, Tag, Tooltip, Typography } from 'antd'
-import {
-  DesktopOutlined, TabletOutlined, MobileOutlined,
-  UserOutlined, MinusOutlined, UpOutlined,
-} from '@ant-design/icons'
+import { Avatar, Button, Space, Tag, Tooltip, Typography, theme } from 'antd'
+import { Monitor, Tablet, Smartphone, User, Minus, ChevronUp } from 'lucide-react'
+import { Select } from './AppSelect'
 import { useDevTools, DEVICE_CONFIG } from '../contexts/DevToolsContext'
 import { useAuth } from '../contexts/AuthContext'
-import { MOCK_USERS } from '../constants/roles'
+import { ROLE_LABELS, ROLE_TAG_COLOR } from '../constants/roles'
+import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
 import type { DeviceSize } from '../contexts/DevToolsContext'
 
 const DEVICE_ICONS: Record<DeviceSize, React.ReactNode> = {
-  desktop: <DesktopOutlined />,
-  tablet:  <TabletOutlined />,
-  mobile:  <MobileOutlined />,
+  desktop: <Monitor size={17} strokeWidth={2.25} />,
+  tablet:  <Tablet size={17} strokeWidth={2.25} />,
+  mobile:  <Smartphone size={17} strokeWidth={2.25} />,
 }
+
+const USER_OPTIONS = MOCK_USER_ACCOUNTS.map(u => ({
+  value: u.id,
+  label: u.name,
+  user: u,
+}))
 
 export function DevToolsPanel() {
   const { device, setDevice } = useDevTools()
-  const { user, setUser } = useAuth()
+  const { user, devSetUser } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
+  const { token } = theme.useToken()
 
   return (
     <div style={{
@@ -38,20 +44,20 @@ export function DevToolsPanel() {
         onClick={() => setCollapsed(p => !p)}
         style={{
           pointerEvents: 'all',
-          background: '#111',
-          border: '1px solid #111',
+          background: token.colorBgLayout,
+          border: `0.5px solid ${token.colorBorderSecondary}`,
           borderRadius: 20,
-          color: '#fff',
+          color: token.colorTextSecondary,
           fontSize: 11,
           padding: '3px 12px',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           gap: 4,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          boxShadow: token.boxShadow,
         }}
       >
-        {collapsed ? <UpOutlined style={{ fontSize: 9 }} /> : <MinusOutlined style={{ fontSize: 9 }} />}
+        {collapsed ? <ChevronUp size={13} strokeWidth={2.25} /> : <Minus size={13} strokeWidth={2.25} />}
         <span>DevTools</span>
       </button>
 
@@ -59,129 +65,90 @@ export function DevToolsPanel() {
       {!collapsed && (
         <div style={{
           pointerEvents: 'all',
-          background: '#fff',
-          borderRadius: 12,
+          background: token.colorBgLayout,
+          borderRadius: token.borderRadiusLG,
           padding: '10px 16px',
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           gap: 20,
-          boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
-          border: '1px solid #e8e8e8',
+          boxShadow: token.boxShadowSecondary,
+          border: `0.5px solid ${token.colorBorderSecondary}`,
+          maxWidth: 720,
         }}>
-
           {/* Device switcher */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <Typography.Text style={{ color: '#aaa', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
+            <Typography.Text style={{ color: token.colorTextQuaternary, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
               Viewport
             </Typography.Text>
             <Space size={4}>
               {(['desktop', 'tablet', 'mobile'] as DeviceSize[]).map(d => (
                 <Tooltip key={d} title={DEVICE_CONFIG[d].label} zIndex={10000}>
-                  <button
+                  <Button
+                    type={device === d ? 'primary' : 'default'}
+                    icon={DEVICE_ICONS[d]}
                     onClick={() => setDevice(d)}
-                    style={{
-                      background: device === d ? '#111' : '#f5f5f5',
-                      border: 'none',
-                      borderRadius: 6,
-                      color: device === d ? '#fff' : '#888',
-                      width: 32,
-                      height: 32,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 15,
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    {DEVICE_ICONS[d]}
-                  </button>
+                  />
                 </Tooltip>
               ))}
             </Space>
           </div>
 
-          <div style={{ width: 1, height: 40, background: '#eee' }} />
-
           {/* User switcher */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <Typography.Text style={{ color: '#aaa', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}>
+            <Typography.Text style={{ color: token.colorTextQuaternary, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
               User
             </Typography.Text>
-            <Space size={6} wrap>
-              {MOCK_USERS.map(u => {
-                const isActive = user.id === u.id
+            <Select
+              value={user?.id}
+              placeholder="Not signed in"
+              style={{ width: 260 }}
+              popupMatchSelectWidth={false}
+              placement="topLeft"
+              getPopupContainer={trigger => trigger.parentElement ?? trigger}
+              onChange={id => {
+                const account = MOCK_USER_ACCOUNTS.find(a => a.id === id)
+                if (account) devSetUser(account)
+              }}
+              options={USER_OPTIONS}
+              optionRender={option => {
+                const u = option.data.user
                 return (
-                  <Tooltip
-                    key={u.id}
-                    zIndex={10000}
-                    title={
-                      <div>
-                        <div style={{ fontWeight: 600 }}>{u.name}</div>
-                        <div style={{ opacity: 0.75 }}>{u.role} · {u.branch}</div>
-                      </div>
-                    }
-                  >
-                    <button
-                      onClick={() => setUser(u)}
-                      style={{
-                        background: isActive ? '#111' : '#ebebeb',
-                        border: isActive ? '1.5px solid #111' : '1.5px solid #ebebeb',
-                        borderRadius: 20,
-                        padding: '3px 10px 3px 4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 5,
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      <Avatar
-                        icon={<UserOutlined />}
-                        size={18}
-                        style={{ background: isActive ? '#444' : '#ccc', color: isActive ? '#fff' : '#777', flexShrink: 0 }}
-                      />
-                      <span style={{ color: isActive ? '#fff' : '#222', fontSize: 12, whiteSpace: 'nowrap' }}>
-                        {u.name.split(' ')[0]}
-                      </span>
-                      <Tag
-                        style={{
-                          margin: 0,
-                          fontSize: 10,
-                          padding: '0 4px',
-                          lineHeight: '16px',
-                          background: isActive ? '#333' : '#ddd',
-                          border: 'none',
-                          color: isActive ? '#eee' : '#444',
-                          borderRadius: 3,
-                        }}
-                      >
-                        {u.role}
-                      </Tag>
-                    </button>
-                  </Tooltip>
+                  <Space size={6}>
+                    <Avatar icon={<User size={15} strokeWidth={2.25} />} size={24} style={{ background: token.colorFill, flexShrink: 0 }} />
+                    <span style={{ fontSize: 13 }}>{u.name}</span>
+                    <Tag color={ROLE_TAG_COLOR[u.role]} style={{ margin: 0 }}>{ROLE_LABELS[u.role]}</Tag>
+                  </Space>
                 )
-              })}
-            </Space>
+              }}
+              labelRender={label => {
+                const account = MOCK_USER_ACCOUNTS.find(a => a.id === label.value)
+                if (!account) return label.label
+                return (
+                  <Space size={6}>
+                    <Avatar icon={<User size={15} strokeWidth={2.25} />} size={24} style={{ background: token.colorPrimaryActive, flexShrink: 0 }} />
+                    <span style={{ fontSize: 13 }}>{account.name}</span>
+                    <Tag color={ROLE_TAG_COLOR[account.role]} style={{ margin: 0 }}>{ROLE_LABELS[account.role]}</Tag>
+                  </Space>
+                )
+              }}
+            />
           </div>
 
-          <div style={{ width: 1, height: 40, background: '#eee' }} />
-
           {/* Current state readout */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography.Text style={{ color: '#aaa', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <Typography.Text style={{ color: token.colorTextQuaternary, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
               Active
             </Typography.Text>
-            <Typography.Text style={{ color: '#333', fontSize: 12, whiteSpace: 'nowrap' }}>
-              {DEVICE_CONFIG[device].label}
-              {device !== 'desktop' && (
-                <span style={{ color: '#aaa' }}> · {DEVICE_CONFIG[device].width}px</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0, lineHeight: 1.3 }}>
+              <Typography.Text style={{ color: token.colorText, fontSize: 12, whiteSpace: 'nowrap' }}>
+                {user ? user.name : 'Not signed in'}
+              </Typography.Text>
+              {user && (
+                <Typography.Text style={{ color: token.colorTextTertiary, fontSize: 12, whiteSpace: 'nowrap' }}>
+                  {user.branch ?? 'All branches'}
+                </Typography.Text>
               )}
-            </Typography.Text>
-            <Typography.Text style={{ color: '#333', fontSize: 12, whiteSpace: 'nowrap' }}>
-              {user.name}
-              <span style={{ color: '#aaa' }}> · {user.branch}</span>
-            </Typography.Text>
+            </div>
           </div>
 
         </div>

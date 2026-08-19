@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import {
-  Card, Tabs, Form, Select, InputNumber, Button, Table, Space,
-  Statistic, Row, Col, Switch, Typography, Divider, Alert,
+  Tabs, Form, InputNumber, Button, Table, Space,
+  Statistic, Row, Col, Switch, Typography, Divider, Alert, theme,
 } from 'antd'
-import { ArrowRightOutlined } from '@ant-design/icons'
+import { ArrowRight } from 'lucide-react'
+import { Select } from '../../components/AppSelect'
 import type { ColumnsType } from 'antd/es/table'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentUser } from '../../contexts/AuthContext'
+import { isMerchantAdminOrAbove } from '../../constants/roles'
 import { MOCK_PRODUCTS, FLAT_RATES } from '../../constants/mockData'
 import { calcFixRate, calcEasyMode } from '../../utils/calculator'
-import { PageHeader } from '../../components/PageHeader'
 import type { ScheduleResult } from '../../types/installment'
 
 const PERIODS = [3, 6, 9, 12, 18, 24]
@@ -28,9 +29,10 @@ const scheduleColumns = (showInterest: boolean): ColumnsType<ScheduleResult['sch
 ]
 
 export function SmartCalculatorPage() {
-  const { user } = useAuth()
+  const user = useCurrentUser()
   const navigate = useNavigate()
-  const isManager = user.role === 'admin'
+  const { token } = theme.useToken()
+  const isManager = isMerchantAdminOrAbove(user)
   const [showInterest, setShowInterest] = useState(true)
   const [fixResult, setFixResult] = useState<ScheduleResult | null>(null)
   const [easyResult, setEasyResult] = useState<ScheduleResult | null>(null)
@@ -70,25 +72,19 @@ export function SmartCalculatorPage() {
 
   const ResultCards = ({ result }: { result: ScheduleResult }) => (
     <div>
-      <Row gutter={16} style={{ marginBottom: 16 }}>
+      <Row gutter={32} style={{ marginBottom: 24 }}>
         <Col span={8}>
-          <Card>
-            <Statistic title="Monthly Installment" value={THB.format(result.monthlyInstallment)} valueStyle={{ color: '#1677ff', fontSize: 20 }} />
-          </Card>
+          <Statistic title="Monthly Installment" value={THB.format(result.monthlyInstallment)} valueStyle={{ color: token.colorPrimary, fontSize: 20 }} />
         </Col>
         <Col span={8}>
-          <Card>
-            <Statistic title="Total Payable" value={THB.format(result.totalPayable)} valueStyle={{ fontSize: 20 }} />
-          </Card>
+          <Statistic title="Total Payable" value={THB.format(result.totalPayable)} valueStyle={{ fontSize: 20 }} />
         </Col>
         <Col span={8}>
-          <Card>
-            <Statistic
-              title={showInterest ? 'Total Interest' : 'Interest (hidden)'}
-              value={showInterest ? THB.format(result.totalInterest) : '—'}
-              valueStyle={{ color: '#fa8c16', fontSize: 20 }}
-            />
-          </Card>
+          <Statistic
+            title={showInterest ? 'Total Interest' : 'Interest (hidden)'}
+            value={showInterest ? THB.format(result.totalInterest) : '—'}
+            valueStyle={{ color: token.colorWarning, fontSize: 20 }}
+          />
         </Col>
       </Row>
       <Table
@@ -105,21 +101,16 @@ export function SmartCalculatorPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Smart Calculator"
-        subtitle="Calculate installment schedules before creating a contract"
-        actions={
-          isManager && (
-            <Space>
-              <Typography.Text type="secondary">Show Interest on Contract</Typography.Text>
-              <Switch checked={showInterest} onChange={setShowInterest} />
-            </Space>
-          )
-        }
-      />
+      {isManager && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+          <Space>
+            <Typography.Text type="secondary">Show Interest on Contract</Typography.Text>
+            <Switch checked={showInterest} onChange={setShowInterest} />
+          </Space>
+        </div>
+      )}
 
-      <Card>
-        <Tabs
+<Tabs
           defaultActiveKey="fix"
           items={[
             {
@@ -187,7 +178,7 @@ export function SmartCalculatorPage() {
                       <ResultCards result={fixResult} />
                       <Button
                         type="primary"
-                        icon={<ArrowRightOutlined />}
+                        icon={<ArrowRight size={16} strokeWidth={2.25} />}
                         onClick={() => goToCreateContract(fixResult, true)}
                       >
                         Create Contract
@@ -244,7 +235,7 @@ export function SmartCalculatorPage() {
                             <ResultCards result={easyResult} />
                             <Button
                               type="primary"
-                              icon={<ArrowRightOutlined />}
+                              icon={<ArrowRight size={16} strokeWidth={2.25} />}
                               onClick={() => goToCreateContract(easyResult, false)}
                             >
                               Create Contract
@@ -258,7 +249,6 @@ export function SmartCalculatorPage() {
               : []),
           ]}
         />
-      </Card>
     </div>
   )
 }

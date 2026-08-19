@@ -1,7 +1,9 @@
+import type { UserRole } from './user'
+
 export type ContractStatus = 'normal' | 'bad_debt'
 export type PaymentStatus = 'due' | 'overdue' | 'paid' | 'future'
 export type StatusFilter = 'all' | PaymentStatus
-export type UserRole = 'admin' | 'retail'
+export type { UserRole }
 
 export interface InstallmentRecord {
   id: string
@@ -54,7 +56,8 @@ export interface AuthUser {
   id: string
   name: string
   role: UserRole
-  branch: string
+  branch?: string
+  merchantId?: string
 }
 
 export interface Product {

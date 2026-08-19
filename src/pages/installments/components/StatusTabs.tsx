@@ -1,10 +1,17 @@
-import { Tabs, Badge } from 'antd'
+import { Segmented, Tag } from 'antd'
 import type { InstallmentRecord, StatusFilter } from '../../../types/installment'
 
 interface Props {
   activeTab: StatusFilter
   allRecords: InstallmentRecord[]
   onChange: (tab: StatusFilter) => void
+}
+
+const TAB_COLOR: Record<StatusFilter, string> = {
+  all: 'default',
+  due: 'orange',
+  overdue: 'red',
+  paid: 'green',
 }
 
 export function StatusTabs({ activeTab, allRecords, onChange }: Props) {
@@ -19,23 +26,17 @@ export function StatusTabs({ activeTab, allRecords, onChange }: Props) {
   ]
 
   return (
-    <Tabs
-      activeKey={activeTab}
+    <Segmented
+      value={activeTab}
       onChange={key => onChange(key as StatusFilter)}
-      style={{ marginBottom: 0 }}
-      items={tabs.map(t => ({
-        key: t.key,
+      options={tabs.map(t => ({
+        value: t.key,
         label: (
           <span>
             {t.label}{' '}
-            <Badge
-              count={count(t.key)}
-              showZero
-              style={{
-                backgroundColor: t.key === 'overdue' ? '#ff4d4f' : t.key === 'due' ? '#fa8c16' : '#d9d9d9',
-                color: t.key === 'all' || t.key === 'paid' ? '#595959' : undefined,
-              }}
-            />
+            <Tag color={TAB_COLOR[t.key]} style={{ margin: 0 }}>
+              {count(t.key)}
+            </Tag>
           </span>
         ),
       }))}
