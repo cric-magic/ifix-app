@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { ROLE_LABELS, ROLE_TAG_COLOR } from '../constants/roles'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
 import type { DeviceSize } from '../contexts/DevToolsContext'
+import type { UserAccount } from '../types/user'
 
 const DEVICE_ICONS: Record<DeviceSize, React.ReactNode> = {
   desktop: <Monitor size={17} strokeWidth={2.25} />,
@@ -111,7 +112,7 @@ export function DevToolsPanel() {
               }}
               options={USER_OPTIONS}
               optionRender={option => {
-                const u = option.data.user
+                const u = option.data.user as UserAccount
                 return (
                   <Space size={6}>
                     <Avatar icon={<User size={15} strokeWidth={2.25} />} size={24} style={{ background: token.colorFill, flexShrink: 0 }} />

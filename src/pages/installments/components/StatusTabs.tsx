@@ -12,6 +12,7 @@ const TAB_COLOR: Record<StatusFilter, string> = {
   due: 'orange',
   overdue: 'red',
   paid: 'green',
+  future: 'default',
 }
 
 export function StatusTabs({ activeTab, allRecords, onChange }: Props) {
