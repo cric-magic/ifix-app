@@ -60,6 +60,14 @@ function buildTheme(variant: ThemeVariant) {
     colorSuccess: '#6a9c72',
     colorWarning: '#c99753',
     colorError: '#b8655a',
+    // Same muted, moderate-saturation family as the three above (antd's own
+    // default colorInfo is a vivid saturated blue with no relation to this
+    // palette, which is what made Alert/Message's "info" variant look
+    // jarring next to everything else — colorSuccess/Warning/Error being in
+    // this family is also the only reason Tags already look consistent,
+    // since Tag doesn't get its own component override; it just inherits
+    // these seed tokens like Alert/Message/Notification/Badge all do).
+    colorInfo: '#5d87a6',
     lineWidth: 0.5,
     colorBgElevated: '#000000', // placeholder, replaced below once colorFillQuaternary is known
     colorIcon: ICON_COLOR_SECONDARY,
