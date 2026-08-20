@@ -76,7 +76,12 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
                     alt={`Photo ${i + 1}`}
                     width={100}
                     height={100}
-                    style={{ objectFit: 'cover', borderRadius: 6 }}
+                    style={{
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                      border: `0.5px solid ${token.colorBorderSecondary}`,
+                      boxShadow: token.boxShadow,
+                    }}
                   />
                 ))}
               </div>
@@ -90,7 +95,9 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
-              borderRadius: 6,
+              borderRadius: 8,
+              border: `0.5px solid ${token.colorBorderSecondary}`,
+              boxShadow: token.boxShadow,
               background: token.colorFillQuaternary,
               color: iconColors.secondary,
             }}>

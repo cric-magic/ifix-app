@@ -138,7 +138,12 @@ export function UnitDetailPage() {
                       alt={photo.label}
                       width={100}
                       height={100}
-                      style={{ objectFit: 'cover', borderRadius: 6 }}
+                      style={{
+                        objectFit: 'cover',
+                        borderRadius: 8,
+                        border: `0.5px solid ${token.colorBorderSecondary}`,
+                        boxShadow: token.boxShadow,
+                      }}
                     />
                   ))}
                 </div>
@@ -152,7 +157,9 @@ export function UnitDetailPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
-                borderRadius: 6,
+                borderRadius: 8,
+                border: `0.5px solid ${token.colorBorderSecondary}`,
+                boxShadow: token.boxShadow,
                 background: token.colorFillQuaternary,
                 color: iconColors.secondary,
               }}>

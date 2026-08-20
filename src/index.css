@@ -618,3 +618,14 @@ label[for="password"]::after {
 .ifix-nested-table-indent .ant-table-tbody > tr > td:first-child {
   padding-left: 43px !important;
 }
+
+/* Product/Unit Details photo thumbnails: the rounded corners set on the
+   <img> itself (see OverviewTab.tsx / UnitDetailPage.tsx) only round the
+   image — antd's own hover cover/mask overlay is a separate sibling element
+   that fills the same box with square corners, so on hover a sharp-cornered
+   dark layer shows on top of the rounded photo. Clipping the wrapper itself
+   fixes any such overlay regardless of which internal element renders it. */
+.ant-image {
+  border-radius: 8px;
+  overflow: hidden;
+}
