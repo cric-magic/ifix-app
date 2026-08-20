@@ -20,7 +20,11 @@ interface FormValues {
   branch: string
   grade?: UnitGrade
   notes?: string
-  conditionPhotos?: string[]
+  frontPhoto?: string[]
+  backPhoto?: string[]
+  imeiLabelPhoto?: string[]
+  sealWrapPhoto?: string[]
+  defectPhotos?: string[]
   tax: UnitTax
   customPrice?: number
 }
@@ -39,7 +43,11 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
         branch: unit.branch,
         grade: unit.grade,
         notes: unit.notes,
-        conditionPhotos: unit.conditionPhotos,
+        frontPhoto: unit.unitPhotos?.front ? [unit.unitPhotos.front] : undefined,
+        backPhoto: unit.unitPhotos?.back ? [unit.unitPhotos.back] : undefined,
+        imeiLabelPhoto: unit.unitPhotos?.imeiLabel ? [unit.unitPhotos.imeiLabel] : undefined,
+        sealWrapPhoto: unit.unitPhotos?.sealWrap ? [unit.unitPhotos.sealWrap] : undefined,
+        defectPhotos: unit.defectPhotos,
         tax: unit.tax,
         customPrice: unit.customPrice,
       })
@@ -51,7 +59,13 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
     unit.branch = lockedBranch ?? values.branch
     unit.grade = isUsed ? values.grade : undefined
     unit.notes = values.notes
-    unit.conditionPhotos = values.conditionPhotos
+    unit.unitPhotos = {
+      front: values.frontPhoto?.[0],
+      back: values.backPhoto?.[0],
+      imeiLabel: values.imeiLabelPhoto?.[0],
+      sealWrap: values.sealWrapPhoto?.[0],
+    }
+    unit.defectPhotos = isUsed ? values.defectPhotos : undefined
     unit.tax = values.tax
     unit.customPrice = values.customPrice
     onUpdated()
@@ -71,17 +85,17 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
         </Space>
       }
     >
-      {unit && (
-        <>
-          <Form.Item label="IMEI">
-            <Input value={unit.imei} disabled />
-          </Form.Item>
-          <Form.Item label="Serial Number">
-            <Input value={unit.serialNumber} disabled />
-          </Form.Item>
-        </>
-      )}
       <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false}>
+        {unit && (
+          <>
+            <Form.Item label="IMEI">
+              <Input value={unit.imei} disabled />
+            </Form.Item>
+            <Form.Item label="Serial Number">
+              <Input value={unit.serialNumber} disabled />
+            </Form.Item>
+          </>
+        )}
         <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Required' }]}>
           <Select placeholder="Select branch" disabled={!!lockedBranch} options={BRANCHES.map(b => ({ value: b, label: b }))} />
         </Form.Item>
@@ -90,13 +104,28 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
             <Select placeholder="Select grade" options={GRADE_OPTIONS} />
           </Form.Item>
         )}
-        <Form.Item
-          label="Condition Photos"
-          name="conditionPhotos"
-          rules={isUsed ? [{ required: true, message: 'Required for used products' }] : []}
-        >
-          <PhotoUpload />
+        <Form.Item label="Front" name="frontPhoto" rules={[{ required: true, message: 'Required' }]}>
+          <PhotoUpload maxCount={1} />
         </Form.Item>
+        <Form.Item label="Back" name="backPhoto">
+          <PhotoUpload maxCount={1} />
+        </Form.Item>
+        <Form.Item label="IMEI Label" name="imeiLabelPhoto" rules={[{ required: true, message: 'Required' }]}>
+          <PhotoUpload maxCount={1} />
+        </Form.Item>
+        <Form.Item label="Seal / Wrap" name="sealWrapPhoto">
+          <PhotoUpload maxCount={1} />
+        </Form.Item>
+        {isUsed && (
+          <Form.Item
+            label="Condition Photos"
+            name="defectPhotos"
+            help="Photos of any defect on the device"
+            rules={[{ required: true, message: 'Required for used products' }]}
+          >
+            <PhotoUpload />
+          </Form.Item>
+        )}
         <Form.Item label="Tax" name="tax" rules={[{ required: true, message: 'Required' }]}>
           <Select options={TAX_OPTIONS} />
         </Form.Item>

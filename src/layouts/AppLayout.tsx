@@ -8,9 +8,10 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth, useCurrentUser } from '../contexts/AuthContext'
 import { canManageUsers } from '../constants/roles'
-import { ICON_COLOR_SECONDARY } from '../constants/iconColors'
+import { useIconColors } from '../constants/iconColors'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
 import { MOCK_PRODUCTS } from '../constants/mockProducts'
+import { MOCK_PRODUCT_UNITS } from '../constants/mockProductUnits'
 
 const { Header, Sider, Content } = Layout
 
@@ -44,6 +45,7 @@ export function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { token } = theme.useToken()
+  const iconColors = useIconColors()
   const [collapsed, setCollapsed] = useState(false)
 
   // Main nav icons sit in a 27×27 box — same size as the workspace logo box,
@@ -83,7 +85,18 @@ export function AppLayout() {
   // ("Products / <name>") instead of the flat section title.
   const productDetailId = inProducts && productsKey === 'catalog' ? location.pathname.split('/')[3] : undefined
   const productDetailName = productDetailId ? MOCK_PRODUCTS.find(p => p.id === productDetailId)?.name : undefined
-  const breadcrumbParts = productDetailName ? ['Products', productDetailName] : [pageTitle]
+
+  // Unit detail route (/products/unit/:id) — same 2-level treatment
+  // ("Units / <IMEI>"), parallel to the product detail breadcrumb above.
+  const unitDetailId = inProducts && productsKey === 'unit' ? location.pathname.split('/')[3] : undefined
+  const unitDetailImei = unitDetailId ? MOCK_PRODUCT_UNITS.find(u => u.id === unitDetailId)?.imei : undefined
+
+  const breadcrumbParts = productDetailName
+    ? ['Products', productDetailName]
+    : unitDetailImei
+    ? ['Units', unitDetailImei]
+    : [pageTitle]
+  const breadcrumbBackUrl = unitDetailImei ? '/products/unit' : '/products/catalog'
 
   function handleLogout() {
     logout()
@@ -92,7 +105,7 @@ export function AppLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
-      <Sider width={220} collapsed={collapsed} collapsedWidth={0} trigger={null} style={{
+      <Sider width={220} collapsedWidth={220} collapsed={false} trigger={null} style={{
         background: 'transparent',
         border: 'none',
         position: 'sticky',
@@ -100,8 +113,25 @@ export function AppLayout() {
         height: '100vh',
         padding: '12px 0 12px 12px',
         overflow: 'hidden',
+        flexShrink: 0,
+        // The box's own width (220) never changes — collapsed={false} is
+        // hardcoded above so antd never shrinks it. Instead: `transform`
+        // slides the whole box (padding, border, everything) off-screen —
+        // a pure visual move that never causes any child to render at an
+        // in-between width and squish (see the "IFix" title wrap bug this
+        // replaces) — while the negative `marginRight` shrinks its actual
+        // flex footprint to 0 in step, so the main panel still reflows to
+        // fill the freed space exactly as it did when the box itself used
+        // to shrink.
+        transform: collapsed ? 'translateX(-220px)' : 'translateX(0)',
+        marginRight: collapsed ? -220 : 0,
+        transition: 'transform var(--ant-motion-duration-mid), margin-right var(--ant-motion-duration-mid)',
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+        }}>
           <Dropdown
             trigger={['click']}
             placement="bottomLeft"
@@ -163,7 +193,7 @@ export function AppLayout() {
                 background: token.colorFillSecondary,
                 flexShrink: 0,
               }} />
-              <Typography.Text strong style={{ fontSize: 15, flex: 1 }}>IFix</Typography.Text>
+              <Typography.Text strong style={{ fontSize: 15, flex: 1, minWidth: 0 }} ellipsis>IFix</Typography.Text>
               <Button type="text" size="small" style={{ borderRadius: 6 }} icon={<ChevronsUpDown size={14} strokeWidth={2.25} />} />
             </div>
           </Dropdown>
@@ -370,7 +400,7 @@ export function AppLayout() {
               flexShrink: 0,
               cursor: 'pointer',
             }}>
-              <Avatar icon={<User size={17} strokeWidth={2.25} />} size={28} style={{ background: token.colorFillSecondary, color: ICON_COLOR_SECONDARY, flexShrink: 0 }} />
+              <Avatar icon={<User size={17} strokeWidth={2.25} />} size={28} style={{ background: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }} />
               <Typography.Text
                 style={{ fontSize: 14, flex: 1, minWidth: 0, color: token.colorText }}
                 ellipsis={{ tooltip: user.name }}
@@ -426,7 +456,7 @@ export function AppLayout() {
                   {i > 0 && <ChevronRight size={14} strokeWidth={2.25} style={{ color: token.colorTextQuaternary }} />}
                   <Typography.Text
                     strong={isLast}
-                    onClick={isLast ? undefined : () => navigate('/products/catalog')}
+                    onClick={isLast ? undefined : () => navigate(breadcrumbBackUrl)}
                     style={{
                       fontSize: 15,
                       color: isLast ? token.colorText : token.colorTextTertiary,

@@ -1,7 +1,7 @@
 import { Upload, theme } from 'antd'
 import type { UploadFile } from 'antd'
 import { Plus } from 'lucide-react'
-import { ICON_COLOR_SECONDARY } from '../constants/iconColors'
+import { useIconColors } from '../constants/iconColors'
 
 interface Props {
   value?: string[]
@@ -22,6 +22,7 @@ function fileToDataUrl(file: File): Promise<string> {
 // record itself, same convention as the rest of this prototype's mock data.
 export function PhotoUpload({ value = [], onChange, maxCount = 4 }: Props) {
   const { token } = theme.useToken()
+  const iconColors = useIconColors()
 
   const fileList: UploadFile[] = value.map((url, i) => ({
     uid: String(i),
@@ -48,7 +49,7 @@ export function PhotoUpload({ value = [], onChange, maxCount = 4 }: Props) {
       >
         {value.length >= maxCount ? null : (
           <div>
-            <div style={{ color: ICON_COLOR_SECONDARY }}>
+            <div style={{ color: iconColors.secondary }}>
               <Plus size={16} strokeWidth={2.25} />
             </div>
             <div style={{ marginTop: 4, fontSize: 12, color: token.colorTextSecondary }}>Upload</div>

@@ -4,7 +4,7 @@ import type { AuthUser } from '../../../types/installment'
 import type { Product } from '../../../types/product'
 import { canViewCostPrice } from '../../../constants/roles'
 import { CATEGORY_LABELS, TYPE_LABELS } from '../../../constants/products'
-import { ICON_COLOR_SECONDARY } from '../../../constants/iconColors'
+import { useIconColors } from '../../../constants/iconColors'
 import { ProductStatusTag } from '../components/ProductStatusTag'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
@@ -19,6 +19,7 @@ interface Props {
 export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
   const showCostPrice = canViewCostPrice(actor)
   const { token } = theme.useToken()
+  const iconColors = useIconColors()
 
   const items = [
     { key: 'brand', label: 'Brand', children: product.brand },
@@ -42,8 +43,9 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
         alignItems: 'center',
         justifyContent: 'space-between',
         height: 56,
-        padding: '0 16px',
-        borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
+        paddingLeft: 16,
+        paddingRight: 10,
+        boxShadow: `inset 0 -0.5px 0 0 ${token.colorBorderSecondary}`,
       }}>
         <Typography.Text strong style={{ fontSize: 15 }}>Product Details</Typography.Text>
         {canEdit && (
@@ -54,12 +56,24 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
       <div style={{ display: 'flex', gap: 24, padding: 16 }}>
         <div style={{ width: 220, flexShrink: 0 }}>
           {product.photos && product.photos.length > 0 ? (
-            <Image.PreviewGroup>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            <Image.PreviewGroup
+              preview={{
+                countRender: (current, total) => <span>Photo {current} / {total}</span>,
+              }}
+            >
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 100px)',
+                gap: 10,
+                maxHeight: 220,
+                overflowY: 'auto',
+                paddingRight: product.photos.length > 4 ? 10 : 0,
+              }}>
                 {product.photos.map((photo, i) => (
                   <Image
                     key={i}
                     src={photo}
+                    alt={`Photo ${i + 1}`}
                     width={100}
                     height={100}
                     style={{ objectFit: 'cover', borderRadius: 6 }}
@@ -78,7 +92,7 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
               gap: 8,
               borderRadius: 6,
               background: token.colorFillQuaternary,
-              color: ICON_COLOR_SECONDARY,
+              color: iconColors.secondary,
             }}>
               <ImageOff size={20} strokeWidth={2.25} />
               <Typography.Text type="secondary" style={{ fontSize: 13 }}>No photos</Typography.Text>
@@ -100,7 +114,7 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
             layout="horizontal"
             items={items}
             labelStyle={{ fontSize: 14 }}
-            contentStyle={{ fontSize: 15 }}
+            contentStyle={{ fontSize: 14 }}
           />
         </div>
       </div>

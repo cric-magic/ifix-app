@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { Avatar, Button, Space, Tag, Tooltip, Typography, theme } from 'antd'
 import { Monitor, Tablet, Smartphone, User, Minus, ChevronUp } from 'lucide-react'
 import { Select } from './AppSelect'
-import { useDevTools, DEVICE_CONFIG } from '../contexts/DevToolsContext'
+import { useDevTools, DEVICE_CONFIG, THEME_LABELS } from '../contexts/DevToolsContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ROLE_LABELS, ROLE_TAG_COLOR } from '../constants/roles'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
-import type { DeviceSize } from '../contexts/DevToolsContext'
+import type { DeviceSize, ThemeVariant } from '../contexts/DevToolsContext'
 import type { UserAccount } from '../types/user'
 
 const DEVICE_ICONS: Record<DeviceSize, React.ReactNode> = {
@@ -15,6 +15,11 @@ const DEVICE_ICONS: Record<DeviceSize, React.ReactNode> = {
   mobile:  <Smartphone size={17} strokeWidth={2.25} />,
 }
 
+const THEME_OPTIONS = (['neutral', 'blue'] as ThemeVariant[]).map(t => ({
+  value: t,
+  label: THEME_LABELS[t],
+}))
+
 const USER_OPTIONS = MOCK_USER_ACCOUNTS.map(u => ({
   value: u.id,
   label: u.name,
@@ -22,7 +27,7 @@ const USER_OPTIONS = MOCK_USER_ACCOUNTS.map(u => ({
 }))
 
 export function DevToolsPanel() {
-  const { device, setDevice } = useDevTools()
+  const { device, setDevice, themeVariant, setThemeVariant } = useDevTools()
   const { user, devSetUser } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
   const { token } = theme.useToken()
@@ -30,7 +35,7 @@ export function DevToolsPanel() {
   return (
     <div style={{
       position: 'fixed',
-      bottom: 16,
+      bottom: 32,
       left: '50%',
       transform: 'translateX(-50%)',
       zIndex: 9999,
@@ -45,7 +50,7 @@ export function DevToolsPanel() {
         onClick={() => setCollapsed(p => !p)}
         style={{
           pointerEvents: 'all',
-          background: token.colorBgLayout,
+          background: token.colorBgElevated,
           border: `0.5px solid ${token.colorBorderSecondary}`,
           borderRadius: 20,
           color: token.colorTextSecondary,
@@ -66,7 +71,7 @@ export function DevToolsPanel() {
       {!collapsed && (
         <div style={{
           pointerEvents: 'all',
-          background: token.colorBgLayout,
+          background: token.colorBgElevated,
           borderRadius: token.borderRadiusLG,
           padding: '10px 16px',
           display: 'flex',
@@ -92,6 +97,22 @@ export function DevToolsPanel() {
                 </Tooltip>
               ))}
             </Space>
+          </div>
+
+          {/* Theme switcher */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}>
+            <Typography.Text style={{ color: token.colorTextQuaternary, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
+              Theme
+            </Typography.Text>
+            <Select
+              value={themeVariant}
+              style={{ width: 120 }}
+              popupMatchSelectWidth={false}
+              placement="topLeft"
+              getPopupContainer={trigger => trigger.parentElement ?? trigger}
+              onChange={(t: ThemeVariant) => setThemeVariant(t)}
+              options={THEME_OPTIONS}
+            />
           </div>
 
           {/* User switcher */}

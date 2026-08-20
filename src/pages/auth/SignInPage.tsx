@@ -30,7 +30,7 @@ export function SignInPage() {
   }
 
   return (
-    <AuthLayout title="Sign in" subtitle="Sign in to your iFix workspace">
+    <AuthLayout title="Sign in" subtitle="Sign in to your workspace">
       {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
 
       <Form layout="vertical" onFinish={handleSubmit} requiredMark={false}>

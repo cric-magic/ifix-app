@@ -19,6 +19,11 @@ export const MOCK_PRODUCTS: Product[] = [
     createdBy: 'admin-1',
     createdAt: '2024-01-10T09:00:00.000Z',
     deletedAt: null,
+    photos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=iPhone+14+Pro+1',
+      'https://placehold.co/400x400/1a1a1a/999999?text=iPhone+14+Pro+2',
+      'https://placehold.co/400x400/1a1a1a/999999?text=iPhone+14+Pro+3',
+    ],
   },
   {
     id: 'prod-2',
@@ -37,6 +42,10 @@ export const MOCK_PRODUCTS: Product[] = [
     createdBy: 'admin-1',
     createdAt: '2024-01-12T09:00:00.000Z',
     deletedAt: null,
+    photos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Galaxy+S23+1',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Galaxy+S23+2',
+    ],
   },
   {
     id: 'prod-3',
@@ -73,6 +82,9 @@ export const MOCK_PRODUCTS: Product[] = [
     createdBy: 'admin-1',
     createdAt: '2024-02-15T09:00:00.000Z',
     deletedAt: null,
+    photos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=MacBook+Air+M2',
+    ],
   },
   {
     id: 'prod-5',

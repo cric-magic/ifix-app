@@ -26,6 +26,16 @@ export type UnitGrade = 'A' | 'B' | 'C' | 'D'
 export type UnitTax = 'vat' | 'non_vat'
 export type UnitAvailability = 'available' | 'reserved' | 'sold'
 
+// Captured once, when the unit is registered into a branch — reused by
+// contract creation afterward instead of being re-captured. Front and IMEI
+// label are required; Back and Seal/Wrap are optional.
+export interface UnitPhotos {
+  front?: string
+  back?: string
+  imeiLabel?: string
+  sealWrap?: string
+}
+
 export interface ProductUnit {
   id: string
   productId: string
@@ -34,7 +44,10 @@ export interface ProductUnit {
   branch: string
   grade?: UnitGrade
   notes?: string
-  conditionPhotos?: string[]
+  unitPhotos?: UnitPhotos
+  // Used units only — photos of any defect, separate from the base unit
+  // photos captured at registration.
+  defectPhotos?: string[]
   tax: UnitTax
   customPrice?: number
   availability: UnitAvailability

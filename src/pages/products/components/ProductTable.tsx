@@ -7,7 +7,7 @@ import type { Product } from '../../../types/product'
 import { canManageProducts, canManageUnits, canViewCostPrice, scopedUnitList } from '../../../constants/roles'
 import { CATEGORY_LABELS, TYPE_LABELS } from '../../../constants/products'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
-import { ICON_COLOR_SECONDARY } from '../../../constants/iconColors'
+import { useIconColors } from '../../../constants/iconColors'
 import { ProductStatusTag } from './ProductStatusTag'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
@@ -22,6 +22,7 @@ interface Props {
 
 export function ProductTable({ actor, products, onEdit, onRemove, onAddUnit }: Props) {
   const { token } = theme.useToken()
+  const iconColors = useIconColors()
   const { modal } = App.useApp()
   const navigate = useNavigate()
   const showCostPrice = canViewCostPrice(actor)
@@ -54,7 +55,7 @@ export function ProductTable({ actor, products, onEdit, onRemove, onAddUnit }: P
             size={32}
             src={p.photos?.[0]}
             icon={<ImageOff size={14} strokeWidth={2.25} />}
-            style={{ backgroundColor: token.colorFillSecondary, color: ICON_COLOR_SECONDARY, flexShrink: 0 }}
+            style={{ backgroundColor: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}
           />
           <span style={{ color: token.colorText }}>{name}</span>
         </div>

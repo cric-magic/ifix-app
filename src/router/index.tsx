@@ -12,6 +12,7 @@ import { ContractsListPage } from '../pages/contracts/ContractsListPage'
 import { ProductsPage } from '../pages/products/ProductsPage'
 import { ProductDetailPage } from '../pages/products/ProductDetailPage'
 import { UnitsListPage } from '../pages/products/UnitsListPage'
+import { UnitDetailPage } from '../pages/products/UnitDetailPage'
 import { CustomersPage } from '../pages/customers/CustomersPage'
 import { MerchantsPage } from '../pages/merchants/MerchantsPage'
 import { BranchesPage } from '../pages/branches/BranchesPage'
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
       { path: 'products/catalog', element: <ProductsPage /> },
       { path: 'products/catalog/:id', element: <ProductDetailPage /> },
       { path: 'products/unit', element: <UnitsListPage /> },
+      { path: 'products/unit/:id', element: <UnitDetailPage /> },
       { path: 'customers', element: <CustomersPage /> },
       { path: 'merchants', element: <MerchantsPage /> },
       { path: 'branches', element: <BranchesPage /> },

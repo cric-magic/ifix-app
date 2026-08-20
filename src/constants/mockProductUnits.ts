@@ -12,6 +12,10 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: null,
     soldBy: null,
     createdAt: '2024-01-11T09:00:00.000Z',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+1+Front',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+1+IMEI',
+    },
   },
   {
     id: 'unit-2',
@@ -24,6 +28,11 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: null,
     soldBy: null,
     createdAt: '2024-01-11T09:00:00.000Z',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+Front',
+      back: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+Back',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+IMEI',
+    },
   },
   {
     id: 'unit-3',
@@ -36,6 +45,12 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: '2024-04-02T10:30:00.000Z',
     soldBy: 'branch-1',
     createdAt: '2024-01-11T09:00:00.000Z',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Front',
+      back: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Back',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+IMEI',
+      sealWrap: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Seal',
+    },
   },
   {
     id: 'unit-4',
@@ -48,6 +63,10 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: null,
     soldBy: null,
     createdAt: '2024-01-13T09:00:00.000Z',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+4+Front',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+4+IMEI',
+    },
   },
   {
     id: 'unit-5',
@@ -57,6 +76,13 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     branch: 'Khon Kaen',
     grade: 'B',
     notes: 'Minor scuff on back panel',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+5+Front',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+5+IMEI',
+    },
+    defectPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+5+Scuff',
+    ],
     tax: 'non_vat',
     customPrice: 20900,
     availability: 'available',
@@ -75,6 +101,10 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: null,
     soldBy: null,
     createdAt: '2024-04-10T09:00:00.000Z',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+6+Front',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+6+IMEI',
+    },
   },
   {
     id: 'unit-7',
@@ -87,6 +117,10 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: '2024-05-15T14:20:00.000Z',
     soldBy: 'branch-1',
     createdAt: '2024-02-20T09:00:00.000Z',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+7+Front',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+7+IMEI',
+    },
   },
   {
     id: 'unit-8',
@@ -99,6 +133,10 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: null,
     soldBy: null,
     createdAt: '2024-05-01T09:00:00.000Z',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+8+Front',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+8+IMEI',
+    },
   },
   {
     id: 'unit-9',
@@ -107,6 +145,13 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     serialNumber: 'SN-IP13-0002',
     branch: 'Chiang Mai',
     grade: 'C',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+9+Front',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+9+IMEI',
+    },
+    defectPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+9+Defect',
+    ],
     tax: 'non_vat',
     customPrice: 19900,
     availability: 'available',
@@ -121,6 +166,13 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     serialNumber: 'SN-IP13-0003',
     branch: 'Chiang Mai',
     grade: 'A',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+10+Front',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+10+IMEI',
+    },
+    defectPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+10+Defect',
+    ],
     tax: 'non_vat',
     customPrice: 21500,
     availability: 'sold',
@@ -139,6 +191,10 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: null,
     soldBy: null,
     createdAt: '2024-05-05T09:00:00.000Z',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+11+Front',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+11+IMEI',
+    },
   },
   {
     id: 'unit-12',
@@ -151,6 +207,10 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: '2024-03-01T16:45:00.000Z',
     soldBy: 'admin-1',
     createdAt: '2024-02-10T09:00:00.000Z',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+12+Front',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+12+IMEI',
+    },
   },
   {
     id: 'unit-13',
@@ -163,5 +223,9 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: null,
     soldBy: null,
     createdAt: '2024-03-01T09:00:00.000Z',
+    unitPhotos: {
+      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+13+Front',
+      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+13+IMEI',
+    },
   },
 ]

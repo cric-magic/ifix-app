@@ -205,6 +205,16 @@ body {
   box-shadow: var(--ifix-panel-shadow) !important;
 }
 
+/* When an input has a prefix/suffix (e.g. the search icon), antd nests the
+   real <input> — which also carries the plain .ant-input class — inside
+   .ant-input-affix-wrapper. The rule above then matches both, stacking the
+   shadow twice: once on the wrapper's rounded box (correct) and again on
+   the inner input's own unrounded rectangle, showing as a hard-edged ring
+   inside the rounded shadow. Only the wrapper should carry it. */
+.ant-input-affix-wrapper .ant-input {
+  box-shadow: none !important;
+}
+
 label[for="password"] {
   width: 100%;
   display: flex;
@@ -244,7 +254,7 @@ label[for="password"]::after {
 .ant-select-dropdown,
 .ant-picker-dropdown,
 .ant-cascader-dropdown {
-  border: 0.5px solid var(--ant-color-border-secondary);
+  border: 0.5px solid var(--ant-color-border);
   box-shadow: var(--ifix-panel-shadow) !important;
 }
 
@@ -316,15 +326,69 @@ label[for="password"]::after {
 }
 
 /* Drawer: solid panel (see Drawer.colorBgElevated in App.tsx), no dimmed mask —
-   the drawer's own border separates it from the page. Border matches the
-   sidebar's hairline (Sider uses token.colorSplit, which resolves to this
-   same rgba). */
+   the drawer's own border separates it from the page. Inset top/right/bottom
+   by the same 12px the app shell's Header/Content wrapper uses (see the
+   Layout margin:12/borderRadius:12 block in AppLayout.tsx), so the drawer's
+   right edge lands exactly on the main panel's right edge instead of the
+   viewport edge — it reads as sliding out from that panel. Only the two
+   corners on that outer (right) side are rounded; the left corners sit
+   inside the main panel's content and stay square since they aren't near
+   any boundary. */
 .ant-drawer-mask {
   background: transparent !important;
 }
 
+.ant-drawer-content-wrapper {
+  top: 12px !important;
+  right: 12px !important;
+  bottom: 12px !important;
+}
+
 .ant-drawer-section {
-  border-left: 0.5px solid var(--ant-color-split);
+  border: 0.5px solid var(--ant-color-split);
+  border-radius: 0 12px 12px 0;
+  overflow: hidden;
+  box-shadow: var(--ifix-panel-shadow);
+}
+
+/* Reveal instead of slide: the wrapper is already pinned at its final resting
+   spot (top/right/bottom:12px above, no transform), so antd's default
+   translateX(100%) slide would travel almost its entire distance beyond the
+   true screen edge before crossing the last 12px into the main panel — that
+   makes it look identical to sliding in from the viewport edge, since the
+   panel edge and screen edge are only 12px apart. Clip-path instead: the
+   panel grows outward from its own right edge (which sits on the main
+   panel's edge) rather than flying in from off-screen, so it visibly reads
+   as emerging from that edge, and collapses back into it symmetrically on
+   close.
+
+   rc-motion keeps both the bare state class (e.g. `-leave`) and its `-active`
+   counterpart (`-leave-active`) on the element at once during the actual
+   transition, not just the `-active` one — so with equal-specificity
+   single-class selectors, the one declared LATER in this stylesheet wins for
+   any property they both set. These three blocks are ordered so each
+   transition's *target* class always comes after its *starting* class:
+   enter's target (`-enter-active`) is declared after enter's start
+   (`-enter`), and — this is the part that was backwards before — leave's
+   target (`-leave-active`) must come after leave's start (`-leave`), or the
+   clip-path never actually animates closed and only the pre-existing opacity
+   fade is visible. */
+.ant-drawer-panel-motion-right-enter,
+.ant-drawer-panel-motion-right-appear {
+  transform: none !important;
+  clip-path: inset(0 0 0 100%);
+}
+
+.ant-drawer-panel-motion-right-enter-active,
+.ant-drawer-panel-motion-right-appear-active,
+.ant-drawer-panel-motion-right-leave {
+  transform: none !important;
+  clip-path: inset(0 0 0 0%);
+}
+
+.ant-drawer-panel-motion-right-leave-active {
+  transform: none !important;
+  clip-path: inset(0 0 0 100%);
 }
 
 /* Footer buttons optically centered against the sidebar account row (64px tall,
@@ -426,9 +490,24 @@ label[for="password"]::after {
 /* Expandable tables: the column right after the expand toggle sits close
    enough to it already — drop its left padding so content isn't pushed an
    extra 16px away from the toggle. Applies to any table with row expansion,
-   header and body alike, since antd tags both with this class. */
-.ant-table-row-expand-icon-cell + .ant-table-cell {
+   header and body alike, since antd tags both with this class.
+   Scoped through `tr >` (rather than the bare 2-class selector this used to
+   be) so its specificity (0,3,1) beats the uniform-cell-padding rule's
+   (0,2,2) — that rule's :not(.ant-table-measure-row) pushed it up to a class
+   count this rule's original 2 classes could no longer beat, so this one
+   silently stopped winning and the gap came back. */
+.ant-table-tbody > tr > .ant-table-row-expand-icon-cell + .ant-table-cell,
+.ant-table-thead > tr > .ant-table-row-expand-icon-cell + .ant-table-cell {
   padding-left: 0 !important;
+}
+
+/* That rule has no ancestor scoping, so it'd also strip padding from a
+   nested table's 2nd column if a table inside an expanded row (e.g. the
+   unit detail table's own "Photos" column) ever grows its own row expansion
+   — restore the normal padding there so nested tables aren't affected by
+   the outer table's expand toggle. */
+.ant-table-expanded-row .ant-table-row-expand-icon-cell + .ant-table-cell {
+  padding-left: 16px !important;
 }
 
 /* Full-bleed panel table: the table sits in a wrapper pulled out to the
@@ -439,14 +518,19 @@ label[for="password"]::after {
    Scoped with `>` to the table that's a direct child of .ifix-panel-table —
    a plain descendant combinator would also match any table nested inside an
    expanded row's cell several levels down, which isn't what we want here
-   (that case is handled separately below). */
+   (that case is handled separately below). Also excludes
+   .ant-table-expanded-row: its single <td> spans every column via colSpan,
+   making it both :first-child and :last-child at once — without the
+   exclusion it picks up both paddings (+16px each side) on top of its own,
+   overflowing the table container and forcing a spurious horizontal
+   scrollbar. */
 .ifix-panel-table > .ant-table-wrapper .ant-table-thead > tr > th:first-child,
-.ifix-panel-table > .ant-table-wrapper .ant-table-tbody > tr > td:first-child {
+.ifix-panel-table > .ant-table-wrapper .ant-table-tbody > tr:not(.ant-table-expanded-row) > td:first-child {
   padding-left: 16px !important;
 }
 
 .ifix-panel-table > .ant-table-wrapper .ant-table-thead > tr > th:last-child,
-.ifix-panel-table > .ant-table-wrapper .ant-table-tbody > tr > td:last-child {
+.ifix-panel-table > .ant-table-wrapper .ant-table-tbody > tr:not(.ant-table-expanded-row) > td:last-child {
   padding-right: 16px !important;
 }
 
@@ -478,18 +562,10 @@ label[for="password"]::after {
   width: 100%;
 }
 
-/* PhotoUpload: stretch the picture-card tiles (upload button + thumbnails)
-   to fill the field's width instead of antd's fixed ~104px square, so it
-   reads as a full-width input like everything else on the form. */
-.ifix-photo-upload .ant-upload-select,
-.ifix-photo-upload .ant-upload-list-item-container {
-  width: 100% !important;
-  height: 120px !important;
-}
-
-.ifix-photo-upload .ant-upload-list {
-  display: block;
-}
+/* PhotoUpload: keep antd's own square picture-card tiles (~104px) rather
+   than stretching them full-width — with several photo fields on one form
+   now (unit registration alone has 5), a squared tile lets multiple sit in
+   one row via antd's default flex-wrap instead of stacking one per row. */
 
 /* Nested/expandable table rows: the wrapper div passed to expandedRowRender
    controls its own margin/padding/radius, so strip antd's default cell

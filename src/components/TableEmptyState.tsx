@@ -4,15 +4,16 @@ import { useIconColors } from '../constants/iconColors'
 interface Props {
   icon: React.ReactNode
   title: string
+  description?: string
 }
 
-export function PlaceholderPage({ icon, title }: Props) {
+export function TableEmptyState({ icon, title, description }: Props) {
   const { token } = theme.useToken()
   const iconColors = useIconColors()
 
   return (
     <div style={{
-      minHeight: '60vh',
+      minHeight: 220,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -33,7 +34,7 @@ export function PlaceholderPage({ icon, title }: Props) {
       </div>
       <div style={{ textAlign: 'center' }}>
         <Typography.Title level={5} style={{ margin: 0 }}>{title}</Typography.Title>
-        <Typography.Text type="secondary">This section is coming soon.</Typography.Text>
+        {description && <Typography.Text type="secondary">{description}</Typography.Text>}
       </div>
     </div>
   )

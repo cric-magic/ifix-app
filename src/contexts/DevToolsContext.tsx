@@ -8,16 +8,30 @@ export const DEVICE_CONFIG: Record<DeviceSize, { width: number | '100%'; label: 
   mobile:  { width: 390,    label: 'Mobile' },
 }
 
+export type ThemeVariant = 'neutral' | 'blue'
+
+export const THEME_LABELS: Record<ThemeVariant, string> = {
+  neutral: 'Neutral',
+  blue: 'Bluish',
+}
+
 interface DevToolsContextValue {
   device: DeviceSize
   setDevice: (d: DeviceSize) => void
+  themeVariant: ThemeVariant
+  setThemeVariant: (t: ThemeVariant) => void
 }
 
 const DevToolsContext = createContext<DevToolsContextValue | null>(null)
 
 export function DevToolsProvider({ children }: { children: React.ReactNode }) {
   const [device, setDevice] = useState<DeviceSize>('desktop')
-  return <DevToolsContext.Provider value={{ device, setDevice }}>{children}</DevToolsContext.Provider>
+  const [themeVariant, setThemeVariant] = useState<ThemeVariant>('neutral')
+  return (
+    <DevToolsContext.Provider value={{ device, setDevice, themeVariant, setThemeVariant }}>
+      {children}
+    </DevToolsContext.Provider>
+  )
 }
 
 export function useDevTools() {

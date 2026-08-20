@@ -23,7 +23,11 @@ interface FormValues {
   branch: string
   grade?: UnitGrade
   notes?: string
-  conditionPhotos?: string[]
+  frontPhoto?: string[]
+  backPhoto?: string[]
+  imeiLabelPhoto?: string[]
+  sealWrapPhoto?: string[]
+  defectPhotos?: string[]
   tax: UnitTax
   customPrice?: number
 }
@@ -49,7 +53,13 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
       branch: lockedBranch ?? values.branch,
       grade: isUsed ? values.grade : undefined,
       notes: values.notes,
-      conditionPhotos: values.conditionPhotos,
+      unitPhotos: {
+        front: values.frontPhoto?.[0],
+        back: values.backPhoto?.[0],
+        imeiLabel: values.imeiLabelPhoto?.[0],
+        sealWrap: values.sealWrapPhoto?.[0],
+      },
+      defectPhotos: isUsed ? values.defectPhotos : undefined,
       tax: values.tax,
       customPrice: values.customPrice,
       availability: 'available',
@@ -113,13 +123,28 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
             <Select placeholder="Select grade" options={GRADE_OPTIONS} />
           </Form.Item>
         )}
-        <Form.Item
-          label="Condition Photos"
-          name="conditionPhotos"
-          rules={isUsed ? [{ required: true, message: 'Required for used products' }] : []}
-        >
-          <PhotoUpload />
+        <Form.Item label="Front" name="frontPhoto" rules={[{ required: true, message: 'Required' }]}>
+          <PhotoUpload maxCount={1} />
         </Form.Item>
+        <Form.Item label="Back" name="backPhoto">
+          <PhotoUpload maxCount={1} />
+        </Form.Item>
+        <Form.Item label="IMEI Label" name="imeiLabelPhoto" rules={[{ required: true, message: 'Required' }]}>
+          <PhotoUpload maxCount={1} />
+        </Form.Item>
+        <Form.Item label="Seal / Wrap" name="sealWrapPhoto">
+          <PhotoUpload maxCount={1} />
+        </Form.Item>
+        {isUsed && (
+          <Form.Item
+            label="Condition Photos"
+            name="defectPhotos"
+            help="Photos of any defect on the device"
+            rules={[{ required: true, message: 'Required for used products' }]}
+          >
+            <PhotoUpload />
+          </Form.Item>
+        )}
         <Form.Item label="Tax" name="tax" rules={[{ required: true, message: 'Required' }]}>
           <Select options={TAX_OPTIONS} />
         </Form.Item>
