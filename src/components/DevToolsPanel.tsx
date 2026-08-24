@@ -15,7 +15,7 @@ const DEVICE_ICONS: Record<DeviceSize, React.ReactNode> = {
   mobile:  <Smartphone size={17} strokeWidth={2.25} />,
 }
 
-const THEME_OPTIONS = (['neutral', 'blue'] as ThemeVariant[]).map(t => ({
+const THEME_OPTIONS = (['neutral', 'blue', 'light'] as ThemeVariant[]).map(t => ({
   value: t,
   label: THEME_LABELS[t],
 }))

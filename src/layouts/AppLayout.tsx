@@ -421,13 +421,13 @@ export function AppLayout() {
         // margin actually reads as bottom padding instead of just shrinking
         // to fit whatever content happens to render.
         height: 'calc(100svh - 24px)',
-        border: `0.5px solid ${token.colorSplit}`,
+        border: '0.5px solid var(--ifix-wrapper-border)',
         borderRadius: 12,
         overflow: 'hidden',
-        boxShadow: token.boxShadow,
+        boxShadow: 'var(--ifix-panel-shadow)',
       }}>
         <Header style={{
-          background: token.colorFillQuaternary,
+          background: 'var(--ifix-wrapper-bg)',
           borderBottom: `0.5px solid ${token.colorSplit}`,
           padding: '0 16px 0 15px',
           height: 56,
@@ -472,7 +472,7 @@ export function AppLayout() {
           <div />
         </Header>
 
-        <Content style={{ padding: 16, overflow: 'auto', background: token.colorFillQuaternary }}>
+        <Content style={{ padding: 16, overflow: 'auto', background: 'var(--ifix-wrapper-bg)' }}>
           <div style={{ maxWidth: 1440, margin: '0 auto' }}>
             <Outlet />
           </div>

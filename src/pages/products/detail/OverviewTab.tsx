@@ -80,7 +80,7 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
                       objectFit: 'cover',
                       borderRadius: 8,
                       border: `0.5px solid ${token.colorBorderSecondary}`,
-                      boxShadow: token.boxShadow,
+                      boxShadow: 'var(--ifix-panel-shadow)',
                     }}
                   />
                 ))}
@@ -97,7 +97,7 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
               gap: 8,
               borderRadius: 8,
               border: `0.5px solid ${token.colorBorderSecondary}`,
-              boxShadow: token.boxShadow,
+              boxShadow: 'var(--ifix-panel-shadow)',
               background: token.colorFillQuaternary,
               color: iconColors.secondary,
             }}>

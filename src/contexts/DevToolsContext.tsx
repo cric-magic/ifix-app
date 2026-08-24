@@ -8,11 +8,12 @@ export const DEVICE_CONFIG: Record<DeviceSize, { width: number | '100%'; label: 
   mobile:  { width: 390,    label: 'Mobile' },
 }
 
-export type ThemeVariant = 'neutral' | 'blue'
+export type ThemeVariant = 'neutral' | 'blue' | 'light'
 
 export const THEME_LABELS: Record<ThemeVariant, string> = {
   neutral: 'Neutral',
   blue: 'Bluish',
+  light: 'Light',
 }
 
 interface DevToolsContextValue {

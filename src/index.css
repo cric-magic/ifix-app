@@ -21,7 +21,7 @@ body {
    colorFillSecondary/colorFill in case a scrolling element sits outside the
    ConfigProvider's cssVar scope (custom properties only inherit downward). */
 * {
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  scrollbar-color: var(--ifix-scrollbar-thumb, rgba(255, 255, 255, 0.12)) transparent;
   scrollbar-width: thin;
 }
 
@@ -35,14 +35,14 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: var(--ant-color-fill-secondary, rgba(255, 255, 255, 0.12));
+  background-color: var(--ifix-scrollbar-thumb, rgba(255, 255, 255, 0.12));
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: var(--ant-color-fill, rgba(255, 255, 255, 0.18));
+  background-color: var(--ifix-scrollbar-thumb-hover, rgba(255, 255, 255, 0.18));
 }
 
 /* Pagination: no stroke in any state. Default is secondary text with no
@@ -145,42 +145,44 @@ body {
 
 /* Icon color convention: default = secondary, hover/focus = primary.
    Solid/primary buttons are excluded — they keep their forced light-on-color icon.
-   Uses solid hex (not the alpha text tokens) — semi-transparent strokes double-render
-   at path intersections on icons like Package/Building2, showing a visible seam.
-   Keep in sync with src/constants/iconColors.ts. */
+   References the colorIcon/colorIconHover seed tokens (via antd's cssVar
+   exposure) rather than solid hex literals, so these track the active theme
+   variant — a literal hex here previously meant these stayed pinned to
+   dark-mode values and read as a near-invisible near-white "hover" state in
+   light mode. Keep in sync with src/constants/iconColors.ts. */
 .ant-input-prefix svg {
-  color: #A6A6A6;
+  color: var(--ant-color-icon);
 }
 
 .ant-input-affix-wrapper:focus-within .ant-input-prefix svg {
-  color: #E0E0E0;
+  color: var(--ant-color-icon-hover);
 }
 
 .ant-btn:not(.ant-btn-variant-solid) .ant-btn-icon svg {
-  color: #A6A6A6;
+  color: var(--ant-color-icon);
 }
 
 .ant-btn:not(.ant-btn-variant-solid):hover .ant-btn-icon svg,
 .ant-btn:not(.ant-btn-variant-solid):focus-visible .ant-btn-icon svg {
-  color: #E0E0E0;
+  color: var(--ant-color-icon-hover);
 }
 
 .ant-select-suffix {
-  color: #A6A6A6 !important;
+  color: var(--ant-color-icon) !important;
 }
 
 .ant-select-focused .ant-select-suffix,
 .ant-select-open .ant-select-suffix {
-  color: #E0E0E0 !important;
+  color: var(--ant-color-icon-hover) !important;
 }
 
 .ant-picker-suffix,
 .ant-picker-clear {
-  color: #A6A6A6 !important;
+  color: var(--ant-color-icon) !important;
 }
 
 .ant-picker-focused .ant-picker-suffix {
-  color: #E0E0E0 !important;
+  color: var(--ant-color-icon-hover) !important;
 }
 
 /* Segmented's border matches the panel's own (0.5px colorBorderSecondary),
@@ -242,20 +244,19 @@ label[for="password"]::after {
   margin-left: 10px !important;
 }
 
-/* Dropdown floating panel: same border + shadow treatment as .ifix-table-panel
-   so it reads as a consistent elevated surface instead of relying on antd's
-   default (no border, a much softer default shadow) to separate it from the
-   page. */
-/* Every floating overlay panel (Dropdown menu, Select's option list, the
-   DatePicker calendar, etc.) gets the same border + shadow as .ifix-table-panel
-   — previously only .ant-dropdown-menu had it, so Select/Picker popups still
-   looked flat and un-elevated next to menus that had already been updated. */
+/* Dropdown floating panels — Dropdown menu, Select's option list, the
+   DatePicker calendar, etc. — always keep a shadow even in light mode
+   (where every other panel/input/button drops theirs, see
+   --ifix-panel-shadow in App.tsx): unlike inline panels, these float above
+   the page with nothing else separating them from it, so a shadow is doing
+   real work here, not just decorative. Uses its own dropdownShadow value
+   rather than sharing --ifix-panel-shadow with everything else. */
 .ant-dropdown-menu,
 .ant-select-dropdown,
 .ant-picker-dropdown,
 .ant-cascader-dropdown {
   border: 0.5px solid var(--ant-color-border);
-  box-shadow: var(--ifix-panel-shadow) !important;
+  box-shadow: var(--ifix-dropdown-shadow) !important;
 }
 
 /* Tag: a touch more breathing room than antd's default (0 top/bottom padding,
@@ -288,11 +289,11 @@ label[for="password"]::after {
 }
 
 .ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled) {
-  color: #A6A6A6 !important;
+  color: var(--ant-color-icon) !important;
 }
 
 .ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled):hover {
-  color: #E0E0E0 !important;
+  color: var(--ant-color-icon-hover) !important;
 }
 
 /* Sidebar nav <-> settings swap: both directions slide+fade in from the left. */
@@ -318,24 +319,31 @@ label[for="password"]::after {
    tokens in App.tsx) so this is the only background layer. #0a0a0a matches
    token.colorBgContainer used elsewhere in the app. */
 .ifix-table-panel {
-  background: var(--ant-color-fill-quaternary);
-  border: 0.5px solid var(--ant-color-border-secondary);
+  background: var(--ifix-panel-bg);
+  border: 0.5px solid var(--ifix-panel-border);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: var(--ifix-panel-shadow);
 }
 
-/* Drawer: solid panel (see Drawer.colorBgElevated in App.tsx), no dimmed mask —
-   the drawer's own border separates it from the page. Inset top/right/bottom
-   by the same 12px the app shell's Header/Content wrapper uses (see the
-   Layout margin:12/borderRadius:12 block in AppLayout.tsx), so the drawer's
-   right edge lands exactly on the main panel's right edge instead of the
-   viewport edge — it reads as sliding out from that panel. Only the two
-   corners on that outer (right) side are rounded; the left corners sit
-   inside the main panel's content and stay square since they aren't near
-   any boundary. */
-.ant-drawer-mask {
-  background: transparent !important;
+/* Drawer: solid panel (see Drawer.colorBgElevated in App.tsx). Inset
+   top/right/bottom by the same 12px the app shell's Header/Content wrapper
+   uses (see the Layout margin:12/borderRadius:12 block in AppLayout.tsx), so
+   the drawer's right edge lands exactly on the main panel's right edge
+   instead of the viewport edge — it reads as sliding out from that panel.
+   Rounded on all four corners (not just the outer right side) even though
+   the left corners sit inside the main panel's content rather than at a
+   true boundary. The mask color is set via Drawer.colorBgMask in App.tsx
+   (black-alpha in dark, white-alpha in light, derived from that variant's
+   own colorBgBase) — now that light mode has no drawer shadow to separate it
+   from the page, the dimmed/lightened backdrop is what does that job. */
+
+/* antd's own default drawer shadow (a separate boxShadowDrawerRight-derived
+   value on the wrapper, not the .ant-drawer-section box-shadow already
+   bridged to --ifix-panel-shadow below) — same var, same light-mode-none /
+   dark-mode-unchanged behavior as every other panel. */
+.ant-drawer-content-wrapper {
+  box-shadow: var(--ifix-panel-shadow) !important;
 }
 
 .ant-drawer-content-wrapper {
@@ -346,21 +354,20 @@ label[for="password"]::after {
 
 .ant-drawer-section {
   border: 0.5px solid var(--ant-color-split);
-  border-radius: 0 12px 12px 0;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--ifix-panel-shadow);
 }
 
-/* Reveal instead of slide: the wrapper is already pinned at its final resting
+/* Fade instead of slide: the wrapper is already pinned at its final resting
    spot (top/right/bottom:12px above, no transform), so antd's default
    translateX(100%) slide would travel almost its entire distance beyond the
    true screen edge before crossing the last 12px into the main panel — that
    makes it look identical to sliding in from the viewport edge, since the
-   panel edge and screen edge are only 12px apart. Clip-path instead: the
-   panel grows outward from its own right edge (which sits on the main
-   panel's edge) rather than flying in from off-screen, so it visibly reads
-   as emerging from that edge, and collapses back into it symmetrically on
-   close.
+   panel edge and screen edge are only 12px apart. Cross-fade via opacity
+   instead, with its own explicit easing (antd's base motion class already
+   transitions `transform`, not `opacity`, so this needs its own transition
+   rather than riding on that one).
 
    rc-motion keeps both the bare state class (e.g. `-leave`) and its `-active`
    counterpart (`-leave-active`) on the element at once during the actual
@@ -369,26 +376,35 @@ label[for="password"]::after {
    any property they both set. These three blocks are ordered so each
    transition's *target* class always comes after its *starting* class:
    enter's target (`-enter-active`) is declared after enter's start
-   (`-enter`), and — this is the part that was backwards before — leave's
-   target (`-leave-active`) must come after leave's start (`-leave`), or the
-   clip-path never actually animates closed and only the pre-existing opacity
-   fade is visible. */
+   (`-enter`), and leave's target (`-leave-active`) is declared after leave's
+   start (`-leave`), or the opacity never actually animates and only jumps.
+
+   antd's own base rule for these same classes sets `opacity: 0.7` (via a
+   `:where(...).ant-drawer .ant-drawer-panel-motion-right-*` selector — the
+   `:where()` contributes zero specificity, but the two plain classes after
+   it still out-specify our single-class selectors here). Without
+   `!important` on opacity too, that 0.7 wins outright: the fade animated
+   correctly but toward the wrong resting value, sat there, then jumped to 1
+   right before unmount — the stall-and-snap that read as "laggy". */
 .ant-drawer-panel-motion-right-enter,
 .ant-drawer-panel-motion-right-appear {
   transform: none !important;
-  clip-path: inset(0 0 0 100%);
+  opacity: 0 !important;
+  transition: opacity 0.3s ease !important;
 }
 
 .ant-drawer-panel-motion-right-enter-active,
 .ant-drawer-panel-motion-right-appear-active,
 .ant-drawer-panel-motion-right-leave {
   transform: none !important;
-  clip-path: inset(0 0 0 0%);
+  opacity: 1 !important;
+  transition: opacity 0.3s ease !important;
 }
 
 .ant-drawer-panel-motion-right-leave-active {
   transform: none !important;
-  clip-path: inset(0 0 0 100%);
+  opacity: 0 !important;
+  transition: opacity 0.3s ease !important;
 }
 
 /* Footer buttons optically centered against the sidebar account row (64px tall,
