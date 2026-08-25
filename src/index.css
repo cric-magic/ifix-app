@@ -204,38 +204,85 @@ body {
   color: var(--ant-color-icon-hover) !important;
 }
 
-/* Segmented's border matches the panel's own (0.5px colorBorderSecondary),
-   not the heavier 1px colorBorder used by Input/Select — it reads more like
-   a track/panel than a text field, so the thinner panel-style hairline fits
-   better than the input treatment. Segmented's own trackPadding (App.tsx)
-   is set to this same 0.5px so the thumb sits inset by exactly the border's
-   width, not an arbitrary gap. */
+/* Segmented's border matches the panel's own (0.5px colorBorderSecondary) —
+   Input/Select/InputNumber/DatePicker now use the same token for their own
+   border (App.tsx), so this is really just about the line weight: Segmented
+   reads more like a track/panel than a text field, so the thinner 0.5px
+   panel-style hairline fits better than the (still 1px) input treatment.
+   Segmented's own trackPadding (App.tsx) is set to this same 0.5px so the
+   thumb sits inset by exactly the border's width, not an arbitrary gap. */
 .ant-segmented {
   border: 0.5px solid var(--ant-color-border-secondary);
 }
 
-/* Every input-like control gets the same panel drop shadow as the rest of
-   the app (table panels, dropdowns) — none of them had one before, just a
-   flat border, which read inconsistent against everything else that's
-   elevated with this shadow. */
+/* Segmented keeps the shared panel drop shadow — it reads as a raised
+   track/tab control. Everything else here doesn't: text-entry controls
+   (Input/Select/InputNumber/Picker) are flat colorBorderSecondary-bordered
+   fields with no fill and no shadow, and buttons have their own separate
+   shadow tokens zeroed out directly in App.tsx's Button component config
+   (defaultShadow/primaryShadow/dangerShadow) rather than through this
+   shared var, since those are antd's own per-variant shadow tokens, not
+   the shared seed boxShadow the rest of this rule targets. */
+.ant-segmented {
+  box-shadow: var(--ifix-panel-shadow) !important;
+}
+
 .ant-input,
 .ant-input-affix-wrapper,
 .ant-input-number,
 .ant-select,
-.ant-picker,
-.ant-segmented,
-.ant-btn-default {
-  box-shadow: var(--ifix-panel-shadow) !important;
+.ant-picker {
+  box-shadow: none !important;
 }
 
-/* When an input has a prefix/suffix (e.g. the search icon), antd nests the
-   real <input> — which also carries the plain .ant-input class — inside
-   .ant-input-affix-wrapper. The rule above then matches both, stacking the
-   shadow twice: once on the wrapper's rounded box (correct) and again on
-   the inner input's own unrounded rectangle, showing as a hard-edged ring
-   inside the rounded shadow. Only the wrapper should carry it. */
-.ant-input-affix-wrapper .ant-input {
-  box-shadow: none !important;
+/* Input/InputNumber addonBefore/addonAfter (e.g. the "฿" prefix box on price
+   fields) render as a separate element from the input itself and pull their
+   border from antd's global colorBorder/lineWidth rather than the
+   component-scoped overrides Input/InputNumber get in App.tsx — so left
+   unstyled, the addon's border silently drifted from the input's own
+   (colorBorderSecondary). Match it explicitly. */
+.ant-input-number-addon,
+.ant-input-group-addon {
+  border-color: var(--ant-color-border-secondary) !important;
+  border-width: 1px !important;
+}
+
+/* The side touching the input itself must stay 0 — antd's own compact-group
+   join logic already zeros it (so the addon and input don't get a doubled
+   border down their shared edge) and the blanket 1px above re-widened it
+   back. addonBefore is the compact group's first item (its shared edge is
+   the trailing/inline-end side); addonAfter is the last item (shared edge
+   is the leading/inline-start side). */
+.ant-space-addon-compact-first-item {
+  border-inline-end-width: 0 !important;
+}
+
+.ant-space-addon-compact-last-item {
+  border-inline-start-width: 0 !important;
+}
+
+/* The photo upload "tile" (PhotoUpload.tsx, listType="picture-card") — antd
+   paints its own colorFillAlter background by default; flatten it so the
+   tile shows the panel it sits on instead of a mismatched fill. */
+.ifix-photo-upload .ant-upload-select {
+  background-color: transparent !important;
+}
+
+/* A scrollbar reserves layout space inside the element's own box no matter
+   which box actually carries the padding (moving padding onto a wrapping
+   child, tried first here, doesn't help — the scrollbar still sits between
+   that child and the body's true edge) — so on any Drawer body tall enough
+   to scroll, its ~11px width adds onto the existing 16px right padding
+   (paddingLG, App.tsx) while the left side stays a plain 16px, making the
+   drawer's content look off-center (measured: 16px left vs 27px right).
+   `overflow: overlay` would have been the one-line fix, but Chrome dropped
+   support for it. `scrollbar-gutter: stable both-edges` is the current
+   standards-track replacement: it reserves a matching gutter on the LEFT
+   too, even though nothing scrolls there, so the extra space is
+   symmetric — both sides get the same 16px content padding plus an equal
+   gutter — instead of only ever appearing on the right. */
+.ant-drawer-body {
+  scrollbar-gutter: stable both-edges;
 }
 
 label[for="password"] {

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Drawer, Button, Space, Form, Input, InputNumber } from 'antd'
 import { Select } from '../../../components/AppSelect'
 import { PhotoUpload } from '../../../components/PhotoUpload'
+import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { AuthUser } from '../../../types/installment'
 import type { Product, ProductUnit, UnitGrade, UnitTax } from '../../../types/product'
 import { GRADE_LABELS, TAX_LABELS } from '../../../constants/products'
@@ -36,6 +37,7 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
   const [form] = Form.useForm<FormValues>()
   const isUsed = product?.type === 'used'
   const lockedBranch = actor.role === 'branch_manager' ? actor.branch : undefined
+  const appWindow = useAppWindowContainer()
 
   useEffect(() => {
     if (unit) {
@@ -78,6 +80,7 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
       onClose={onClose}
       destroyOnHidden
       width={420}
+      getContainer={appWindow ?? undefined}
       footer={
         <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button onClick={onClose}>Cancel</Button>

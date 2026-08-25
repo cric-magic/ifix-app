@@ -1,6 +1,7 @@
 import { Drawer, Button, Space, Form, Input, InputNumber } from 'antd'
 import { Select } from '../../../components/AppSelect'
 import { PhotoUpload } from '../../../components/PhotoUpload'
+import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { AuthUser } from '../../../types/installment'
 import type { Product, ProductUnit, UnitGrade, UnitTax } from '../../../types/product'
 import { GRADE_LABELS, TAX_LABELS } from '../../../constants/products'
@@ -42,6 +43,7 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
   const isUsed = activeProduct?.type === 'used'
   const lockedBranch = actor.role === 'branch_manager' ? actor.branch : undefined
   const showProductPicker = !product && !!products
+  const appWindow = useAppWindowContainer()
 
   function handleSubmit(values: FormValues) {
     if (!activeProduct) return
@@ -78,6 +80,7 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
       onClose={onClose}
       destroyOnHidden
       width={420}
+      getContainer={appWindow ?? undefined}
       footer={
         <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button onClick={onClose}>Cancel</Button>

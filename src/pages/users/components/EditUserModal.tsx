@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Drawer, Button, Space, Form, Input } from 'antd'
 import { Select } from '../../../components/AppSelect'
+import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { AuthUser } from '../../../types/installment'
 import type { UserAccount, UserRole } from '../../../types/user'
 import { assignableRoles, ROLE_LABELS } from '../../../constants/roles'
@@ -28,6 +29,7 @@ export function EditUserModal({ open, actor, account, onClose, onUpdated }: Prop
   const [form] = Form.useForm<FormValues>()
   const role = Form.useWatch('role', form)
   const roleOptions = assignableRoles(actor).map(r => ({ value: r, label: ROLE_LABELS[r] }))
+  const appWindow = useAppWindowContainer()
 
   useEffect(() => {
     if (account) {
@@ -58,6 +60,7 @@ export function EditUserModal({ open, actor, account, onClose, onUpdated }: Prop
       onClose={onClose}
       destroyOnHidden
       width={420}
+      getContainer={appWindow ?? undefined}
       footer={
         <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button onClick={onClose}>Cancel</Button>

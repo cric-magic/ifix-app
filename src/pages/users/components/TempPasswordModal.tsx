@@ -1,4 +1,5 @@
 import { Drawer, Button, Typography, Alert } from 'antd'
+import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 
 interface Props {
   open: boolean
@@ -8,12 +9,14 @@ interface Props {
 }
 
 export function TempPasswordModal({ open, userName, tempPassword, onClose }: Props) {
+  const appWindow = useAppWindowContainer()
   return (
     <Drawer
       open={open}
       onClose={onClose}
       title="Temporary password"
       width={420}
+      getContainer={appWindow ?? undefined}
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button type="primary" onClick={onClose}>Done</Button>

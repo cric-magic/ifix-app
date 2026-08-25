@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Drawer, Button, Space, Form, Input, InputNumber } from 'antd'
 import { Select } from '../../../components/AppSelect'
 import { PhotoUpload } from '../../../components/PhotoUpload'
+import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { Product, ProductCategory, ProductType, ProductStatus } from '../../../types/product'
 import { CATEGORY_LABELS, TYPE_LABELS, STATUS_LABELS } from '../../../constants/products'
 
@@ -35,6 +36,7 @@ export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
   const [form] = Form.useForm<FormValues>()
   const type = Form.useWatch('type', form)
   const isNew = type !== 'used'
+  const appWindow = useAppWindowContainer()
 
   useEffect(() => {
     if (product) {
@@ -68,6 +70,7 @@ export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
       onClose={onClose}
       destroyOnHidden
       width={420}
+      getContainer={appWindow ?? undefined}
       footer={
         <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button onClick={onClose}>Cancel</Button>

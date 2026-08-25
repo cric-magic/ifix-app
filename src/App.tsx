@@ -223,6 +223,20 @@ function buildTheme(variant: ThemeVariant) {
   seedTokens.colorTextDisabled = solidize(preToken.colorTextDisabled)
 
   const baseToken = theme.getDesignToken({ algorithm, token: seedTokens })
+  // controlItemBgHover/-Active back antd's own Dropdown menu items (the
+  // menu-bar user/branch pickers) directly from the global token set, not
+  // from the Menu component override below — that override only reaches
+  // an actual <Menu>, not Dropdown's internal one. Left at antd's defaults
+  // they're raw alpha overlays computed against colorBgContainer: hover
+  // solidized down to exactly colorBgElevated (invisible), and active kept
+  // a leftover blue-tinted alpha never covered by the solid-color pass.
+  // Pin both to the same solid fill so hover and active read identically.
+  seedTokens.controlItemBgHover = baseToken.colorFillSecondary
+  seedTokens.controlItemBgActive = baseToken.colorFillSecondary
+  // colorFill (not colorFillTertiary — that's weaker than Secondary in
+  // antd's scale and landed indistinguishable from colorBgElevated here)
+  // so hovering an already-active item still reads as a step up.
+  seedTokens.controlItemBgActiveHover = baseToken.colorFill
   // Nested panels (.ifix-table-panel: Product/Unit Details, Sale Info,
   // Notes, list-page table wrappers) — white in light mode, same as
   // colorBgElevated, so they read as a clearly separate surface from the
@@ -305,10 +319,24 @@ function AppThemed() {
       components: {
         Drawer: {
           colorBgMask: maskBg,
+          // antd's Drawer header/body both use paddingLG (24px default) for
+          // their horizontal padding — every .ifix-table-panel header/body
+          // in the app (Product/Unit Details, Sale Info, etc.) uses 16px
+          // (OverviewTab.tsx/UnitDetailPage.tsx), so side-by-side the
+          // drawer's content sat 8px further in from the edge than a
+          // panel's did. Match it.
+          paddingLG: 16,
         },
         Menu: {
           itemColor: seedTokens.colorIcon,
           itemHoverColor: seedTokens.colorIconHover,
+          // itemActiveBg (mousedown/keyboard-highlighted state) defaults to
+          // antd's own controlItemBgActive, an alpha overlay computed against
+          // colorBgContainer — not the solid colorBgElevated our dropdowns
+          // actually render on, so it came out effectively invisible. Pinned
+          // to the same solid value as hover so both states read consistently.
+          itemHoverBg: baseToken.colorFillSecondary,
+          itemActiveBg: baseToken.colorFillSecondary,
           itemSelectedBg: baseToken.colorFillSecondary,
           itemSelectedColor: seedTokens.colorIconHover,
           itemHeight: 36,
@@ -336,22 +364,33 @@ function AppThemed() {
         Select: {
           optionSelectedBg: baseToken.colorFillTertiary,
           optionSelectedColor: baseToken.colorText,
-          optionActiveBg: baseToken.colorFillQuaternary,
-          colorBgContainer: baseToken.colorFillQuaternary,
-          colorBorder: baseToken.colorBorder,
+          // The dropdown popup itself renders on colorBgElevated (antd's
+          // own default, not overridden here) — optionActiveBg (hover) needs
+          // to read as lighter than that surface, not the same fill used for
+          // the (darker) input field's own background, or hovering an
+          // option looks like a hole punched in the popup instead of a
+          // highlight.
+          optionActiveBg: baseToken.colorFillSecondary,
+          colorBgContainer: 'transparent',
+          colorBorder: baseToken.colorBorderSecondary,
           lineWidth: 1,
         },
         Pagination: {
           itemActiveBg: baseToken.colorFillSecondary,
         },
         Input: {
-          colorBgContainer: baseToken.colorFillQuaternary,
-          colorBorder: baseToken.colorBorder,
+          colorBgContainer: 'transparent',
+          colorBorder: baseToken.colorBorderSecondary,
           lineWidth: 1,
         },
         InputNumber: {
-          colorBgContainer: baseToken.colorFillQuaternary,
-          colorBorder: baseToken.colorBorder,
+          colorBgContainer: 'transparent',
+          colorBorder: baseToken.colorBorderSecondary,
+          lineWidth: 1,
+        },
+        DatePicker: {
+          colorBgContainer: 'transparent',
+          colorBorder: baseToken.colorBorderSecondary,
           lineWidth: 1,
         },
         Table: {
@@ -376,21 +415,36 @@ function AppThemed() {
         },
         Button: {
           paddingInline: baseToken.paddingSM,
-          defaultBg: baseToken.colorFillQuaternary,
+          // 1px to match Input/Select/InputNumber/DatePicker's own border
+          // weight (App.tsx) instead of the global seed's 0.5px — a default
+          // button sits right next to those fields often enough that the
+          // thinner line read as an inconsistency.
+          lineWidth: 1,
+          // Transparent instead of a fill tint — the default/secondary
+          // button no longer paints its own surface, so it always shows
+          // whatever's behind it (page, panel, drawer) instead of a fixed
+          // shade that could clash or double up with that backdrop.
+          defaultBg: 'transparent',
           defaultColor: baseToken.colorTextSecondary,
           defaultHoverBg: baseToken.colorFillTertiary,
           defaultHoverColor: baseToken.colorText,
           defaultBorderColor: baseToken.colorBorder,
           defaultHoverBorderColor: baseToken.colorBorder,
-          // antd's own primary/danger button shadow (a colorPrimary-tinted
-          // `0 1px 0` line, separate from the seed boxShadow token this app
-          // already zeroes out for light mode) survived the earlier
-          // shadow-removal pass since it's a Button-specific component token,
-          // not part of the shared seed. Kill it the same way in light mode.
-          // Only set the key at all when light — an explicit `undefined`
-          // isn't ignored the way omitting the key is, so it would blank out
-          // dark mode's shadow too instead of leaving antd's own default.
-          ...(algorithm === theme.defaultAlgorithm ? { primaryShadow: 'none', dangerShadow: 'none' } : {}),
+          // antd gives every button variant its own drop shadow by default
+          // (a colorPrimary-tinted line for primary, colorError-tinted for
+          // danger, a neutral one for default) — all three are separate
+          // Button-specific component tokens, not part of the shared seed
+          // boxShadow this app already zeroes out elsewhere, so they need
+          // their own override. Unconditional now (not just light mode):
+          // no button in this app should carry a shadow.
+          defaultShadow: 'none',
+          primaryShadow: 'none',
+          dangerShadow: 'none',
+        },
+        Upload: {
+          // Same reasoning as Button above — 1px to match the input-family
+          // border weight instead of the global seed's 0.5px.
+          lineWidth: 1,
         },
       },
     }}>

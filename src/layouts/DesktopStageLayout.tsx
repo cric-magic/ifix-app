@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { theme } from 'antd'
 import { Outlet } from 'react-router-dom'
 import { useDevTools } from '../contexts/DevToolsContext'
+import { AppWindowProvider } from '../contexts/AppWindowContext'
 
 type ResizeDir = 'right' | 'bottom' | 'corner'
 
@@ -17,6 +18,10 @@ export function DesktopStageLayout() {
   const { token } = theme.useToken()
   const [resizing, setResizing] = useState<ResizeDir | null>(null)
   const startRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null)
+  // Captured via callback ref so the state update (and the re-render it
+  // triggers for AppWindowProvider's value) happens right after mount,
+  // rather than needing a separate effect just to read a ref.
+  const [contentEl, setContentEl] = useState<HTMLDivElement | null>(null)
 
   const startResize = (dir: ResizeDir) => (e: React.MouseEvent) => {
     e.preventDefault()
@@ -81,8 +86,30 @@ export function DesktopStageLayout() {
         boxShadow: token.boxShadowSecondary,
         overflow: 'hidden',
       }}>
-        <div style={{ width: '100%', height: '100%', overflow: 'auto' }}>
-          <Outlet />
+        <div ref={setContentEl} style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          overflow: 'auto',
+          // Drawer (and any other antd overlay) uses `position: fixed`
+          // regardless of which DOM node it's portaled into — CSS `fixed`
+          // positions relative to the viewport, not the nearest positioned
+          // ancestor, UNLESS an ancestor establishes a new containing block
+          // (transform/filter/perspective/contain/will-change). Without
+          // this, the portal correctly nests in the DOM here (confirmed via
+          // getContainer below) but still visually renders full-viewport —
+          // this is what actually clips/contains it to the window's bounds.
+          transform: 'translateZ(0)',
+        }}>
+          {/* Drawers (and anything else that would otherwise portal to
+              document.body) mount here instead, via AppWindowProvider — see
+              AppWindowContext — so they stay visually inside the simulated
+              app window rather than covering the whole desktop canvas.
+              `position: relative` makes this div the containing block antd
+              positions the portaled content against. */}
+          <AppWindowProvider value={contentEl}>
+            <Outlet />
+          </AppWindowProvider>
         </div>
 
         {/* Resize handles — right edge (width), bottom edge (height), corner (both).
