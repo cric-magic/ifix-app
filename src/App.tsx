@@ -319,8 +319,16 @@ function AppThemed() {
           defaultBg: baseToken.colorFillSecondary,
         },
         Segmented: {
-          borderRadiusSM: 6,
-          trackPadding: 2,
+          // trackPadding (the inset between the wrapper's border and the
+          // selected-item thumb) matches the wrapper's own border width
+          // (0.5px, see .ant-segmented in index.css) instead of an arbitrary
+          // gap. The thumb's own radius is then the wrapper's radius minus
+          // that same inset, so the two stay concentric — a rounded shape
+          // inset from another rounded shape only looks "nested" correctly
+          // when its radius shrinks by the inset amount, not when it copies
+          // the outer radius outright.
+          borderRadiusSM: baseToken.borderRadius - 0.5,
+          trackPadding: 0.5,
           trackBg: baseToken.colorFillTertiary,
           itemSelectedBg: baseToken.colorBgLayout,
           itemHoverBg: baseToken.colorFillSecondary,

@@ -207,7 +207,9 @@ body {
 /* Segmented's border matches the panel's own (0.5px colorBorderSecondary),
    not the heavier 1px colorBorder used by Input/Select — it reads more like
    a track/panel than a text field, so the thinner panel-style hairline fits
-   better than the input treatment. */
+   better than the input treatment. Segmented's own trackPadding (App.tsx)
+   is set to this same 0.5px so the thumb sits inset by exactly the border's
+   width, not an arbitrary gap. */
 .ant-segmented {
   border: 0.5px solid var(--ant-color-border-secondary);
 }
