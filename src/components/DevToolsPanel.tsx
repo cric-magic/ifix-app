@@ -1,180 +1,167 @@
-import { useState } from 'react'
-import { Avatar, Button, Space, Tag, Tooltip, Typography, theme } from 'antd'
-import { Monitor, Tablet, Smartphone, User, Minus, ChevronUp } from 'lucide-react'
-import { Select } from './AppSelect'
-import { useDevTools, DEVICE_CONFIG, THEME_LABELS } from '../contexts/DevToolsContext'
+import { Avatar, Dropdown, Space, Tag, Typography, theme } from 'antd'
+import { User, BookOpen, ChevronDown, Home } from 'lucide-react'
+import { useDevTools, DEVICE_PRESETS, DEVICE_PRESET_LABELS, THEME_LABELS } from '../contexts/DevToolsContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ROLE_LABELS, ROLE_TAG_COLOR } from '../constants/roles'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
-import type { DeviceSize, ThemeVariant } from '../contexts/DevToolsContext'
-import type { UserAccount } from '../types/user'
+import type { ThemeVariant } from '../contexts/DevToolsContext'
+import type { ItemType } from 'antd/es/menu/interface'
 
-const DEVICE_ICONS: Record<DeviceSize, React.ReactNode> = {
-  desktop: <Monitor size={17} strokeWidth={2.25} />,
-  tablet:  <Tablet size={17} strokeWidth={2.25} />,
-  mobile:  <Smartphone size={17} strokeWidth={2.25} />,
+const DOCS_MENU_ITEMS = [
+  { key: 'overview', label: 'Design Docs', href: '/design-docs' },
+  { key: 'typography', label: 'Typography', href: '/design-docs#typography' },
+  { key: 'colors', label: 'Colors', href: '/design-docs#colors' },
+]
+
+const MENU_BAR_FONT_SIZE = 13
+
+// A macOS-style menu bar item: plain text immediately followed by a chevron
+// (8px gap, no reserved trigger-box width) with no border/background/shadow
+// until opened — a plain Dropdown trigger rather than an antd Select, which
+// always reserves its own padded box for the arrow and (via the shared
+// "every input-like control gets a shadow" rule in index.css) picks up the
+// same drop shadow as real form inputs regardless of `variant="borderless"`.
+function MenuBarTrigger({ items, onSelect, children }: {
+  items: ItemType[]
+  onSelect?: (key: string) => void
+  children: React.ReactNode
+}) {
+  const { token } = theme.useToken()
+  return (
+    <Dropdown
+      menu={{ items, onClick: ({ key }) => onSelect?.(key) }}
+      trigger={['click']}
+    >
+      <div className="ifix-menubar-item" style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        cursor: 'pointer',
+        color: token.colorText,
+        fontSize: MENU_BAR_FONT_SIZE,
+      }}>
+        <span>{children}</span>
+        <ChevronDown size={12} strokeWidth={2.25} />
+      </div>
+    </Dropdown>
+  )
 }
 
-const THEME_OPTIONS = (['neutral', 'blue', 'light'] as ThemeVariant[]).map(t => ({
-  value: t,
-  label: THEME_LABELS[t],
-}))
-
-const USER_OPTIONS = MOCK_USER_ACCOUNTS.map(u => ({
-  value: u.id,
-  label: u.name,
-  user: u,
-}))
-
 export function DevToolsPanel() {
-  const { device, setDevice, themeVariant, setThemeVariant } = useDevTools()
+  const { windowSize, setWindowSize, themeVariant, setThemeVariant } = useDevTools()
   const { user, devSetUser } = useAuth()
-  const [collapsed, setCollapsed] = useState(false)
   const { token } = theme.useToken()
+
+  const matchedPreset = Object.keys(DEVICE_PRESETS).find(
+    key => DEVICE_PRESETS[key].width === windowSize.width && DEVICE_PRESETS[key].height === windowSize.height,
+  )
+  const viewportLabel = matchedPreset
+    ? `${DEVICE_PRESET_LABELS[matchedPreset]} · ${windowSize.width}×${windowSize.height}`
+    : `Custom · ${windowSize.width}×${windowSize.height}`
+
+  const viewportItems: ItemType[] = Object.keys(DEVICE_PRESETS).map(key => ({
+    key,
+    label: `${DEVICE_PRESET_LABELS[key]} · ${DEVICE_PRESETS[key].width}×${DEVICE_PRESETS[key].height}`,
+  }))
+
+  const themeItems: ItemType[] = (['neutral', 'blue', 'light'] as ThemeVariant[]).map(t => ({
+    key: t,
+    label: THEME_LABELS[t],
+  }))
+
+  const userItems: ItemType[] = MOCK_USER_ACCOUNTS.map(u => ({
+    key: u.id,
+    label: (
+      <Space size={6}>
+        <Avatar icon={<User size={15} strokeWidth={2.25} />} size={20} style={{ background: token.colorFill, flexShrink: 0 }} />
+        <span style={{ fontSize: MENU_BAR_FONT_SIZE }}>{u.name}</span>
+        <Tag color={ROLE_TAG_COLOR[u.role]} style={{ margin: 0 }}>{ROLE_LABELS[u.role]}</Tag>
+      </Space>
+    ),
+  }))
 
   return (
     <div style={{
-      position: 'fixed',
-      bottom: 32,
-      left: '50%',
-      transform: 'translateX(-50%)',
-      zIndex: 9999,
+      flexShrink: 0,
+      height: 44,
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
-      gap: 6,
-      pointerEvents: 'none',
+      padding: '0 16px',
+      background: token.colorBgElevated,
+      borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
+      position: 'relative',
+      // Below antd's own popup z-index (zIndexPopupBase, ~1000) so Select/
+      // Dropdown menus render above the bar instead of behind it — this only
+      // needs to clear the desktop stage/app content below it, not popups.
+      zIndex: 100,
     }}>
-      {/* Collapse toggle tab */}
-      <button
-        onClick={() => setCollapsed(p => !p)}
-        style={{
-          pointerEvents: 'all',
-          background: token.colorBgElevated,
-          border: `0.5px solid ${token.colorBorderSecondary}`,
-          borderRadius: 20,
-          color: token.colorTextSecondary,
-          fontSize: 11,
-          padding: '3px 12px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 4,
-          boxShadow: token.boxShadow,
-        }}
-      >
-        {collapsed ? <ChevronUp size={13} strokeWidth={2.25} /> : <Minus size={13} strokeWidth={2.25} />}
-        <span>DevTools</span>
-      </button>
+      {/* Left: Home (back to the app — mainly useful from the standalone
+          /design-docs page, which has no sidebar of its own to navigate
+          from) + User identity + branch info text. Home/User use a tighter
+          4px gap than User/branch-text (10px) since the trigger items
+          already carry their own 6px/10px padding from .ifix-menubar-item —
+          a shared larger gap read as too much air between Home and User. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <a
+            href="/"
+            className="ifix-menubar-item"
+            style={{ display: 'flex', alignItems: 'center', color: token.colorText }}
+          >
+            <Home size={15} strokeWidth={2.25} />
+          </a>
 
-      {/* Main panel */}
-      {!collapsed && (
-        <div style={{
-          pointerEvents: 'all',
-          background: token.colorBgElevated,
-          borderRadius: token.borderRadiusLG,
-          padding: '10px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 20,
-          boxShadow: token.boxShadowSecondary,
-          border: `0.5px solid ${token.colorBorderSecondary}`,
-          maxWidth: 720,
-        }}>
-          {/* Device switcher */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <Typography.Text style={{ color: token.colorTextQuaternary, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
-              Viewport
-            </Typography.Text>
-            <Space size={4}>
-              {(['desktop', 'tablet', 'mobile'] as DeviceSize[]).map(d => (
-                <Tooltip key={d} title={DEVICE_CONFIG[d].label} zIndex={10000}>
-                  <Button
-                    type={device === d ? 'primary' : 'default'}
-                    icon={DEVICE_ICONS[d]}
-                    onClick={() => setDevice(d)}
-                  />
-                </Tooltip>
-              ))}
-            </Space>
-          </div>
-
-          {/* Theme switcher */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}>
-            <Typography.Text style={{ color: token.colorTextQuaternary, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
-              Theme
-            </Typography.Text>
-            <Select
-              value={themeVariant}
-              style={{ width: 120 }}
-              popupMatchSelectWidth={false}
-              placement="topLeft"
-              getPopupContainer={trigger => trigger.parentElement ?? trigger}
-              onChange={(t: ThemeVariant) => setThemeVariant(t)}
-              options={THEME_OPTIONS}
-            />
-          </div>
-
-          {/* User switcher */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}>
-            <Typography.Text style={{ color: token.colorTextQuaternary, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
-              User
-            </Typography.Text>
-            <Select
-              value={user?.id}
-              placeholder="Not signed in"
-              style={{ width: 260 }}
-              popupMatchSelectWidth={false}
-              placement="topLeft"
-              getPopupContainer={trigger => trigger.parentElement ?? trigger}
-              onChange={id => {
-                const account = MOCK_USER_ACCOUNTS.find(a => a.id === id)
-                if (account) devSetUser(account)
-              }}
-              options={USER_OPTIONS}
-              optionRender={option => {
-                const u = option.data.user as UserAccount
-                return (
-                  <Space size={6}>
-                    <Avatar icon={<User size={15} strokeWidth={2.25} />} size={24} style={{ background: token.colorFill, flexShrink: 0 }} />
-                    <span style={{ fontSize: 13 }}>{u.name}</span>
-                    <Tag color={ROLE_TAG_COLOR[u.role]} style={{ margin: 0 }}>{ROLE_LABELS[u.role]}</Tag>
-                  </Space>
-                )
-              }}
-              labelRender={label => {
-                const account = MOCK_USER_ACCOUNTS.find(a => a.id === label.value)
-                if (!account) return label.label
-                return (
-                  <Space size={6}>
-                    <Avatar icon={<User size={15} strokeWidth={2.25} />} size={24} style={{ background: token.colorPrimaryActive, flexShrink: 0 }} />
-                    <span style={{ fontSize: 13 }}>{account.name}</span>
-                    <Tag color={ROLE_TAG_COLOR[account.role]} style={{ margin: 0 }}>{ROLE_LABELS[account.role]}</Tag>
-                  </Space>
-                )
-              }}
-            />
-          </div>
-
-          {/* Current state readout */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <Typography.Text style={{ color: token.colorTextQuaternary, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
-              Active
-            </Typography.Text>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0, lineHeight: 1.3 }}>
-              <Typography.Text style={{ color: token.colorText, fontSize: 12, whiteSpace: 'nowrap' }}>
-                {user ? user.name : 'Not signed in'}
-              </Typography.Text>
-              {user && (
-                <Typography.Text style={{ color: token.colorTextTertiary, fontSize: 12, whiteSpace: 'nowrap' }}>
-                  {user.branch ?? 'All branches'}
-                </Typography.Text>
-              )}
-            </div>
-          </div>
-
+          <MenuBarTrigger
+            items={userItems}
+            onSelect={id => {
+              const account = MOCK_USER_ACCOUNTS.find(a => a.id === id)
+              if (account) devSetUser(account)
+            }}
+          >
+            {user ? user.name : 'Not signed in'}
+          </MenuBarTrigger>
         </div>
-      )}
+        {user && (
+          <Typography.Text style={{ color: token.colorTextTertiary, fontSize: MENU_BAR_FONT_SIZE }}>
+            {user.branch ?? 'All branches'}
+          </Typography.Text>
+        )}
+      </div>
+
+      <div style={{ flex: 1 }} />
+
+      {/* Middle: Viewport size + Theme */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <MenuBarTrigger items={viewportItems} onSelect={key => setWindowSize(DEVICE_PRESETS[key])}>
+          {viewportLabel}
+        </MenuBarTrigger>
+        <MenuBarTrigger items={themeItems} onSelect={key => setThemeVariant(key as ThemeVariant)}>
+          {THEME_LABELS[themeVariant]}
+        </MenuBarTrigger>
+      </div>
+
+      <div style={{ flex: 1 }} />
+
+      {/* Right: Docs */}
+      <Dropdown
+        menu={{
+          items: DOCS_MENU_ITEMS.map(item => ({
+            key: item.key,
+            label: (
+              <a href={item.href} target="_blank" rel="noreferrer">
+                {item.label}
+              </a>
+            ),
+          })),
+        }}
+        trigger={['click']}
+      >
+        <div className="ifix-menubar-item" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: token.colorText, fontSize: MENU_BAR_FONT_SIZE, flexShrink: 0 }}>
+          <BookOpen size={14} strokeWidth={2.25} />
+          <span>Docs</span>
+          <ChevronDown size={12} strokeWidth={2.25} />
+        </div>
+      </Dropdown>
     </div>
   )
 }

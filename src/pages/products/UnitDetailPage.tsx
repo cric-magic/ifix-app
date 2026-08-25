@@ -9,6 +9,7 @@ import { MOCK_USER_ACCOUNTS } from '../../constants/mockUsers'
 import { canManageUnits, canViewProducts } from '../../constants/roles'
 import { GRADE_LABELS, TAX_LABELS } from '../../constants/products'
 import { useIconColors } from '../../constants/iconColors'
+import { IMAGE_PREVIEW_CLOSE_ICON } from '../../constants/imagePreviewIcons'
 import { UnitAvailabilityTag } from './components/UnitAvailabilityTag'
 import { EditUnitModal } from './components/EditUnitModal'
 
@@ -121,6 +122,7 @@ export function UnitDetailPage() {
                   countRender: (current, total) => (
                     <span>{allPhotos[current - 1]?.label} · {current} / {total}</span>
                   ),
+                  closeIcon: IMAGE_PREVIEW_CLOSE_ICON,
                 }}
               >
                 <div style={{

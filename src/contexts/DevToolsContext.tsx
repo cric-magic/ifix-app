@@ -1,11 +1,24 @@
 import { createContext, useContext, useState } from 'react'
 
-export type DeviceSize = 'desktop' | 'tablet' | 'mobile'
+export interface WindowSize {
+  width: number
+  height: number
+}
 
-export const DEVICE_CONFIG: Record<DeviceSize, { width: number | '100%'; label: string }> = {
-  desktop: { width: '100%', label: 'Desktop' },
-  tablet:  { width: 768,    label: 'Tablet' },
-  mobile:  { width: 390,    label: 'Mobile' },
+// Named reference sizes offered as quick-picks in the menu bar's Viewport
+// dropdown. Dragging the window's own resize handles can land on any other
+// size — WindowSize itself is just {width, height}, these are only used to
+// label the dropdown and to detect when the current size matches one of them.
+export const DEVICE_PRESETS: Record<string, WindowSize> = {
+  desktop: { width: 1024, height: 700 },
+  tablet:  { width: 768,  height: 1024 },
+  mobile:  { width: 390,  height: 844 },
+}
+
+export const DEVICE_PRESET_LABELS: Record<string, string> = {
+  desktop: 'Desktop',
+  tablet:  'Tablet',
+  mobile:  'Mobile',
 }
 
 export type ThemeVariant = 'neutral' | 'blue' | 'light'
@@ -17,8 +30,8 @@ export const THEME_LABELS: Record<ThemeVariant, string> = {
 }
 
 interface DevToolsContextValue {
-  device: DeviceSize
-  setDevice: (d: DeviceSize) => void
+  windowSize: WindowSize
+  setWindowSize: (s: WindowSize) => void
   themeVariant: ThemeVariant
   setThemeVariant: (t: ThemeVariant) => void
 }
@@ -26,10 +39,10 @@ interface DevToolsContextValue {
 const DevToolsContext = createContext<DevToolsContextValue | null>(null)
 
 export function DevToolsProvider({ children }: { children: React.ReactNode }) {
-  const [device, setDevice] = useState<DeviceSize>('desktop')
+  const [windowSize, setWindowSize] = useState<WindowSize>(DEVICE_PRESETS.desktop)
   const [themeVariant, setThemeVariant] = useState<ThemeVariant>('neutral')
   return (
-    <DevToolsContext.Provider value={{ device, setDevice, themeVariant, setThemeVariant }}>
+    <DevToolsContext.Provider value={{ windowSize, setWindowSize, themeVariant, setThemeVariant }}>
       {children}
     </DevToolsContext.Provider>
   )

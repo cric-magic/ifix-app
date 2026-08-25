@@ -5,6 +5,7 @@ import type { Product } from '../../../types/product'
 import { canViewCostPrice } from '../../../constants/roles'
 import { CATEGORY_LABELS, TYPE_LABELS } from '../../../constants/products'
 import { useIconColors } from '../../../constants/iconColors'
+import { IMAGE_PREVIEW_CLOSE_ICON } from '../../../constants/imagePreviewIcons'
 import { ProductStatusTag } from '../components/ProductStatusTag'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
@@ -59,6 +60,7 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
             <Image.PreviewGroup
               preview={{
                 countRender: (current, total) => <span>Photo {current} / {total}</span>,
+                closeIcon: IMAGE_PREVIEW_CLOSE_ICON,
               }}
             >
               <div style={{

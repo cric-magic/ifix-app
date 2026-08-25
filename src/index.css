@@ -6,7 +6,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Google Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -141,6 +141,25 @@ body {
 
 .ant-input-affix-wrapper .ant-input-prefix {
   margin-inline-end: 8px !important;
+}
+
+/* Menu bar triggers (DevToolsPanel): same hover-only hotspot treatment as
+   sidebar menu items and default/secondary buttons — no background at rest,
+   colorFillTertiary on hover, so the clickable area reads as a defined
+   region instead of bare floating text. */
+.ifix-menubar-item {
+  /* Fixed height (not just vertical padding) so the icon-only Home link —
+     with no text to set its own line-height — matches the text+chevron
+     triggers exactly instead of coming out a few px shorter. */
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.ifix-menubar-item:hover {
+  background: var(--ant-color-fill-tertiary);
 }
 
 /* Icon color convention: default = secondary, hover/focus = primary.
@@ -414,10 +433,6 @@ label[for="password"]::after {
   border-top: 0.5px solid var(--ant-color-split) !important;
 }
 
-.ant-table-thead > tr > th {
-  background: transparent !important;
-}
-
 .ant-table-thead > tr > th:first-child,
 .ant-table-tbody > tr > td:first-child {
   padding-left: 0 !important;
@@ -461,46 +476,22 @@ label[for="password"]::after {
   width: 0.5px !important;
 }
 
-/* Fixed (sticky) columns: antd's default treatment is a transparent cell plus
-   a gradient shadow on the trailing edge to hint at clipped content underneath.
-   That reads as a stray glow against this app's dark panels — swap it for a
-   solid elevated surface instead, which reads as its own layer above the
-   scrolling content without needing the shadow cue.
-   Body cells only — header cells stay transparent like every other header
-   cell (see the plain `background: transparent` rule above). Headers don't
-   scroll under anything, so they don't need the elevated-surface treatment;
-   applying it there just left a two-tone header row (some cells transparent,
-   some solid) on every table with fixed columns. */
-.ant-table-tbody > tr > td.ant-table-cell-fix-start,
-.ant-table-tbody > tr > td.ant-table-cell-fix-end {
-  background-color: var(--ant-color-bg-elevated) !important;
-  transition: background-color 0.2s !important;
-}
-
+/* Fixed (sticky) columns: antd's default treatment adds a gradient shadow on
+   the trailing edge to hint at clipped content underneath. That reads as a
+   stray glow against this app's panels, since Table.colorBgContainer (below
+   in App.tsx) already paints every cell — fixed or scrolling — as a solid
+   colorBgElevated, the same color the surrounding .ifix-table-panel already
+   is. That solid, uniform background is also why fixed columns no longer
+   need their own explicit background-color or hover-color overrides here:
+   with every cell opaque and identical at rest, antd's own rowHoverBg
+   mechanism already paints fixed and scrolling cells the same solid hover
+   color with no special-casing — the old alpha-based token scheme couldn't
+   do this (a transparent hover overlay over an opaque fixed-column
+   background just clipped at the fixed edge), which is what all of this used
+   to work around. */
 .ant-table-cell-fix-start-shadow::after,
 .ant-table-cell-fix-end-shadow::after {
   box-shadow: none !important;
-}
-
-/* The row hover fill (App.tsx Table.rowHoverBg) is a transparent overlay, so
-   it reads fine on the scrolling columns' transparent cells — but the fixed
-   columns' own opaque background above sits on top and blocks it, making the
-   hover look like it stops short at the fixed edges. --ifix-fixed-cell-hover-bg
-   (App.tsx) is colorFillTertiary pre-blended onto colorBgElevated as a solid
-   color — a plain gradient overlay would work visually too, but background-color
-   is what actually transitions smoothly; background-image (gradients) can't be
-   interpolated, so it'd snap instantly instead of fading like the rest of the
-   table.
-   Keyed on antd's own `.ant-table-cell-row-hover` class (which it already adds
-   to every td in the hovered row, JS-driven via onMouseEnter/Leave) rather than
-   a plain `tr:hover`: opening a row's action Dropdown portals the menu to
-   <body>, and if that portal renders on top of the fixed column, the browser
-   no longer hit-tests the cursor as being over that td, so real `:hover` drops
-   even though the row is still conceptually hovered — antd's class doesn't
-   have that problem, so matching it keeps the two mechanisms in sync. */
-.ant-table-tbody > tr > td.ant-table-cell-row-hover.ant-table-cell-fix-start,
-.ant-table-tbody > tr > td.ant-table-cell-row-hover.ant-table-cell-fix-end {
-  background-color: var(--ifix-fixed-cell-hover-bg) !important;
 }
 
 /* Expandable tables: the column right after the expand toggle sits close
@@ -644,4 +635,44 @@ label[for="password"]::after {
 .ant-image {
   border-radius: 8px;
   overflow: hidden;
+}
+
+/* Lightbox nav arrows: antd's Image/PreviewGroup always injects its own
+   hardcoded LeftOutlined/RightOutlined pair (see the `icons` constant in
+   antd's PreviewGroup.js) into the preview regardless of what's passed via
+   `preview.icons` — there's no supported prop to swap them for this app's
+   Lucide chevrons the way `preview.closeIcon` covers the close button (see
+   IMAGE_PREVIEW_CLOSE_ICON in imagePreviewIcons.tsx). Swapped visually
+   instead: hide antd's SVG and paint Lucide's chevron-left/chevron-right
+   path data as a `mask-image` in its place, colored via `background-color:
+   currentColor` so it still inherits the same previewOperationColor token
+   the antd icon would have. */
+.ant-image-preview-switch-prev .anticon,
+.ant-image-preview-switch-next .anticon {
+  display: none;
+}
+
+.ant-image-preview-switch-prev::after,
+.ant-image-preview-switch-next::after {
+  content: '';
+  display: block;
+  width: 1em;
+  height: 1em;
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+.ant-image-preview-switch-prev::after {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E");
+}
+
+.ant-image-preview-switch-next::after {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
 }

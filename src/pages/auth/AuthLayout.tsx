@@ -10,7 +10,7 @@ export function AuthLayout({ title, subtitle, children }: Props) {
   const { token } = theme.useToken()
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div style={{ minHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 360 }}>
         <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 4 }}>{title}</Typography.Title>
         {subtitle && (

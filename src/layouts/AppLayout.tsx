@@ -104,13 +104,13 @@ export function AppLayout() {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
+    <Layout style={{ height: '100%', background: 'transparent' }}>
       <Sider width={220} collapsedWidth={220} collapsed={false} trigger={null} style={{
         background: 'transparent',
         border: 'none',
         position: 'sticky',
         top: 0,
-        height: '100vh',
+        height: '100%',
         padding: '12px 0 12px 12px',
         overflow: 'hidden',
         flexShrink: 0,
@@ -416,11 +416,13 @@ export function AppLayout() {
       <Layout style={{
         background: 'transparent',
         margin: 12,
-        // 100svh minus the 12px top + 12px bottom margin above, so the
-        // rounded box always reaches the bottom of the viewport and the
-        // margin actually reads as bottom padding instead of just shrinking
-        // to fit whatever content happens to render.
-        height: 'calc(100svh - 24px)',
+        // 100% of this layout's own box (which now comes from the resizable
+        // desktop window in App.tsx, not the true browser viewport) minus the
+        // 12px top + 12px bottom margin above, so the rounded box always
+        // reaches the bottom of that box and the margin actually reads as
+        // bottom padding instead of just shrinking to fit whatever content
+        // happens to render.
+        height: 'calc(100% - 24px)',
         border: '0.5px solid var(--ifix-wrapper-border)',
         borderRadius: 12,
         overflow: 'hidden',
