@@ -316,7 +316,7 @@ function AppThemed() {
         },
         Tag: {
           borderRadiusSM: 999,
-          defaultBg: baseToken.colorFillTertiary,
+          defaultBg: baseToken.colorFillSecondary,
         },
         Segmented: {
           borderRadiusSM: 6,
