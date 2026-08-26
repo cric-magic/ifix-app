@@ -52,7 +52,7 @@ export function ProductTable({ actor, products, onEdit, onRemove, onAddUnit }: P
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Avatar
             shape="square"
-            size={32}
+            size={28}
             src={p.photos?.[0]}
             icon={<ImageOff size={14} strokeWidth={2.25} />}
             style={{ backgroundColor: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}

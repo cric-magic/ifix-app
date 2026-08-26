@@ -317,6 +317,16 @@ function AppThemed() {
       algorithm,
       token: seedTokens,
       components: {
+        Alert: {
+          // antd's default with-description padding is asymmetric
+          // (16px vertical / 24px horizontal) — flatten it to a uniform
+          // 16px to match the rest of the app's panel/drawer padding.
+          withDescriptionPadding: '16px',
+          // Default is fontSizeHeading3 (24px) — oversized next to the
+          // rest of the app's icon scale (17px in the sidebar nav, 15px in
+          // the menu bar). 17px matches the sidebar.
+          withDescriptionIconSize: 17,
+        },
         Drawer: {
           colorBgMask: maskBg,
           // antd's Drawer header/body both use paddingLG (24px default) for
@@ -362,7 +372,16 @@ function AppThemed() {
           itemHoverBg: baseToken.colorFillSecondary,
         },
         Select: {
-          optionSelectedBg: baseToken.colorFillTertiary,
+          // colorFillTertiary looked right on paper (weaker than Secondary,
+          // as antd's own fill scale intends) but this theme's solid-color
+          // conversion (solidize() above) blends it against colorBgLayout,
+          // not colorBgElevated — the surface it actually renders on here —
+          // and the two happened to land on the exact same value, so the
+          // "selected" highlight silently disappeared into the dropdown
+          // background. colorFill (one step past Secondary/hover) keeps the
+          // persistent selected state visibly stronger than the momentary
+          // hover instead.
+          optionSelectedBg: baseToken.colorFill,
           optionSelectedColor: baseToken.colorText,
           // The dropdown popup itself renders on colorBgElevated (antd's
           // own default, not overridden here) — optionActiveBg (hover) needs
@@ -407,7 +426,13 @@ function AppThemed() {
           // .ant-table-cell-fix-* rules).
           colorBgContainer: baseToken.colorBgElevated,
           headerBg: baseToken.colorBgElevated,
-          rowHoverBg: baseToken.colorFillTertiary,
+          // colorFillTertiary, not colorFillSecondary — but this theme's
+          // solidize() blends Tertiary against colorBgLayout, which happens
+          // to land on the exact same value as colorBgElevated (the surface
+          // the table body actually renders on), so the hover made rows
+          // silently vanish instead of highlighting. colorFillSecondary is
+          // the tier that's actually distinguishable from colorBgElevated.
+          rowHoverBg: baseToken.colorFillSecondary,
           bodySortBg: baseToken.colorBgElevated,
           headerSortActiveBg: baseToken.colorBgElevated,
           headerSortHoverBg: baseToken.colorBgElevated,
@@ -426,10 +451,24 @@ function AppThemed() {
           // shade that could clash or double up with that backdrop.
           defaultBg: 'transparent',
           defaultColor: baseToken.colorTextSecondary,
-          defaultHoverBg: baseToken.colorFillTertiary,
+          // Same colorFillTertiary/colorBgElevated collision as Table's
+          // rowHoverBg and Select's optionSelectedBg above — a default
+          // button's transparent bg reveals whatever panel is behind it
+          // (usually colorBgElevated), so the hover fill needs to be a tier
+          // that's actually distinguishable from that, not Tertiary.
+          defaultHoverBg: baseToken.colorFillSecondary,
           defaultHoverColor: baseToken.colorText,
           defaultBorderColor: baseToken.colorBorder,
           defaultHoverBorderColor: baseToken.colorBorder,
+          // Same colorFillTertiary/colorBgElevated collision again — antd's
+          // type="text" (the borderless variant used for every icon-only
+          // trigger: ChevronsUpDown, "...", MoreHorizontal) defaults its
+          // hover to colorFillTertiary too. It happened to look fine
+          // because every existing use of it sits on the sidebar's
+          // transparent/colorBgLayout backdrop, where Tertiary is still
+          // visibly lighter — but the same button dropped onto an elevated
+          // panel or drawer would have the identical invisible-hover bug.
+          textHoverBg: baseToken.colorFillSecondary,
           // antd gives every button variant its own drop shadow by default
           // (a colorPrimary-tinted line for primary, colorError-tinted for
           // danger, a neutral one for default) — all three are separate

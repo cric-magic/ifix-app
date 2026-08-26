@@ -18,11 +18,13 @@ import { CustomersPage } from '../pages/customers/CustomersPage'
 import { MerchantsPage } from '../pages/merchants/MerchantsPage'
 import { BranchesPage } from '../pages/branches/BranchesPage'
 import { UserListPage } from '../pages/users/UserListPage'
+import { UserDetailPage } from '../pages/users/UserDetailPage'
 import { AccountGeneralPage } from '../pages/account/AccountGeneralPage'
 import { DesignDocsPage } from '../pages/design/DesignDocsPage'
 import { SignInPage } from '../pages/auth/SignInPage'
 import { SetPasswordPage } from '../pages/auth/SetPasswordPage'
 import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage'
+import { ResetPasswordPage } from '../pages/auth/ResetPasswordPage'
 
 export const router = createBrowserRouter([
   // /design-docs is deliberately NOT nested under DesktopStageLayout below —
@@ -35,6 +37,7 @@ export const router = createBrowserRouter([
       { path: '/sign-in', element: <SignInPage /> },
       { path: '/set-password', element: <SetPasswordPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
       {
         path: '/',
         element: <RequireAuth><AppLayout /></RequireAuth>,
@@ -57,6 +60,7 @@ export const router = createBrowserRouter([
           { path: 'settings', element: <Navigate to="/settings/general" replace /> },
           { path: 'settings/general', element: <PlaceholderPage icon={<SlidersHorizontal size={26} strokeWidth={2} />} title="General" /> },
           { path: 'settings/members', element: <UserListPage /> },
+          { path: 'settings/members/:id', element: <UserDetailPage /> },
           { path: 'account', element: <Navigate to="/account/general" replace /> },
           { path: 'account/general', element: <AccountGeneralPage /> },
         ],

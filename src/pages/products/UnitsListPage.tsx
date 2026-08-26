@@ -79,7 +79,7 @@ export function UnitsListPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Avatar
               shape="square"
-              size={32}
+              size={28}
               src={photo}
               icon={<ImageOff size={14} strokeWidth={2.25} />}
               style={{ backgroundColor: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}

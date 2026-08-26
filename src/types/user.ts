@@ -18,4 +18,6 @@ export interface UserAccount {
   activatedAt: string | null
   suspendedBy: string | null
   suspendedAt: string | null
+  resetToken: string | null
+  resetTokenExpiresAt: string | null
 }

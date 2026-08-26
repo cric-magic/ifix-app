@@ -1,7 +1,7 @@
 import type { UserAccount } from '../types/user'
 
 export const MERCHANT_ID = 'merchant-1'
-export const MERCHANT_NAME = 'iFix Demo Merchant'
+export const MERCHANT_NAME = 'IFix'
 
 export const MOCK_USER_ACCOUNTS: UserAccount[] = [
   {
@@ -19,6 +19,8 @@ export const MOCK_USER_ACCOUNTS: UserAccount[] = [
     activatedAt: '2023-11-01T09:15:00.000Z',
     suspendedBy: null,
     suspendedAt: null,
+    resetToken: null,
+    resetTokenExpiresAt: null,
   },
   {
     id: 'owner-1',
@@ -36,6 +38,8 @@ export const MOCK_USER_ACCOUNTS: UserAccount[] = [
     activatedAt: '2023-11-02T09:20:00.000Z',
     suspendedBy: null,
     suspendedAt: null,
+    resetToken: null,
+    resetTokenExpiresAt: null,
   },
   {
     id: 'admin-1',
@@ -53,6 +57,8 @@ export const MOCK_USER_ACCOUNTS: UserAccount[] = [
     activatedAt: '2023-11-05T09:30:00.000Z',
     suspendedBy: null,
     suspendedAt: null,
+    resetToken: null,
+    resetTokenExpiresAt: null,
   },
   {
     id: 'branch-1',
@@ -71,6 +77,8 @@ export const MOCK_USER_ACCOUNTS: UserAccount[] = [
     activatedAt: '2023-11-10T09:45:00.000Z',
     suspendedBy: null,
     suspendedAt: null,
+    resetToken: null,
+    resetTokenExpiresAt: null,
   },
   {
     id: 'branch-2',
@@ -89,6 +97,8 @@ export const MOCK_USER_ACCOUNTS: UserAccount[] = [
     activatedAt: '2023-11-10T09:45:00.000Z',
     suspendedBy: null,
     suspendedAt: null,
+    resetToken: null,
+    resetTokenExpiresAt: null,
   },
   {
     id: 'staff-1',
@@ -107,6 +117,8 @@ export const MOCK_USER_ACCOUNTS: UserAccount[] = [
     activatedAt: '2023-11-15T09:50:00.000Z',
     suspendedBy: null,
     suspendedAt: null,
+    resetToken: null,
+    resetTokenExpiresAt: null,
   },
   {
     id: 'staff-2',
@@ -125,6 +137,8 @@ export const MOCK_USER_ACCOUNTS: UserAccount[] = [
     activatedAt: null,
     suspendedBy: null,
     suspendedAt: null,
+    resetToken: null,
+    resetTokenExpiresAt: null,
   },
   {
     id: 'staff-3',
@@ -143,10 +157,20 @@ export const MOCK_USER_ACCOUNTS: UserAccount[] = [
     activatedAt: '2024-01-10T09:30:00.000Z',
     suspendedBy: 'admin-1',
     suspendedAt: '2026-06-01T09:00:00.000Z',
+    resetToken: null,
+    resetTokenExpiresAt: null,
   },
 ]
 
 export function generateTempPassword(): string {
   const part = () => String(Math.floor(1000 + Math.random() * 9000))
   return `${part()}-${part()}-${part()}`
+}
+
+export const RESET_TOKEN_TTL_MS = 15 * 60 * 1000
+
+export function generateResetToken(): string {
+  const bytes = new Uint8Array(24)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
 }

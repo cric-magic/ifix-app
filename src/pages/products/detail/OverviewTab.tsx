@@ -112,7 +112,7 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <Typography.Text strong style={{ fontSize: 20 }}>{product.name}</Typography.Text>
-            <Tag style={{ margin: 0, background: token.colorFillTertiary, color: token.colorTextSecondary, fontSize: token.fontSize, border: 'none' }}>
+            <Tag style={{ margin: 0, background: token.colorFillSecondary, color: token.colorTextSecondary, fontSize: token.fontSize, border: 'none' }}>
               {TYPE_LABELS[product.type]}
             </Tag>
             <ProductStatusTag status={product.status} />

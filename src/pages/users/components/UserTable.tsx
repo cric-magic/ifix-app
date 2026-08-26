@@ -1,9 +1,12 @@
-import { App, ConfigProvider, Table, Button, Dropdown, theme } from 'antd'
+import { App, Avatar, ConfigProvider, Table, Button, Dropdown, theme } from 'antd'
 import { Pencil, Ban, RotateCcw, KeyRound, ChevronLeft, ChevronRight, ChevronDown, MoreHorizontal } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
 import type { AuthUser } from '../../../types/installment'
 import type { UserAccount } from '../../../types/user'
 import { ROLE_LABELS, canManageTargetUser } from '../../../constants/roles'
+import { MERCHANT_NAME } from '../../../constants/mockUsers'
+import { getAvatarUrl } from '../../../utils/avatar'
 import { UserStatusTag } from './UserStatusTag'
 import { mockCreatedContracts, mockMonthlyCollection } from '../mockStats'
 
@@ -20,6 +23,7 @@ interface Props {
 export function UserTable({ actor, accounts, onEdit, onToggleSuspend, onForceReset }: Props) {
   const { token } = theme.useToken()
   const { modal } = App.useApp()
+  const navigate = useNavigate()
 
   const columns: ColumnsType<UserAccount> = [
     {
@@ -40,11 +44,31 @@ export function UserTable({ actor, accounts, onEdit, onToggleSuspend, onForceRes
           }}
         />
       ),
-      render: (name: string) => <span style={{ color: token.colorText }}>{name}</span>,
+      render: (name: string, r) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Avatar src={getAvatarUrl(r.id)} size={28} style={{ flexShrink: 0 }} />
+          <span style={{ color: token.colorText }}>{name}</span>
+        </div>
+      ),
     },
     { title: 'Staff ID', dataIndex: 'staffId', key: 'staffId' },
     { title: 'Role', key: 'role', render: (_, r) => ROLE_LABELS[r.role] },
-    { title: 'Branch', key: 'branch', render: (_, r) => r.branch ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
+    // Per the User Account doc's List User spec: branch shows for Super
+    // Admin/Merchant Admin/Owner, not Branch Manager — a Branch Manager's
+    // whole list is already scoped to their own branch, so repeating it on
+    // every row adds nothing.
+    ...(actor.role !== 'branch_manager' ? [{
+      title: 'Branch',
+      key: 'branch',
+      render: (_: unknown, r: UserAccount) => r.branch ?? <span style={{ color: token.colorTextDisabled }}>—</span>,
+    }] : []),
+    // Merchant shows for Super Admin only — the only role whose user list
+    // (scopedUserList) spans more than one merchant.
+    ...(actor.role === 'super_admin' ? [{
+      title: 'Merchant',
+      key: 'merchant',
+      render: (_: unknown, r: UserAccount) => r.merchantId ? MERCHANT_NAME : <span style={{ color: token.colorTextDisabled }}>—</span>,
+    }] : []),
     { title: 'Status', key: 'status', fixed: 'right', render: (_, r) => <UserStatusTag status={r.status} /> },
     {
       title: 'Created Contracts',
@@ -68,37 +92,39 @@ export function UserTable({ actor, accounts, onEdit, onToggleSuspend, onForceRes
         if (!canManageTargetUser(actor, r)) return null
         const isSuspended = r.status === 'suspended'
         return (
-          <Dropdown
-            trigger={['click']}
-            placement="bottomRight"
-            menu={{
-              items: [
-                { key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' },
-                { key: 'reset', icon: <KeyRound size={15} strokeWidth={2.25} />, label: 'Reset password' },
-                { type: 'divider' },
-                {
-                  key: 'suspend',
-                  danger: !isSuspended,
-                  icon: isSuspended ? <RotateCcw size={15} strokeWidth={2.25} /> : <Ban size={15} strokeWidth={2.25} />,
-                  label: isSuspended ? 'Reactivate' : 'Suspend',
+          <div onClick={e => e.stopPropagation()}>
+            <Dropdown
+              trigger={['click']}
+              placement="bottomRight"
+              menu={{
+                items: [
+                  { key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' },
+                  { key: 'reset', icon: <KeyRound size={15} strokeWidth={2.25} />, label: 'Reset password' },
+                  { type: 'divider' },
+                  {
+                    key: 'suspend',
+                    danger: !isSuspended,
+                    icon: isSuspended ? <RotateCcw size={15} strokeWidth={2.25} /> : <Ban size={15} strokeWidth={2.25} />,
+                    label: isSuspended ? 'Reactivate' : 'Suspend',
+                  },
+                ],
+                onClick: ({ key }) => {
+                  if (key === 'edit') onEdit(r)
+                  if (key === 'reset') onForceReset(r)
+                  if (key === 'suspend') {
+                    modal.confirm({
+                      title: isSuspended ? 'Reactivate this user?' : 'Suspend this user?',
+                      okText: isSuspended ? 'Reactivate' : 'Suspend',
+                      okButtonProps: { danger: !isSuspended },
+                      onOk: () => onToggleSuspend(r),
+                    })
+                  }
                 },
-              ],
-              onClick: ({ key }) => {
-                if (key === 'edit') onEdit(r)
-                if (key === 'reset') onForceReset(r)
-                if (key === 'suspend') {
-                  modal.confirm({
-                    title: isSuspended ? 'Reactivate this user?' : 'Suspend this user?',
-                    okText: isSuspended ? 'Reactivate' : 'Suspend',
-                    okButtonProps: { danger: !isSuspended },
-                    onOk: () => onToggleSuspend(r),
-                  })
-                }
-              },
-            }}
-          >
-            <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
-          </Dropdown>
+              }}
+            >
+              <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+            </Dropdown>
+          </div>
         )
       },
     },
@@ -121,6 +147,10 @@ export function UserTable({ actor, accounts, onEdit, onToggleSuspend, onForceRes
               columns={columns}
               dataSource={accounts}
               scroll={{ x: 'max-content' }}
+              onRow={record => ({
+                onClick: () => navigate(`/settings/members/${record.id}`),
+                style: { cursor: 'pointer' },
+              })}
               pagination={{
                 pageSize: 10,
                 size: 'small',

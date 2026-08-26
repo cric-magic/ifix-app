@@ -7,11 +7,12 @@ import {
 } from 'lucide-react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth, useCurrentUser } from '../contexts/AuthContext'
-import { canManageUsers } from '../constants/roles'
+import { canManageUsers, scopedUserList } from '../constants/roles'
 import { useIconColors } from '../constants/iconColors'
-import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
+import { MOCK_USER_ACCOUNTS, MERCHANT_ID } from '../constants/mockUsers'
 import { MOCK_PRODUCTS } from '../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../constants/mockProductUnits'
+import { getAvatarUrl, getWorkspaceAvatarUrl } from '../utils/avatar'
 
 const { Header, Sider, Content } = Layout
 
@@ -91,12 +92,28 @@ export function AppLayout() {
   const unitDetailId = inProducts && productsKey === 'unit' ? location.pathname.split('/')[3] : undefined
   const unitDetailImei = unitDetailId ? MOCK_PRODUCT_UNITS.find(u => u.id === unitDetailId)?.imei : undefined
 
+  // Member detail route (/settings/members/:id) — same 2-level treatment
+  // ("Members / <name>"), parallel to the product/unit breadcrumbs above.
+  // Looked up through scopedUserList (not the raw account list) so a member
+  // outside the viewer's own scope doesn't leak their name into the
+  // breadcrumb even though the page itself correctly blocks access to them.
+  const memberDetailId = inSettings && settingsKey === 'members' ? location.pathname.split('/')[3] : undefined
+  const memberDetailName = memberDetailId
+    ? scopedUserList(user, MOCK_USER_ACCOUNTS).find(u => u.id === memberDetailId)?.name
+    : undefined
+
   const breadcrumbParts = productDetailName
     ? ['Products', productDetailName]
     : unitDetailImei
     ? ['Units', unitDetailImei]
+    : memberDetailName
+    ? ['Members', memberDetailName]
     : [pageTitle]
-  const breadcrumbBackUrl = unitDetailImei ? '/products/unit' : '/products/catalog'
+  const breadcrumbBackUrl = unitDetailImei
+    ? '/products/unit'
+    : memberDetailName
+    ? '/settings/members'
+    : '/products/catalog'
 
   function handleLogout() {
     logout()
@@ -144,13 +161,19 @@ export function AppLayout() {
                   style: { height: 'auto', cursor: 'default', padding: '8px 12px' },
                   label: (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div className="ifix-logo-box" style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        background: token.colorFillSecondary,
-                        flexShrink: 0,
-                      }} />
+                      <img
+                        className="ifix-logo-box"
+                        src={getWorkspaceAvatarUrl(MERCHANT_ID)}
+                        alt=""
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          background: token.colorFillSecondary,
+                          flexShrink: 0,
+                          objectFit: 'cover',
+                        }}
+                      />
                       <div>
                         <div style={{ fontSize: 14, lineHeight: '18px', fontWeight: 600, color: token.colorText }}>IFix</div>
                         <div style={{ fontSize: 12, lineHeight: '16px', color: token.colorTextSecondary }}>{MOCK_USER_ACCOUNTS.length} members</div>
@@ -186,13 +209,19 @@ export function AppLayout() {
               flexShrink: 0,
               cursor: 'pointer',
             }}>
-              <div className="ifix-logo-box" style={{
-                width: 27,
-                height: 27,
-                borderRadius: 6,
-                background: token.colorFillSecondary,
-                flexShrink: 0,
-              }} />
+              <img
+                className="ifix-logo-box"
+                src={getWorkspaceAvatarUrl(MERCHANT_ID)}
+                alt=""
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 6,
+                  background: token.colorFillSecondary,
+                  flexShrink: 0,
+                  objectFit: 'cover',
+                }}
+              />
               <Typography.Text strong style={{ fontSize: 15, flex: 1, minWidth: 0 }} ellipsis>IFix</Typography.Text>
               <Button type="text" size="small" style={{ borderRadius: 6 }} icon={<ChevronsUpDown size={14} strokeWidth={2.25} />} />
             </div>
@@ -400,7 +429,12 @@ export function AppLayout() {
               flexShrink: 0,
               cursor: 'pointer',
             }}>
-              <Avatar icon={<User size={17} strokeWidth={2.25} />} size={28} style={{ background: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }} />
+              <Avatar
+                src={getAvatarUrl(user.id)}
+                icon={<User size={17} strokeWidth={2.25} />}
+                size={28}
+                style={{ background: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}
+              />
               <Typography.Text
                 style={{ fontSize: 14, flex: 1, minWidth: 0, color: token.colorText }}
                 ellipsis={{ tooltip: user.name }}

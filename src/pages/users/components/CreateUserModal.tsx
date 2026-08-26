@@ -4,7 +4,7 @@ import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { AuthUser } from '../../../types/installment'
 import type { UserAccount, UserRole } from '../../../types/user'
 import { assignableRoles, ROLE_LABELS } from '../../../constants/roles'
-import { MOCK_USER_ACCOUNTS, generateTempPassword, MERCHANT_ID } from '../../../constants/mockUsers'
+import { MOCK_USER_ACCOUNTS, generateTempPassword, MERCHANT_ID, MERCHANT_NAME } from '../../../constants/mockUsers'
 import { BRANCHES } from '../../../constants/mockData'
 
 interface Props {
@@ -21,9 +21,17 @@ interface FormValues {
   phone: string
   role: UserRole
   branch?: string
+  merchantId?: string
 }
 
 const BRANCH_ROLES: UserRole[] = ['branch_manager', 'staff']
+
+// Only one merchant exists in this prototype (Merchants itself is still a
+// placeholder page), so this is a stand-in single-option picker — it wires
+// up the field the User Account doc calls for ("merchant assignment (for
+// Super Admin)") without pretending there's a real merchant list to pick
+// from yet.
+const MERCHANT_OPTIONS = [{ value: MERCHANT_ID, label: MERCHANT_NAME }]
 
 export function CreateUserModal({ open, actor, onClose, onCreated }: Props) {
   const [form] = Form.useForm<FormValues>()
@@ -41,7 +49,7 @@ export function CreateUserModal({ open, actor, onClose, onCreated }: Props) {
       password: tempPassword,
       phone: values.phone,
       role: values.role,
-      merchantId: actor.role === 'super_admin' ? MERCHANT_ID : actor.merchantId,
+      merchantId: actor.role === 'super_admin' ? values.merchantId : actor.merchantId,
       branch: BRANCH_ROLES.includes(values.role) ? values.branch : undefined,
       status: 'created',
       isTemporaryPassword: true,
@@ -50,6 +58,8 @@ export function CreateUserModal({ open, actor, onClose, onCreated }: Props) {
       activatedAt: null,
       suspendedBy: null,
       suspendedAt: null,
+      resetToken: null,
+      resetTokenExpiresAt: null,
     }
     MOCK_USER_ACCOUNTS.push(account)
     form.resetFields()
@@ -87,6 +97,11 @@ export function CreateUserModal({ open, actor, onClose, onCreated }: Props) {
         <Form.Item label="Role" name="role" rules={[{ required: true, message: 'Required' }]}>
           <Select placeholder="Select role" options={roleOptions} />
         </Form.Item>
+        {actor.role === 'super_admin' && (
+          <Form.Item label="Merchant" name="merchantId" initialValue={MERCHANT_ID} rules={[{ required: true, message: 'Required' }]}>
+            <Select placeholder="Select merchant" options={MERCHANT_OPTIONS} />
+          </Form.Item>
+        )}
         {role && BRANCH_ROLES.includes(role) && (
           <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Required' }]}>
             <Select placeholder="Select branch" options={BRANCHES.map(b => ({ value: b, label: b }))} />

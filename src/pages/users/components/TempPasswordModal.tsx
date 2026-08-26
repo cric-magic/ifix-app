@@ -1,5 +1,7 @@
-import { Drawer, Button, Typography, Alert } from 'antd'
+import { Drawer, Button, Typography, Alert, theme } from 'antd'
+import { Copy, Check } from 'lucide-react'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
+import { useIconColors } from '../../../constants/iconColors'
 
 interface Props {
   open: boolean
@@ -10,6 +12,8 @@ interface Props {
 
 export function TempPasswordModal({ open, userName, tempPassword, onClose }: Props) {
   const appWindow = useAppWindowContainer()
+  const { token } = theme.useToken()
+  const iconColors = useIconColors()
   return (
     <Drawer
       open={open}
@@ -30,7 +34,18 @@ export function TempPasswordModal({ open, userName, tempPassword, onClose }: Pro
         description="Share this with the user through a secure channel. They will be required to set a new password on next sign-in."
         style={{ marginBottom: 16 }}
       />
-      <Typography.Text code copyable style={{ fontSize: 16 }}>{tempPassword}</Typography.Text>
+      <Typography.Text
+        code
+        copyable={{
+          icon: [
+            <Copy key="copy" size={14} strokeWidth={2.25} color={iconColors.secondary} />,
+            <Check key="copied" size={14} strokeWidth={2.25} color={token.colorSuccess} />,
+          ],
+        }}
+        style={{ fontSize: 16 }}
+      >
+        {tempPassword}
+      </Typography.Text>
     </Drawer>
   )
 }

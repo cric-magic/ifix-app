@@ -145,7 +145,7 @@ body {
 
 /* Menu bar triggers (DevToolsPanel): same hover-only hotspot treatment as
    sidebar menu items and default/secondary buttons — no background at rest,
-   colorFillTertiary on hover, so the clickable area reads as a defined
+   a visible fill on hover, so the clickable area reads as a defined
    region instead of bare floating text. */
 .ifix-menubar-item {
   /* Fixed height (not just vertical padding) so the icon-only Home link —
@@ -159,7 +159,13 @@ body {
 }
 
 .ifix-menubar-item:hover {
-  background: var(--ant-color-fill-tertiary);
+  /* Was --ant-color-fill-tertiary — this theme's solid-color conversion
+     blends Tertiary against colorBgLayout, which happens to land on the
+     exact same value as colorBgElevated (the surface the menu bar itself
+     sits on), so the hover silently stopped rendering. Same bug already
+     fixed for Select/Table/Button/Tag in App.tsx and DotTag.tsx —
+     colorFillSecondary is the tier that's actually distinguishable. */
+  background: var(--ant-color-fill-secondary);
 }
 
 /* Icon color convention: default = secondary, hover/focus = primary.
@@ -235,6 +241,25 @@ body {
   box-shadow: none !important;
 }
 
+/* Browser autofill (Chrome/Safari/Edge) paints its own yellow/lavender
+   background via an internal UA style that ignores background-color
+   entirely — the only way to override it is this inset box-shadow trick,
+   painted large enough to fully cover the field, plus forcing the text
+   color separately since autofilled text also ignores `color`. Covers
+   every native text-entry surface across Input/InputNumber/Select (its
+   hidden search input)/DatePicker so none of them flash the browser's
+   default styling on focus or once a saved value is filled in. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--ant-color-bg-elevated) inset !important;
+  box-shadow: 0 0 0 1000px var(--ant-color-bg-elevated) inset !important;
+  -webkit-text-fill-color: var(--ant-color-text) !important;
+  caret-color: var(--ant-color-text);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 /* Input/InputNumber addonBefore/addonAfter (e.g. the "฿" prefix box on price
    fields) render as a separate element from the input itself and pull their
    border from antd's global colorBorder/lineWidth rather than the
@@ -268,22 +293,18 @@ body {
   background-color: transparent !important;
 }
 
-/* A scrollbar reserves layout space inside the element's own box no matter
-   which box actually carries the padding (moving padding onto a wrapping
-   child, tried first here, doesn't help — the scrollbar still sits between
-   that child and the body's true edge) — so on any Drawer body tall enough
-   to scroll, its ~11px width adds onto the existing 16px right padding
-   (paddingLG, App.tsx) while the left side stays a plain 16px, making the
-   drawer's content look off-center (measured: 16px left vs 27px right).
-   `overflow: overlay` would have been the one-line fix, but Chrome dropped
-   support for it. `scrollbar-gutter: stable both-edges` is the current
-   standards-track replacement: it reserves a matching gutter on the LEFT
-   too, even though nothing scrolls there, so the extra space is
-   symmetric — both sides get the same 16px content padding plus an equal
-   gutter — instead of only ever appearing on the right. */
-.ant-drawer-body {
-  scrollbar-gutter: stable both-edges;
-}
+/* Deliberately NOT compensating for the scrollbar here. A scrollbar
+   reserves layout space inside the element's own box no matter which box
+   carries the padding (tried moving padding onto a wrapping child) or
+   whether a matching gutter is reserved on the left too (tried
+   scrollbar-gutter: stable both-edges) — both approaches "fixed" the
+   symmetry on a genuinely scrolling drawer but only by permanently taking
+   the padding on EVERY drawer from 16px to 27px, including the common
+   case (most drawers) that never scrolls at all. Plain 16px on both sides
+   always was judged the better tradeoff — a scrolling drawer's right side
+   loses a few px to the scrollbar track, but every other drawer matches
+   the app's panels exactly instead of all of them being padded out for a
+   case that rarely happens. */
 
 label[for="password"] {
   width: 100%;
@@ -724,4 +745,80 @@ label[for="password"]::after {
 .ant-image-preview-switch-next::after {
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+}
+
+/* Alert's description text (the paragraph under the bold title, shown
+   when a description prop is passed) isn't exposed as its own themeable
+   component token — antd hardcodes it to the global colorText — so it
+   reads as full-strength body text instead of the secondary tier used
+   for supporting copy everywhere else in the app. */
+.ant-alert-with-description .ant-alert-description {
+  color: var(--ant-color-text-secondary);
+}
+
+/* The with-description layout aligns icon and text block to flex-start
+   (top), which anchors the icon to the very top of the whole block
+   instead of the vertical center of just the first (title) line — with a
+   two-line title/description stack, the icon then sits visibly above
+   center relative to that first line. Nudge it down by exactly half the
+   gap between the title's line box and the icon's own box so their
+   centers match. 17px here must stay in sync with Alert's
+   withDescriptionIconSize override in App.tsx. */
+.ant-alert-with-description .ant-alert-icon {
+  margin-top: calc((var(--ant-font-size-lg) * var(--ant-line-height) - 17px) / 2);
+}
+
+/* Typography's copy trigger (Typography.Text copyable) renders as a bare
+   inline icon with no hit area of its own — 14x17.5px, sized only by its
+   SVG and line-height — next to every other icon-only trigger in the app
+   (the small text buttons: ChevronsUpDown, "...", etc.), which get a
+   27x27 square wrapper with rounded corners and a hover fill. Give the
+   copy trigger the same box so it doesn't look like a stray, unbalanced
+   glyph floating next to text with a proper button wrapper. */
+.ant-typography-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.ant-typography-copy:hover {
+  background: var(--ant-color-fill-secondary);
+}
+
+/* The <code> pill wrapping the temp password + copy button (TempPasswordModal)
+   uses antd's typography reset defaults (padding: 0.2em/0.1em top-bottom,
+   0.4em inline, borderRadius: 3) — not proportioned for a 27px copy-button
+   child. 4px top/bottom brings the box to a full 35px (4 + the button's own
+   27px + 4), 8px on the left gives the text room to breathe, 4px on the
+   right keeps the button snug against the edge instead of centered with
+   equal gaps both sides, and the radius matches Input's (var(--ant-border-radius))
+   so it reads as the same family of control instead of antd's smaller
+   default code-tag radius.
+   display must move off the browser default `inline` too: an inline
+   box's own height comes purely from font metrics/line-height, not from
+   its children's rendered size, so the 27px copy button was overflowing
+   the padding box invisibly instead of actually growing it to 35px.
+   inline-flex (kept inline-level, but with real box sizing) fixes that
+   and also lets align-items center the text against the button. */
+.ant-typography code {
+  display: inline-flex;
+  align-items: center;
+  /* box-sizing: border-box + explicit height, not just padding, because
+     antd's code reset also puts a 1px border on this element — with the
+     default content-box sizing that border adds on top of padding+content
+     (27 + 4 + 4 = 35, plus 1px top/bottom border = 37), overshooting the
+     intended 35px. border-box folds the border back into that total. */
+  box-sizing: border-box;
+  height: 35px;
+  padding: 4px 4px 4px 8px;
+  border-radius: var(--ant-border-radius);
+  /* antd's reset also puts `margin: 0 0.2em` on <code> (meant for code
+     spans sitting inline within a paragraph) — with nothing else on this
+     line, that inset just shifted the whole pill off the Alert's left
+     edge above it instead of lining up flush. */
+  margin: 0;
 }

@@ -4,6 +4,7 @@ import { useDevTools, DEVICE_PRESETS, DEVICE_PRESET_LABELS, THEME_LABELS } from 
 import { useAuth } from '../contexts/AuthContext'
 import { ROLE_LABELS, ROLE_TAG_COLOR } from '../constants/roles'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
+import { getAvatarUrl } from '../utils/avatar'
 import type { ThemeVariant } from '../contexts/DevToolsContext'
 import type { ItemType } from 'antd/es/menu/interface'
 
@@ -73,7 +74,12 @@ export function DevToolsPanel() {
     key: u.id,
     label: (
       <Space size={6}>
-        <Avatar icon={<User size={15} strokeWidth={2.25} />} size={20} style={{ background: token.colorFill, flexShrink: 0 }} />
+        <Avatar
+          src={getAvatarUrl(u.id)}
+          icon={<User size={15} strokeWidth={2.25} />}
+          size={20}
+          style={{ background: token.colorFill, flexShrink: 0 }}
+        />
         <span style={{ fontSize: MENU_BAR_FONT_SIZE }}>{u.name}</span>
         <Tag color={ROLE_TAG_COLOR[u.role]} style={{ margin: 0 }}>{ROLE_LABELS[u.role]}</Tag>
       </Space>
