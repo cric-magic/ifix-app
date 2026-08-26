@@ -89,6 +89,16 @@ When adding a new panel, check which kind of page it's on before deciding where 
 - Positioned fixed at bottom-center, z-index 9999, outside the app viewport wrapper
 - Must always stay in sync with the app theme — no hardcoded colors
 
+## Consistency
+When building a new feature (a table, a form, an empty state, a detail page, etc.), first check how the same kind of thing is already done elsewhere in the app and match it — don't invent a new pattern for something that already has one. This applies to visual treatment, component structure, and copy alike.
+
+- **Table empty states** — every table with search/filtering renders its empty state via the shared `TableEmptyState` component (`src/components/TableEmptyState.tsx`), wired through antd `Table`'s `locale.emptyText`, not antd's plain default row. Two variants:
+  - **No results from a search/filter** — content-specific icon (e.g. `Users` for people, `Smartphone` for device units — never a generic search icon), title "No {things} found", description "Try a different {field a}, {field b}, or {field c}."
+  - **Truly empty (no filter active)** — same icon, title "No {things} yet", description "{Things} you add will show up here."
+  - See `UnitsListPage.tsx` (original) and `UserTable.tsx` for the reference implementation.
+- **Detail pages** — mirror the layout of an existing detail page for the same kind of entity (e.g. a new user-facing detail view should look like `AccountGeneralPage.tsx`/`UserDetailPage.tsx`'s header + `SettingsCard` sections) rather than composing a new layout from scratch.
+- Before adding a new visual pattern, search the codebase for how a similar need was already solved (empty states, panel headers, table action columns, avatar sizing, icon color handling, etc.) and reuse it.
+
 ## Role-based access
 - Roles: `admin`, `retail`
 - Permission helpers in `src/constants/roles.ts`: `canEditInstallment()`, `canViewBranchFilter()`, `canConfigurePenalty()`

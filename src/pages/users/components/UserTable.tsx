@@ -1,5 +1,5 @@
 import { App, Avatar, ConfigProvider, Table, Button, Dropdown, theme } from 'antd'
-import { Pencil, Ban, RotateCcw, KeyRound, ChevronLeft, ChevronRight, ChevronDown, MoreHorizontal } from 'lucide-react'
+import { Pencil, Ban, RotateCcw, KeyRound, ChevronLeft, ChevronRight, ChevronDown, MoreHorizontal, Users } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
 import type { AuthUser } from '../../../types/installment'
@@ -9,18 +9,20 @@ import { MERCHANT_NAME } from '../../../constants/mockUsers'
 import { getAvatarUrl } from '../../../utils/avatar'
 import { UserStatusTag } from './UserStatusTag'
 import { mockCreatedContracts, mockMonthlyCollection } from '../mockStats'
+import { TableEmptyState } from '../../../components/TableEmptyState'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 
 interface Props {
   actor: AuthUser
   accounts: UserAccount[]
+  search: string
   onEdit: (account: UserAccount) => void
   onToggleSuspend: (account: UserAccount) => void
   onForceReset: (account: UserAccount) => void
 }
 
-export function UserTable({ actor, accounts, onEdit, onToggleSuspend, onForceReset }: Props) {
+export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, onForceReset }: Props) {
   const { token } = theme.useToken()
   const { modal } = App.useApp()
   const navigate = useNavigate()
@@ -69,7 +71,6 @@ export function UserTable({ actor, accounts, onEdit, onToggleSuspend, onForceRes
       key: 'merchant',
       render: (_: unknown, r: UserAccount) => r.merchantId ? MERCHANT_NAME : <span style={{ color: token.colorTextDisabled }}>—</span>,
     }] : []),
-    { title: 'Status', key: 'status', fixed: 'right', render: (_, r) => <UserStatusTag status={r.status} /> },
     {
       title: 'Created Contracts',
       key: 'createdContracts',
@@ -82,6 +83,7 @@ export function UserTable({ actor, accounts, onEdit, onToggleSuspend, onForceRes
       align: 'right',
       render: (_, r) => formatter.format(mockMonthlyCollection(r.id)),
     },
+    { title: 'Status', key: 'status', fixed: 'right', render: (_, r) => <UserStatusTag status={r.status} /> },
     {
       title: '',
       key: 'actions',
@@ -151,6 +153,13 @@ export function UserTable({ actor, accounts, onEdit, onToggleSuspend, onForceRes
                 onClick: () => navigate(`/settings/members/${record.id}`),
                 style: { cursor: 'pointer' },
               })}
+              locale={{
+                emptyText: search ? (
+                  <TableEmptyState icon={<Users size={22} strokeWidth={2.25} />} title="No members found" description="Try a different name, email, or staff ID." />
+                ) : (
+                  <TableEmptyState icon={<Users size={22} strokeWidth={2.25} />} title="No members yet" description="Members you add will show up here." />
+                ),
+              }}
               pagination={{
                 pageSize: 10,
                 size: 'small',

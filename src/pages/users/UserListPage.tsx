@@ -102,6 +102,7 @@ export function UserListPage() {
       <UserTable
         actor={user}
         accounts={accounts}
+        search={search}
         onEdit={setEditingAccount}
         onToggleSuspend={handleToggleSuspend}
         onForceReset={handleForceReset}
