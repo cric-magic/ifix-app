@@ -47,7 +47,7 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
         />
       ),
       render: (name: string, r) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Avatar src={getAvatarUrl(r.id)} size={28} style={{ flexShrink: 0 }} />
           <span style={{ color: token.colorText }}>{name}</span>
         </div>

@@ -2,26 +2,26 @@ import { useEffect, useState } from 'react'
 import { Typography, message, theme } from 'antd'
 import { Copy, Check } from 'lucide-react'
 import { useIconColors } from '../../constants/iconColors'
+import { SPACING_SCALE, RADIUS_SCALE } from '../../constants/designTokens'
+import { toHex } from '../../utils/colorTokenLookup'
 
 const TOC_ITEMS = [
   { id: 'typography', label: 'Typography' },
   { id: 'colors', label: 'Colors' },
+  { id: 'spacing', label: 'Spacing' },
+  { id: 'radius', label: 'Radius' },
 ]
 
-// Solid tokens resolve to `rgb(r, g, b)` (App.tsx's blendOverlay output) or
-// already to a literal hex (the semantic colorPrimary/Success/etc. seeds) —
-// normalize both to hex here so the docs always show/copy the more portable,
-// universally-recognized form. Actually-translucent values (rgba with
-// alpha < 1, none currently shown here but kept safe) pass through
-// unchanged, since flattening those to hex would silently drop the alpha.
-function toHex(value: string): string {
-  const match = value.match(/^rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\s*\)$/)
-  if (!match) return value
-  const [, r, g, b, a] = match
-  if (a !== undefined && Number(a) < 1) return value
-  const toByte = (n: string) => Number(n).toString(16).padStart(2, '0')
-  return `#${toByte(r)}${toByte(g)}${toByte(b)}`
-}
+// The scale itself (CLAUDE.md's Spacing section) lives in designTokens.ts —
+// shared with InspectorOverlay.tsx so a spacing value it reports always
+// names the same scale entry this page renders. Gaps are still deliberate
+// (e.g. nothing between 16 and 24, or 24 and 32) — a value that falls
+// between two of these rounds down to the tighter one rather than
+// introducing a new size.
+
+// toHex (rgb()/rgba() → hex, for the docs' more portable, universally-
+// recognized display/copy form) lives in utils/colorTokenLookup.ts, shared
+// with InspectorOverlay.tsx so its popover prints colors the same way.
 
 const TOC_IDS = TOC_ITEMS.map(item => item.id)
 
@@ -33,12 +33,12 @@ function Section({ id, title, children }: { id?: string; title: string; children
         display: 'flex',
         alignItems: 'center',
         height: 56,
-        padding: '0 20px',
+        padding: '0 16px',
         boxShadow: `inset 0 -0.5px 0 0 ${token.colorBorderSecondary}`,
       }}>
         <Typography.Text strong style={{ fontSize: 15 }}>{title}</Typography.Text>
       </div>
-      <div style={{ padding: 20 }}>{children}</div>
+      <div style={{ padding: 16 }}>{children}</div>
     </div>
   )
 }
@@ -142,7 +142,133 @@ function Swatch({ name, value, copyValue, tokenName, textOn }: { name: string; v
 }
 
 function SwatchRow({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>{children}</div>
+  return <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>{children}</div>
+}
+
+function SpacingRow({ name, px }: { name: string; px: number }) {
+  const { token } = theme.useToken()
+  const iconColors = useIconColors()
+  const [copied, setCopied] = useState(false)
+  const displayValue = `${px}px`
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(displayValue)
+    } catch {
+      // Clipboard-write can be blocked by permissions policy (embedded
+      // iframes, some sandboxed browser contexts) even on a plain click —
+      // execCommand('copy') via a throwaway textarea still works there.
+      const textarea = document.createElement('textarea')
+      textarea.value = displayValue
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(textarea)
+      if (!ok) {
+        message.error('Copy failed — select and copy the value manually')
+        return
+      }
+    }
+    setCopied(true)
+    message.success(`Copied ${displayValue}`)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 16,
+      padding: '8px 0',
+      borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
+    }}>
+      <Typography.Text style={{ width: 32, fontSize: 13, fontFamily: token.fontFamilyCode, flexShrink: 0 }}>
+        {name}
+      </Typography.Text>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Capped visual width (real scale runs up to 384px) — the point is
+            to show relative proportions between nearby values, not to
+            literally reproduce the largest ones at full size. */}
+        <div style={{ width: Math.min(px, 320), height: 8, background: token.colorFillSecondary, borderRadius: 2 }} />
+      </div>
+      <div
+        onClick={handleCopy}
+        title="Click to copy"
+        style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', width: 56, justifyContent: 'flex-end', flexShrink: 0 }}
+      >
+        <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode, color: token.colorText }}>
+          {displayValue}
+        </Typography.Text>
+        {copied
+          ? <Check size={11} strokeWidth={2.25} color={iconColors.secondary} style={{ flexShrink: 0 }} />
+          : <Copy size={11} strokeWidth={2.25} color={iconColors.secondary} style={{ flexShrink: 0 }} />}
+      </div>
+    </div>
+  )
+}
+
+function RadiusRow({ name, px }: { name: string; px: number }) {
+  const { token } = theme.useToken()
+  const iconColors = useIconColors()
+  const [copied, setCopied] = useState(false)
+  const displayValue = `${px}px`
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(displayValue)
+    } catch {
+      const textarea = document.createElement('textarea')
+      textarea.value = displayValue
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(textarea)
+      if (!ok) {
+        message.error('Copy failed — select and copy the value manually')
+        return
+      }
+    }
+    setCopied(true)
+    message.success(`Copied ${displayValue}`)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 16,
+      padding: '8px 0',
+      borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
+    }}>
+      <Typography.Text style={{ width: 32, fontSize: 13, fontFamily: token.fontFamilyCode, flexShrink: 0 }}>
+        {name}
+      </Typography.Text>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* The shape itself, not a proportional bar — radius is much more
+            legible as "how rounded does this look" than as a length. A
+            999px radius on a 32px box just renders as a full pill/circle,
+            which is exactly the right picture for it — no capping needed. */}
+        <div style={{ width: 32, height: 32, background: token.colorFillSecondary, borderRadius: px }} />
+      </div>
+      <div
+        onClick={handleCopy}
+        title="Click to copy"
+        style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', width: 56, justifyContent: 'flex-end', flexShrink: 0 }}
+      >
+        <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode, color: token.colorText }}>
+          {displayValue}
+        </Typography.Text>
+        {copied
+          ? <Check size={11} strokeWidth={2.25} color={iconColors.secondary} style={{ flexShrink: 0 }} />
+          : <Copy size={11} strokeWidth={2.25} color={iconColors.secondary} style={{ flexShrink: 0 }} />}
+      </div>
+    </div>
+  )
 }
 
 function SubHeading({ children }: { children: React.ReactNode }) {
@@ -150,7 +276,7 @@ function SubHeading({ children }: { children: React.ReactNode }) {
   return (
     <Typography.Text
       type="secondary"
-      style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 12, color: token.colorTextTertiary }}
+      style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 8, color: token.colorTextTertiary }}
     >
       {children}
     </Typography.Text>
@@ -193,7 +319,7 @@ function TableOfContents() {
     <nav style={{ position: 'sticky', top: 48, width: 160, flexShrink: 0 }}>
       <Typography.Text
         type="secondary"
-        style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 12, color: token.colorTextTertiary }}
+        style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 8, color: token.colorTextTertiary }}
       >
         On this page
       </Typography.Text>
@@ -206,7 +332,7 @@ function TableOfContents() {
               href={`#${item.id}`}
               style={{
                 fontSize: 13,
-                padding: '6px 10px',
+                padding: '4px 8px',
                 borderRadius: 6,
                 color: isActive ? token.colorText : token.colorTextTertiary,
                 background: isActive ? token.colorFillTertiary : 'transparent',
@@ -229,7 +355,7 @@ export function DesignDocsPage() {
 
   return (
     <div style={{ minHeight: '100%', background: token.colorBgLayout, padding: '48px 24px' }}>
-      <div style={{ display: 'flex', gap: 40, maxWidth: 940, margin: '0 auto', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: 32, maxWidth: 940, margin: '0 auto', alignItems: 'flex-start' }}>
         <TableOfContents />
 
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -314,6 +440,12 @@ export function DesignDocsPage() {
               <Swatch name="Tertiary" value={token.colorBgElevated} copyValue={token.colorTextTertiary} tokenName="colorTextTertiary" textOn={token.colorTextTertiary} />
               <Swatch name="Quaternary" value={token.colorBgElevated} copyValue={token.colorTextQuaternary} tokenName="colorTextQuaternary" textOn={token.colorTextQuaternary} />
               <Swatch name="Disabled" value={token.colorBgElevated} copyValue={token.colorTextDisabled} tokenName="colorTextDisabled" textOn={token.colorTextDisabled} />
+              {/* Backdrop is colorPrimary, not the elevated panel like the other
+                  four above — this token is specifically for text sitting on a
+                  solid semantic color (primary Button, colored Tag, filled
+                  Badge, etc.), not on a neutral surface, so demonstrating it on
+                  one is the honest picture of how it's actually used. */}
+              <Swatch name="Light Solid" value={token.colorPrimary} copyValue={token.colorTextLightSolid} tokenName="colorTextLightSolid" textOn={token.colorTextLightSolid} />
             </SwatchRow>
 
             <SubHeading>Backgrounds &amp; Fills</SubHeading>
@@ -339,6 +471,23 @@ export function DesignDocsPage() {
               <Swatch name="Icon (default)" value={token.colorBgElevated} copyValue={iconColors.secondary} tokenName="colorIcon" textOn={iconColors.secondary} />
               <Swatch name="Icon (hover/active)" value={token.colorBgElevated} copyValue={iconColors.primary} tokenName="colorIconHover" textOn={iconColors.primary} />
             </SwatchRow>
+          </Section>
+
+          <Section id="spacing" title="Spacing">
+            <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
+              Every padding, margin, and gap in the app comes from this scale — no other raw pixel values for spacing.
+              The scale still has deliberate gaps (nothing between 16 and 24, or 24 and 32); when a spacing decision falls
+              between two values here, round down to the tighter one.
+            </Typography.Text>
+            {SPACING_SCALE.map(s => <SpacingRow key={s.name} name={s.name} px={s.px} />)}
+          </Section>
+
+          <Section id="radius" title="Radius">
+            <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
+              Every borderRadius in the app comes from this scale. XS/SM/Base/LG are antd's own default tokens; XL and
+              Pill are this project's own additions for surfaces antd's scale doesn't reach.
+            </Typography.Text>
+            {RADIUS_SCALE.map(s => <RadiusRow key={s.name} name={s.name} px={s.px} />)}
           </Section>
         </div>
       </div>

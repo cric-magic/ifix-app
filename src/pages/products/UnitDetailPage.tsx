@@ -98,14 +98,14 @@ export function UnitDetailPage() {
 
   return (
     <div>
-      <div className="ifix-table-panel" style={{ marginBottom: 20 }}>
+      <div className="ifix-table-panel" style={{ marginBottom: 16 }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           height: 56,
           paddingLeft: 16,
-          paddingRight: 10,
+          paddingRight: 8,
           boxShadow: `inset 0 -0.5px 0 0 ${token.colorBorderSecondary}`,
         }}>
           <Typography.Text strong style={{ fontSize: 15 }}>Unit Details</Typography.Text>
@@ -128,7 +128,7 @@ export function UnitDetailPage() {
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(2, 100px)',
-                  gap: 10,
+                  gap: 8,
                   maxHeight: 220,
                   overflowY: 'auto',
                   paddingRight: allPhotos.length > 4 ? 10 : 0,
@@ -172,7 +172,7 @@ export function UnitDetailPage() {
           </div>
 
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <Typography.Text strong style={{ fontSize: 20 }}>{unit.imei}</Typography.Text>
               <UnitAvailabilityTag availability={unit.availability} />
             </div>
@@ -188,7 +188,7 @@ export function UnitDetailPage() {
         </div>
       </div>
 
-      <div className="ifix-table-panel" style={{ marginBottom: 20 }}>
+      <div className="ifix-table-panel" style={{ marginBottom: 16 }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',

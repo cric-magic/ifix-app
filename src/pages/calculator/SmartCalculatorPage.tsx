@@ -229,7 +229,7 @@ export function SmartCalculatorPage() {
                         {easyResult && (
                           <>
                             <Divider />
-                            <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+                            <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
                               Implied flat rate: <strong>{easyResult.flatRatePercent}%/month</strong>
                             </Typography.Text>
                             <ResultCards result={easyResult} />

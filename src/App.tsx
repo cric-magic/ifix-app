@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { DevToolsProvider, useDevTools } from './contexts/DevToolsContext'
 import type { ThemeVariant } from './contexts/DevToolsContext'
 import { DevToolsPanel } from './components/DevToolsPanel'
+import { InspectorOverlay } from './components/InspectorOverlay'
 import { ICON_COLOR_SECONDARY, ICON_COLOR_PRIMARY } from './constants/iconColors'
 import { router } from './router'
 
@@ -337,6 +338,15 @@ function AppThemed() {
           // panel's did. Match it.
           paddingLG: 16,
         },
+        Dropdown: {
+          // antd derives this internally as (controlHeight - fontSize *
+          // lineHeight) / 2 to vertically center a menu item's text inside
+          // controlHeight (36px in this app's grid) — (36 - 22) / 2 = 7px,
+          // not a value this project set directly. Pinned to 8px (Spacing
+          // 2) instead, per the project-wide move to trace every
+          // padding/margin/gap back to the spacing scale.
+          paddingBlock: 8,
+        },
         Menu: {
           itemColor: seedTokens.colorIcon,
           itemHoverColor: seedTokens.colorIconHover,
@@ -393,6 +403,11 @@ function AppThemed() {
           colorBgContainer: 'transparent',
           colorBorder: baseToken.colorBorderSecondary,
           lineWidth: 1,
+          // Select's own selector-box horizontal padding (antd default
+          // 11px) isn't exposed as a component token — unlike Input/
+          // InputNumber/DatePicker below, there's no paddingInline (or
+          // equivalent) in its public ComponentToken to override here.
+          // Fixed via a `.ant-select-selector` CSS rule in index.css instead.
         },
         Pagination: {
           itemActiveBg: baseToken.colorFillSecondary,
@@ -401,16 +416,20 @@ function AppThemed() {
           colorBgContainer: 'transparent',
           colorBorder: baseToken.colorBorderSecondary,
           lineWidth: 1,
+          // Same 11px→12px fix as Select above.
+          paddingInline: 12,
         },
         InputNumber: {
           colorBgContainer: 'transparent',
           colorBorder: baseToken.colorBorderSecondary,
           lineWidth: 1,
+          paddingInline: 12,
         },
         DatePicker: {
           colorBgContainer: 'transparent',
           colorBorder: baseToken.colorBorderSecondary,
           lineWidth: 1,
+          paddingInline: 12,
         },
         Table: {
           // Explicit colorBgElevated (not 'transparent') on every cell —
@@ -491,6 +510,7 @@ function AppThemed() {
         <AuthProvider>
           <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
             <DevToolsPanel />
+            <InspectorOverlay />
             {/* Always present regardless of route, so both the windowed app
                 (via DesktopStageLayout, nested inside the router tree) and
                 the standalone /design-docs page (rendered directly, no

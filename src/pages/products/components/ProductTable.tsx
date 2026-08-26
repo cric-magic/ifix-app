@@ -49,7 +49,7 @@ export function ProductTable({ actor, products, onEdit, onRemove, onAddUnit }: P
         />
       ),
       render: (name: string, p: Product) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Avatar
             shape="square"
             size={28}

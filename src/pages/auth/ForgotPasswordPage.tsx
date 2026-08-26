@@ -61,7 +61,7 @@ export function ForgotPasswordPage() {
           <Input prefix={<Mail size={15} strokeWidth={2} />} placeholder="you@company.com" autoComplete="username" />
         </Form.Item>
 
-        <Form.Item style={{ marginBottom: 12 }}>
+        <Form.Item style={{ marginBottom: 8 }}>
           <Button type="primary" htmlType="submit" block>
             Send reset link
           </Button>

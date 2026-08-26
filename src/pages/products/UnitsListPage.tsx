@@ -76,7 +76,7 @@ export function UnitsListPage() {
         const product = productById.get(u.productId)
         const photo = u.unitPhotos?.front ?? product?.photos?.[0]
         return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Avatar
               shape="square"
               size={28}
@@ -149,7 +149,7 @@ export function UnitsListPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8 }}>
         <Input
           placeholder="Search by IMEI or serial number"
           prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}

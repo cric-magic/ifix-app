@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { theme } from 'antd'
 import { Outlet } from 'react-router-dom'
 import { useDevTools } from '../contexts/DevToolsContext'
@@ -14,7 +14,7 @@ const MIN_WINDOW_HEIGHT = 400
 // the docs page renders as its own plain full-size page: no desktop
 // background, no window chrome, not resizable.
 export function DesktopStageLayout() {
-  const { windowSize, setWindowSize } = useDevTools()
+  const { windowSize, setWindowSize, setAppWindowEl } = useDevTools()
   const { token } = theme.useToken()
   const [resizing, setResizing] = useState<ResizeDir | null>(null)
   const startRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null)
@@ -22,6 +22,14 @@ export function DesktopStageLayout() {
   // triggers for AppWindowProvider's value) happens right after mount,
   // rather than needing a separate effect just to read a ref.
   const [contentEl, setContentEl] = useState<HTMLDivElement | null>(null)
+
+  // Mirrored into DevToolsContext too — see the comment there — so
+  // InspectorOverlay (a sibling of the router tree, not a descendant of
+  // this layout's Outlet) can scope itself to the same window bounds.
+  useEffect(() => {
+    setAppWindowEl(contentEl)
+    return () => setAppWindowEl(null)
+  }, [contentEl, setAppWindowEl])
 
   const startResize = (dir: ResizeDir) => (e: React.MouseEvent) => {
     e.preventDefault()
@@ -66,7 +74,7 @@ export function DesktopStageLayout() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 40,
+      padding: 32,
       boxSizing: 'border-box',
       background: token.colorBgLayout,
       // A faint dot grid sells the "desktop canvas" read — subtle enough not
@@ -75,41 +83,49 @@ export function DesktopStageLayout() {
       backgroundImage: `radial-gradient(${token.colorBorderSecondary} 1px, transparent 1px)`,
       backgroundSize: '24px 24px',
     }}>
-      <div style={{
-        position: 'relative',
-        width: windowSize.width,
-        height: windowSize.height,
-        flexShrink: 0,
-        background: token.colorBgContainer,
-        borderRadius: 12,
-        border: `0.5px solid ${token.colorBorder}`,
-        boxShadow: token.boxShadowSecondary,
-        overflow: 'hidden',
-      }}>
-        <div ref={setContentEl} style={{
+      {/* Sizing wrapper — holds the resize handles as siblings of the
+          visible window box below, not children of it. The box itself
+          clips to its rounded corners (overflow: hidden), so a handle
+          straddling its edge with a negative offset (e.g. right: -4) used
+          to get half-clipped by that same overflow, shrinking its hit area
+          and, at the corner grip, visibly cutting the grip icon off square
+          against the rounded corner instead of sitting outside it cleanly. */}
+      <div style={{ position: 'relative', width: windowSize.width, height: windowSize.height, flexShrink: 0 }}>
+        <div style={{
           position: 'relative',
           width: '100%',
           height: '100%',
-          overflow: 'auto',
-          // Drawer (and any other antd overlay) uses `position: fixed`
-          // regardless of which DOM node it's portaled into — CSS `fixed`
-          // positions relative to the viewport, not the nearest positioned
-          // ancestor, UNLESS an ancestor establishes a new containing block
-          // (transform/filter/perspective/contain/will-change). Without
-          // this, the portal correctly nests in the DOM here (confirmed via
-          // getContainer below) but still visually renders full-viewport —
-          // this is what actually clips/contains it to the window's bounds.
-          transform: 'translateZ(0)',
+          background: token.colorBgContainer,
+          borderRadius: 12,
+          border: `0.5px solid ${token.colorBorder}`,
+          boxShadow: token.boxShadowSecondary,
+          overflow: 'hidden',
         }}>
-          {/* Drawers (and anything else that would otherwise portal to
-              document.body) mount here instead, via AppWindowProvider — see
-              AppWindowContext — so they stay visually inside the simulated
-              app window rather than covering the whole desktop canvas.
-              `position: relative` makes this div the containing block antd
-              positions the portaled content against. */}
-          <AppWindowProvider value={contentEl}>
-            <Outlet />
-          </AppWindowProvider>
+          <div ref={setContentEl} style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            overflow: 'auto',
+            // Drawer (and any other antd overlay) uses `position: fixed`
+            // regardless of which DOM node it's portaled into — CSS `fixed`
+            // positions relative to the viewport, not the nearest positioned
+            // ancestor, UNLESS an ancestor establishes a new containing block
+            // (transform/filter/perspective/contain/will-change). Without
+            // this, the portal correctly nests in the DOM here (confirmed via
+            // getContainer below) but still visually renders full-viewport —
+            // this is what actually clips/contains it to the window's bounds.
+            transform: 'translateZ(0)',
+          }}>
+            {/* Drawers (and anything else that would otherwise portal to
+                document.body) mount here instead, via AppWindowProvider — see
+                AppWindowContext — so they stay visually inside the simulated
+                app window rather than covering the whole desktop canvas.
+                `position: relative` makes this div the containing block antd
+                positions the portaled content against. */}
+            <AppWindowProvider value={contentEl}>
+              <Outlet />
+            </AppWindowProvider>
+          </div>
         </div>
 
         {/* Resize handles — right edge (width), bottom edge (height), corner (both).
@@ -125,7 +141,7 @@ export function DesktopStageLayout() {
           height: 16,
           cursor: 'nwse-resize',
           boxSizing: 'border-box',
-          padding: 3,
+          padding: 4,
         }}>
           <div style={{
             width: '100%',

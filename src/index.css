@@ -153,7 +153,7 @@ body {
      triggers exactly instead of coming out a few px shorter. */
   height: 32px;
   box-sizing: border-box;
-  padding: 0 10px;
+  padding: 0 12px;
   border-radius: 6px;
   transition: background-color 0.15s ease;
 }
@@ -241,6 +241,14 @@ body {
   box-shadow: none !important;
 }
 
+/* Select's own horizontal padding (antd default 11px) isn't exposed as a
+   public component token the way Input/InputNumber/DatePicker's is — see
+   the paddingInline overrides on those in App.tsx — so it's fixed here
+   instead, matching their 12px value. */
+.ant-select {
+  padding-inline: 12px;
+}
+
 /* Browser autofill (Chrome/Safari/Edge) paints its own yellow/lavender
    background via an internal UA style that ignores background-color
    entirely — the only way to override it is this inset box-shadow trick,
@@ -319,18 +327,21 @@ label[for="password"]::after {
 
 /* Main nav items' icons sit 16px from the sidebar edge by default (the Menu's
    inlineIndent), which doesn't line up with the workspace icon, account
-   avatar, or the swap-nav chevron buttons — all trimmed to a 4.5px item inset
-   elsewhere for their own vertical-centering reasons. Match it here too so
-   every icon in the sidebar shares one left column. */
+   avatar, or the swap-nav chevron buttons — all trimmed to a 4px (Spacing 1)
+   item inset elsewhere. Match it here too so every icon in the sidebar
+   shares one left column. Previously 4.5px (exact antd button-height
+   centering math) — rounded to the spacing scale instead, since every
+   padding/margin/gap in the app should trace back to it going forward; the
+   half-pixel difference against antd's own control height is imperceptible. */
 .ifix-main-nav .ant-menu-item {
-  padding-left: 4.5px !important;
+  padding-left: 4px !important;
 }
 
 /* antd's default icon-to-label gap (13px, via margin-left on the title) is a
-   touch wider than the 10px gap used everywhere else in the sidebar (the
-   workspace row and the avatar row both use flex `gap: 10`) — match it. */
+   touch wider than the 8px gap used everywhere else in the sidebar (the
+   workspace row and the avatar row both use flex `gap: 8`) — match it. */
 .ifix-main-nav .ant-menu-item .ant-menu-title-content {
-  margin-left: 10px !important;
+  margin-left: 8px !important;
 }
 
 /* Dropdown floating panels — Dropdown menu, Select's option list, the
@@ -416,8 +427,8 @@ label[for="password"]::after {
 }
 
 /* Drawer: solid panel (see Drawer.colorBgElevated in App.tsx). Inset
-   top/right/bottom by the same 12px the app shell's Header/Content wrapper
-   uses (see the Layout margin:12/borderRadius:12 block in AppLayout.tsx), so
+   top/right/bottom by the same 8px the app shell's Header/Content wrapper
+   uses (see the Layout margin:8/borderRadius:12 block in AppLayout.tsx), so
    the drawer's right edge lands exactly on the main panel's right edge
    instead of the viewport edge — it reads as sliding out from that panel.
    Rounded on all four corners (not just the outer right side) even though
@@ -436,9 +447,9 @@ label[for="password"]::after {
 }
 
 .ant-drawer-content-wrapper {
-  top: 12px !important;
-  right: 12px !important;
-  bottom: 12px !important;
+  top: 8px !important;
+  right: 8px !important;
+  bottom: 8px !important;
 }
 
 .ant-drawer-section {
@@ -523,7 +534,7 @@ label[for="password"]::after {
    every table's first real row. */
 .ant-table-thead > tr > th,
 .ant-table-tbody > tr:not(.ant-table-measure-row) > td {
-  padding: 12px 16px !important;
+  padding: 8px 16px !important;
 }
 
 /* No top padding on table headers. Text now sits flush against the top of
@@ -622,8 +633,8 @@ label[for="password"]::after {
    which leaves little to no visible gap before the next field's label. Add
    it back so fields with help text are spaced the same as fields without. */
 .ant-form-item-additional {
-  margin-top: 6px;
-  padding-bottom: 22px;
+  margin-top: 4px;
+  padding-bottom: 24px;
 }
 
 .ant-form-item-explain {
@@ -770,17 +781,16 @@ label[for="password"]::after {
 
 /* Typography's copy trigger (Typography.Text copyable) renders as a bare
    inline icon with no hit area of its own — 14x17.5px, sized only by its
-   SVG and line-height — next to every other icon-only trigger in the app
-   (the small text buttons: ChevronsUpDown, "...", etc.), which get a
-   27x27 square wrapper with rounded corners and a hover fill. Give the
-   copy trigger the same box so it doesn't look like a stray, unbalanced
-   glyph floating next to text with a proper button wrapper. */
+   SVG and line-height. Give it the same 28x28 box used for every other
+   icon anchor in the app (sidebar nav icons, workspace logo, avatars) so
+   it doesn't look like a stray, unbalanced glyph floating next to text
+   instead of a proper button wrapper. */
 .ant-typography-copy {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 27px;
-  height: 27px;
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
   transition: background-color 0.15s ease;
 }
@@ -791,17 +801,17 @@ label[for="password"]::after {
 
 /* The <code> pill wrapping the temp password + copy button (TempPasswordModal)
    uses antd's typography reset defaults (padding: 0.2em/0.1em top-bottom,
-   0.4em inline, borderRadius: 3) — not proportioned for a 27px copy-button
-   child. 4px top/bottom brings the box to a full 35px (4 + the button's own
-   27px + 4), 8px on the left gives the text room to breathe, 4px on the
+   0.4em inline, borderRadius: 3) — not proportioned for a 28px copy-button
+   child. 4px top/bottom brings the box to a full 36px (4 + the button's own
+   28px + 4), 8px on the left gives the text room to breathe, 4px on the
    right keeps the button snug against the edge instead of centered with
    equal gaps both sides, and the radius matches Input's (var(--ant-border-radius))
    so it reads as the same family of control instead of antd's smaller
    default code-tag radius.
    display must move off the browser default `inline` too: an inline
    box's own height comes purely from font metrics/line-height, not from
-   its children's rendered size, so the 27px copy button was overflowing
-   the padding box invisibly instead of actually growing it to 35px.
+   its children's rendered size, so the 28px copy button was overflowing
+   the padding box invisibly instead of actually growing it to 36px.
    inline-flex (kept inline-level, but with real box sizing) fixes that
    and also lets align-items center the text against the button. */
 .ant-typography code {
@@ -810,10 +820,10 @@ label[for="password"]::after {
   /* box-sizing: border-box + explicit height, not just padding, because
      antd's code reset also puts a 1px border on this element — with the
      default content-box sizing that border adds on top of padding+content
-     (27 + 4 + 4 = 35, plus 1px top/bottom border = 37), overshooting the
-     intended 35px. border-box folds the border back into that total. */
+     (28 + 4 + 4 = 36, plus 1px top/bottom border = 38), overshooting the
+     intended 36px. border-box folds the border back into that total. */
   box-sizing: border-box;
-  height: 35px;
+  height: 36px;
   padding: 4px 4px 4px 8px;
   border-radius: var(--ant-border-radius);
   /* antd's reset also puts `margin: 0 0.2em` on <code> (meant for code

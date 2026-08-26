@@ -49,15 +49,15 @@ export function AppLayout() {
   const iconColors = useIconColors()
   const [collapsed, setCollapsed] = useState(false)
 
-  // Main nav icons sit in a 27×27 box — same size as the workspace logo box,
-  // the swap-nav chevron buttons, and the avatar — so every icon anchor in
-  // the sidebar lines up on the same grid. No background here (unlike the
-  // logo box): this is purely a sizing/centering box for the glyph, not a tile.
+  // Main nav icons sit in a 28×28 box — same size as the workspace logo box
+  // and the avatar — so every icon anchor in the sidebar lines up on the
+  // same grid. No background here (unlike the logo box): this is purely a
+  // sizing/centering box for the glyph, not a tile.
   function navIcon(icon: React.ReactNode) {
     return (
       <div style={{
-        width: 27,
-        height: 27,
+        width: 28,
+        height: 28,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -128,7 +128,7 @@ export function AppLayout() {
         position: 'sticky',
         top: 0,
         height: '100%',
-        padding: '12px 0 12px 12px',
+        padding: '8px 0 8px 8px',
         overflow: 'hidden',
         flexShrink: 0,
         // The box's own width (220) never changes — collapsed={false} is
@@ -158,9 +158,9 @@ export function AppLayout() {
                 {
                   key: 'workspace-info',
                   disabled: true,
-                  style: { height: 'auto', cursor: 'default', padding: '8px 12px' },
+                  style: { height: 'auto', cursor: 'default', padding: '8px' },
                   label: (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <img
                         className="ifix-logo-box"
                         src={getWorkspaceAvatarUrl(MERCHANT_ID)}
@@ -197,15 +197,17 @@ export function AppLayout() {
               height: 56,
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
-              // Right padding set to 8.5px so this button's right edge lines up in the
-              // same column as the other two sidebar icon buttons (avatar "..." row and
-              // the Products menu item's chevron) rather than each row's own vertical-
+              gap: 8,
+              // Right padding set to 8px (Spacing 2) so this button's right edge lines up
+              // in the same column as the other two sidebar icon buttons (avatar "..." row
+              // and the Products menu item's chevron) rather than each row's own vertical-
               // centering gap, which put all three at different horizontal offsets.
-              // Left padding matches (8.5px) so the workspace icon aligns with the
+              // Left padding matches (8px) so the workspace icon aligns with the
               // back-chevron column and the main nav icons (all trimmed to the same
-              // 4.5px item padding below).
-              padding: '0 8.5px 0 8.5px',
+              // 4px item padding below). Previously 8.5px (exact antd button-height
+              // centering math) — rounded to the scale, per the project-wide move to
+              // trace every padding/margin/gap back to it.
+              padding: '0 8px 0 8px',
               flexShrink: 0,
               cursor: 'pointer',
             }}>
@@ -239,10 +241,13 @@ export function AppLayout() {
                     {
                       key: 'back',
                       // Item's default 16px left padding put the button's left edge 16px
-                      // from the item's own edge vs. a 4.5px top/bottom centering gap.
+                      // from the item's own edge vs. a 4px (Spacing 1) centering gap.
                       // Trimming the item's own padding (rather than a negative margin,
                       // which just got clipped by the item's overflow: hidden) matches them.
-                      style: { paddingLeft: 4.5, paddingRight: 4.5 },
+                      // Previously 4.5px (exact antd button-height centering math) —
+                      // rounded to the scale, per the project-wide move to trace every
+                      // padding/margin/gap back to it.
+                      style: { paddingLeft: 4, paddingRight: 4 },
                       label: (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
                           <Button type="text" size="small" style={{ borderRadius: 6, justifySelf: 'start' }} icon={<ChevronLeft size={17} strokeWidth={2.25} />} />
@@ -276,10 +281,13 @@ export function AppLayout() {
                     {
                       key: 'back',
                       // Item's default 16px left padding put the button's left edge 16px
-                      // from the item's own edge vs. a 4.5px top/bottom centering gap.
+                      // from the item's own edge vs. a 4px (Spacing 1) centering gap.
                       // Trimming the item's own padding (rather than a negative margin,
                       // which just got clipped by the item's overflow: hidden) matches them.
-                      style: { paddingLeft: 4.5, paddingRight: 4.5 },
+                      // Previously 4.5px (exact antd button-height centering math) —
+                      // rounded to the scale, per the project-wide move to trace every
+                      // padding/margin/gap back to it.
+                      style: { paddingLeft: 4, paddingRight: 4 },
                       label: (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
                           <Button type="text" size="small" style={{ borderRadius: 6, justifySelf: 'start' }} icon={<ChevronLeft size={17} strokeWidth={2.25} />} />
@@ -313,10 +321,13 @@ export function AppLayout() {
                     {
                       key: 'back',
                       // Item's default 16px left padding put the button's left edge 16px
-                      // from the item's own edge vs. a 4.5px top/bottom centering gap.
+                      // from the item's own edge vs. a 4px (Spacing 1) centering gap.
                       // Trimming the item's own padding (rather than a negative margin,
                       // which just got clipped by the item's overflow: hidden) matches them.
-                      style: { paddingLeft: 4.5, paddingRight: 4.5 },
+                      // Previously 4.5px (exact antd button-height centering math) —
+                      // rounded to the scale, per the project-wide move to trace every
+                      // padding/margin/gap back to it.
+                      style: { paddingLeft: 4, paddingRight: 4 },
                       label: (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
                           <Button type="text" size="small" style={{ borderRadius: 6, justifySelf: 'start' }} icon={<ChevronLeft size={17} strokeWidth={2.25} />} />
@@ -357,10 +368,11 @@ export function AppLayout() {
                     ...(user.role !== 'super_admin' ? [{
                       key: 'products',
                       icon: navIcon(<Package size={17} strokeWidth={2.25} />),
-                      // Right padding matches the button's own vertical centering gap
-                      // ((36 - 27) / 2 = 4.5px) so it sits equidistant from the item's
-                      // top, bottom, and right edges instead of a mismatched flat 16px.
-                      style: { paddingRight: 4.5 },
+                      // Right padding matches the sidebar's shared 4px (Spacing 1) item
+                      // inset (see .ifix-main-nav .ant-menu-item in index.css) instead of
+                      // a mismatched flat 16px. Previously 4.5px (exact antd button-height
+                      // centering math, (36 - 27) / 2) — rounded to the scale.
+                      style: { paddingRight: 4 },
                       label: (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                           <span>Products</span>
@@ -418,14 +430,17 @@ export function AppLayout() {
               height: 64,
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
-              // Right padding set to 8.5px so this button's right edge lines up in the
-              // same column as the other two sidebar icon buttons (header dropdown row
-              // and the Products menu item's chevron) rather than each row's own
+              gap: 8,
+              // Right padding set to 8px (Spacing 2) so this button's right edge lines up
+              // in the same column as the other two sidebar icon buttons (header dropdown
+              // row and the Products menu item's chevron) rather than each row's own
               // vertical-centering gap, which put all three at different offsets.
-              // Left padding matches (8.5px) so the avatar aligns with the back-chevron
-              // column and the main nav icons (all trimmed to the same 4.5px item padding).
-              padding: '0 8.5px 0 8.5px',
+              // Left padding matches (8px) so the avatar aligns with the back-chevron
+              // column and the main nav icons (all trimmed to the same 4px item padding).
+              // Previously 8.5px (exact antd button-height centering math) — rounded to
+              // the scale, per the project-wide move to trace every padding/margin/gap
+              // back to it.
+              padding: '0 8px 0 8px',
               flexShrink: 0,
               cursor: 'pointer',
             }}>
@@ -449,14 +464,14 @@ export function AppLayout() {
 
       <Layout style={{
         background: 'transparent',
-        margin: 12,
+        margin: 8,
         // 100% of this layout's own box (which now comes from the resizable
         // desktop window in App.tsx, not the true browser viewport) minus the
-        // 12px top + 12px bottom margin above, so the rounded box always
+        // 8px top + 8px bottom margin above, so the rounded box always
         // reaches the bottom of that box and the margin actually reads as
         // bottom padding instead of just shrinking to fit whatever content
         // happens to render.
-        height: 'calc(100% - 24px)',
+        height: 'calc(100% - 16px)',
         border: '0.5px solid var(--ifix-wrapper-border)',
         borderRadius: 12,
         overflow: 'hidden',
@@ -465,7 +480,7 @@ export function AppLayout() {
         <Header style={{
           background: 'var(--ifix-wrapper-bg)',
           borderBottom: `0.5px solid ${token.colorSplit}`,
-          padding: '0 16px 0 15px',
+          padding: '0 16px',
           height: 56,
           lineHeight: '56px',
           display: 'grid',
@@ -484,11 +499,11 @@ export function AppLayout() {
               onClick={() => setCollapsed(c => !c)}
             />
           </div>
-          <div style={{ justifySelf: 'center', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ justifySelf: 'center', display: 'flex', alignItems: 'center', gap: 4 }}>
             {breadcrumbParts.map((part, i) => {
               const isLast = i === breadcrumbParts.length - 1
               return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   {i > 0 && <ChevronRight size={14} strokeWidth={2.25} style={{ color: token.colorTextQuaternary }} />}
                   <Typography.Text
                     strong={isLast}

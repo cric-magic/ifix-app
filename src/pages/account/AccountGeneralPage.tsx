@@ -29,7 +29,7 @@ export function AccountGeneralPage() {
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
         <Avatar src={getAvatarUrl(account.id)} size={48} style={{ flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <Typography.Text strong style={{ fontSize: 18, display: 'block' }} ellipsis>

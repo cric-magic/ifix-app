@@ -34,6 +34,15 @@ interface DevToolsContextValue {
   setWindowSize: (s: WindowSize) => void
   themeVariant: ThemeVariant
   setThemeVariant: (t: ThemeVariant) => void
+  inspectMode: boolean
+  setInspectMode: (v: boolean) => void
+  // Mirrors AppWindowContext's value up to this top-level context so
+  // siblings of the router tree (InspectorOverlay, rendered next to
+  // DevToolsPanel in App.tsx, not inside DesktopStageLayout's Outlet) can
+  // read it too — AppWindowContext's own Provider only reaches descendants
+  // of the windowed layout, which InspectorOverlay isn't one of.
+  appWindowEl: HTMLElement | null
+  setAppWindowEl: (el: HTMLElement | null) => void
 }
 
 const DevToolsContext = createContext<DevToolsContextValue | null>(null)
@@ -41,8 +50,10 @@ const DevToolsContext = createContext<DevToolsContextValue | null>(null)
 export function DevToolsProvider({ children }: { children: React.ReactNode }) {
   const [windowSize, setWindowSize] = useState<WindowSize>(DEVICE_PRESETS.desktop)
   const [themeVariant, setThemeVariant] = useState<ThemeVariant>('neutral')
+  const [inspectMode, setInspectMode] = useState(false)
+  const [appWindowEl, setAppWindowEl] = useState<HTMLElement | null>(null)
   return (
-    <DevToolsContext.Provider value={{ windowSize, setWindowSize, themeVariant, setThemeVariant }}>
+    <DevToolsContext.Provider value={{ windowSize, setWindowSize, themeVariant, setThemeVariant, inspectMode, setInspectMode, appWindowEl, setAppWindowEl }}>
       {children}
     </DevToolsContext.Provider>
   )

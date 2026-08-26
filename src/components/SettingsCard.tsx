@@ -2,8 +2,8 @@ import { Typography, theme } from 'antd'
 
 export function SettingsCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="ifix-table-panel" style={{ padding: 20, marginBottom: 20 }}>
-      <Typography.Text strong style={{ fontSize: 15, display: 'block', marginBottom: 14 }}>
+    <div className="ifix-table-panel" style={{ padding: 16, marginBottom: 16 }}>
+      <Typography.Text strong style={{ fontSize: 15, display: 'block', marginBottom: 16 }}>
         {title}
       </Typography.Text>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -21,7 +21,7 @@ export function SettingsRow({ label, children }: { label: string; children: Reac
       alignItems: 'center',
       justifyContent: 'space-between',
       borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
-      padding: '10px 0',
+      padding: '8px 0',
     }}>
       <span style={{ fontSize: 13, color: token.colorTextSecondary }}>{label}</span>
       <span style={{ fontSize: 14, color: token.colorText, display: 'flex', alignItems: 'center', gap: 8 }}>

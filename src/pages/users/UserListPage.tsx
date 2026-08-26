@@ -83,7 +83,7 @@ export function UserListPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8 }}>
         <Input
           placeholder="Search by name, email, or staff ID"
           prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}

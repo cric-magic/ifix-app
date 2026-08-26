@@ -1,5 +1,5 @@
 import { Avatar, Dropdown, Space, Tag, Typography, theme } from 'antd'
-import { User, BookOpen, ChevronDown, Home } from 'lucide-react'
+import { User, BookOpen, ChevronDown, Home, Crosshair } from 'lucide-react'
 import { useDevTools, DEVICE_PRESETS, DEVICE_PRESET_LABELS, THEME_LABELS } from '../contexts/DevToolsContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ROLE_LABELS, ROLE_TAG_COLOR } from '../constants/roles'
@@ -7,12 +7,6 @@ import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
 import { getAvatarUrl } from '../utils/avatar'
 import type { ThemeVariant } from '../contexts/DevToolsContext'
 import type { ItemType } from 'antd/es/menu/interface'
-
-const DOCS_MENU_ITEMS = [
-  { key: 'overview', label: 'Design Docs', href: '/design-docs' },
-  { key: 'typography', label: 'Typography', href: '/design-docs#typography' },
-  { key: 'colors', label: 'Colors', href: '/design-docs#colors' },
-]
 
 const MENU_BAR_FONT_SIZE = 13
 
@@ -49,7 +43,7 @@ function MenuBarTrigger({ items, onSelect, children }: {
 }
 
 export function DevToolsPanel() {
-  const { windowSize, setWindowSize, themeVariant, setThemeVariant } = useDevTools()
+  const { windowSize, setWindowSize, themeVariant, setThemeVariant, inspectMode, setInspectMode } = useDevTools()
   const { user, devSetUser } = useAuth()
   const { token } = theme.useToken()
 
@@ -87,7 +81,7 @@ export function DevToolsPanel() {
   }))
 
   return (
-    <div style={{
+    <div data-ifix-devtools-bar style={{
       flexShrink: 0,
       height: 44,
       display: 'flex',
@@ -104,10 +98,10 @@ export function DevToolsPanel() {
       {/* Left: Home (back to the app — mainly useful from the standalone
           /design-docs page, which has no sidebar of its own to navigate
           from) + User identity + branch info text. Home/User use a tighter
-          4px gap than User/branch-text (10px) since the trigger items
-          already carry their own 6px/10px padding from .ifix-menubar-item —
+          4px gap than User/branch-text (8px) since the trigger items
+          already carry their own horizontal padding from .ifix-menubar-item —
           a shared larger gap read as too much air between Home and User. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <a
             href="/"
@@ -148,26 +142,41 @@ export function DevToolsPanel() {
 
       <div style={{ flex: 1 }} />
 
-      {/* Right: Docs */}
-      <Dropdown
-        menu={{
-          items: DOCS_MENU_ITEMS.map(item => ({
-            key: item.key,
-            label: (
-              <a href={item.href} target="_blank" rel="noreferrer">
-                {item.label}
-              </a>
-            ),
-          })),
+      {/* Right: Inspect toggle + Docs link */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+      {/* Active state reuses the exact hover background (colorFillSecondary,
+          via .ifix-menubar-item:hover elsewhere in this bar) rather than a
+          separate "selected" color — so toggled-on just looks like it's
+          permanently in the state hovering it would put it in. */}
+      <button
+        type="button"
+        onClick={() => setInspectMode(!inspectMode)}
+        className="ifix-menubar-item"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8, border: 'none', cursor: 'pointer',
+          background: inspectMode ? token.colorFillSecondary : 'transparent',
+          color: inspectMode ? token.colorText : token.colorTextSecondary,
+          fontSize: MENU_BAR_FONT_SIZE,
         }}
-        trigger={['click']}
       >
-        <div className="ifix-menubar-item" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: token.colorText, fontSize: MENU_BAR_FONT_SIZE, flexShrink: 0 }}>
-          <BookOpen size={14} strokeWidth={2.25} />
-          <span>Docs</span>
-          <ChevronDown size={12} strokeWidth={2.25} />
-        </div>
-      </Dropdown>
+        <Crosshair size={14} strokeWidth={2.25} />
+        <span>Inspect</span>
+      </button>
+
+      {/* Docs — a plain link, not a dropdown. The docs page has its own
+          in-page table of contents (Typography/Colors/Spacing) now, so a
+          menu of shortcuts into it here was redundant with that. */}
+      <a
+        href="/design-docs"
+        target="_blank"
+        rel="noreferrer"
+        className="ifix-menubar-item"
+        style={{ display: 'flex', alignItems: 'center', gap: 8, color: token.colorText, fontSize: MENU_BAR_FONT_SIZE, flexShrink: 0 }}
+      >
+        <BookOpen size={14} strokeWidth={2.25} />
+        <span>Docs</span>
+      </a>
+      </div>
     </div>
   )
 }

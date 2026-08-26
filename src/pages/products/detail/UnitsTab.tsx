@@ -115,7 +115,7 @@ export function UnitsTab({ actor, product }: Props) {
           justifyContent: 'space-between',
           height: 56,
           paddingLeft: 16,
-          paddingRight: 10,
+          paddingRight: 8,
           boxShadow: `inset 0 -0.5px 0 0 ${token.colorBorderSecondary}`,
         }}>
           <Typography.Text strong style={{ fontSize: 15 }}>

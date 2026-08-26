@@ -27,7 +27,7 @@ export function DotTag({ dotColor, textColor, children }: Props) {
         border: 'none',
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 6,
+        gap: 4,
       }}
     >
       <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
