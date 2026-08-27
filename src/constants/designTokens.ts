@@ -109,3 +109,16 @@ export function getNamedColorTokens(
   }
   return entries
 }
+
+// antd's three shadow tiers. boxShadow/boxShadowSecondary are real
+// per-variant seed tokens in App.tsx's VARIANT_SEEDS (flat surfaces vs.
+// floating overlays, respectively) — no separate CSS-var bridge needed,
+// unlike colorIcon/colorIconHover, since these live directly on the token
+// object already.
+export function getNamedShadowTokens(token: Record<string, unknown>): { name: string; value: string }[] {
+  return [
+    { name: 'boxShadow', value: String(token.boxShadow ?? '') },
+    { name: 'boxShadowSecondary', value: String(token.boxShadowSecondary ?? '') },
+    { name: 'boxShadowTertiary', value: String(token.boxShadowTertiary ?? '') },
+  ]
+}

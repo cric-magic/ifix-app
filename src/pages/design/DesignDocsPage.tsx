@@ -10,6 +10,7 @@ const TOC_ITEMS = [
   { id: 'colors', label: 'Colors' },
   { id: 'spacing', label: 'Spacing' },
   { id: 'radius', label: 'Radius' },
+  { id: 'shadow', label: 'Shadow' },
 ]
 
 // The scale itself (CLAUDE.md's Spacing section) lives in designTokens.ts —
@@ -200,6 +201,71 @@ function SpacingRow({ name, px }: { name: string; px: number }) {
       >
         <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode, color: token.colorText }}>
           {displayValue}
+        </Typography.Text>
+        {copied
+          ? <Check size={11} strokeWidth={2.25} color={iconColors.secondary} style={{ flexShrink: 0 }} />
+          : <Copy size={11} strokeWidth={2.25} color={iconColors.secondary} style={{ flexShrink: 0 }} />}
+      </div>
+    </div>
+  )
+}
+
+function ShadowRow({ name, tokenName, value }: { name: string; tokenName: string; value: string }) {
+  const { token } = theme.useToken()
+  const iconColors = useIconColors()
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value)
+    } catch {
+      const textarea = document.createElement('textarea')
+      textarea.value = value
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(textarea)
+      if (!ok) {
+        message.error('Copy failed — select and copy the value manually')
+        return
+      }
+    }
+    setCopied(true)
+    message.success(`Copied ${tokenName}`)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 16,
+      padding: '8px 0',
+      borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
+    }}>
+      <Typography.Text style={{ width: 72, fontSize: 13, flexShrink: 0 }}>
+        {name}
+      </Typography.Text>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex' }}>
+        {/* Backdrop is colorBgLayout (the real page canvas), not the panel's
+            own colorBgContainer — against its own surface the shadow barely
+            shows, same as it wouldn't in the app either. */}
+        <div style={{
+          width: '100%', maxWidth: 200, height: 48, background: token.colorBgLayout,
+          borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ width: 96, height: 28, background: token.colorBgContainer, border: `0.5px solid ${token.colorBorderSecondary}`, borderRadius: 6, boxShadow: value }} />
+        </div>
+      </div>
+      <div
+        onClick={handleCopy}
+        title="Click to copy"
+        style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', width: 148, justifyContent: 'flex-end', flexShrink: 0 }}
+      >
+        <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode, color: token.colorText }}>
+          {tokenName}
         </Typography.Text>
         {copied
           ? <Check size={11} strokeWidth={2.25} color={iconColors.secondary} style={{ flexShrink: 0 }} />
@@ -488,6 +554,17 @@ export function DesignDocsPage() {
               Pill are this project's own additions for surfaces antd's scale doesn't reach.
             </Typography.Text>
             {RADIUS_SCALE.map(s => <RadiusRow key={s.name} name={s.name} px={s.px} />)}
+          </Section>
+
+          <Section id="shadow" title="Shadow">
+            <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
+              Not a graduated scale like Spacing/Radius — just two elevation levels, each a real per-variant seed
+              token (App.tsx's VARIANT_SEEDS). Panel drops to none in light mode (the border already separates it
+              from the page); Dropdown always keeps one, since floating overlays have nothing else to read as
+              detached.
+            </Typography.Text>
+            <ShadowRow name="Panel" tokenName="boxShadow" value={token.boxShadow} />
+            <ShadowRow name="Dropdown" tokenName="boxShadowSecondary" value={token.boxShadowSecondary} />
           </Section>
         </div>
       </div>

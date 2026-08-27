@@ -66,3 +66,55 @@ export function buildColorTokenLookup(entries: { name: string; value: string }[]
     return null
   }
 }
+
+interface ShadowLayer { x: number; y: number; blur: number; spread: number; color: string; inset: boolean }
+
+// getComputedStyle's box-shadow is a plain string — no CSSOM structure to
+// compare with — and its serialization doesn't match antd's raw token
+// strings byte-for-byte (color moves to the front, "0" gains a "px" unit,
+// whitespace/newlines differ), so string equality doesn't work here the way
+// it incidentally does for spacing. Parsing into layers and comparing the
+// actual numbers/colors is what makes the two comparable at all.
+function parseBoxShadow(value: string): ShadowLayer[] {
+  if (!value || value === 'none') return []
+  const layers: string[] = []
+  let depth = 0, current = ''
+  for (const ch of value) {
+    if (ch === '(') depth++
+    if (ch === ')') depth--
+    if (ch === ',' && depth === 0) { layers.push(current); current = '' } else current += ch
+  }
+  if (current.trim()) layers.push(current)
+
+  return layers.map(layer => {
+    const trimmed = layer.trim()
+    const inset = /(^|\s)inset(\s|$)/.test(trimmed)
+    const withoutInset = trimmed.replace(/inset/g, '').trim()
+    const colorMatch = withoutInset.match(/rgba?\([^)]*\)|#[0-9a-fA-F]{3,8}/)
+    const color = colorMatch ? colorMatch[0] : ''
+    const nums = withoutInset.replace(color, '').trim().split(/\s+/).filter(Boolean).map(n => parseFloat(n) || 0)
+    const [x = 0, y = 0, blur = 0, spread = 0] = nums
+    return { x, y, blur, spread, color, inset }
+  })
+}
+
+function shadowsEqual(a: string, b: string): boolean {
+  const la = parseBoxShadow(a)
+  const lb = parseBoxShadow(b)
+  if (la.length === 0 || la.length !== lb.length) return false
+  return la.every((layer, i) => {
+    const other = lb[i]
+    return layer.x === other.x && layer.y === other.y && layer.blur === other.blur
+      && layer.spread === other.spread && layer.inset === other.inset && colorsEqual(layer.color, other.color)
+  })
+}
+
+export function buildShadowTokenLookup(entries: { name: string; value: string }[]) {
+  return (cssValue: string): string | null => {
+    if (!cssValue || cssValue === 'none') return null
+    for (const { name, value } of entries) {
+      if (value && value !== 'none' && shadowsEqual(cssValue, value)) return name
+    }
+    return null
+  }
+}

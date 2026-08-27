@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { theme } from 'antd'
 import { useDevTools } from '../contexts/DevToolsContext'
 import { useIconColors } from '../constants/iconColors'
-import { getNamedColorTokens, findSpacingName, findRadiusName } from '../constants/designTokens'
-import { buildColorTokenLookup, isTransparentColor, toHex } from '../utils/colorTokenLookup'
+import { getNamedColorTokens, getNamedShadowTokens, findSpacingName, findRadiusName } from '../constants/designTokens'
+import { buildColorTokenLookup, buildShadowTokenLookup, isTransparentColor, toHex } from '../utils/colorTokenLookup'
 
 // Dev-only box-model + token inspector, toggled from the "Inspect" button in
 // DevToolsPanel. Scoped to the simulated app window (the same container
@@ -114,13 +114,38 @@ function ColorRow({ label, value, lookup, token }: { label: string; value: strin
   if (!value || isTransparentColor(value)) return null
   const name = lookup(value)
   const hex = toHex(value)
+  const text = `${hex} · ${name ?? 'No token match'}`
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-      <span style={{ color: token.colorTextTertiary }}>{label}</span>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-        <span style={{ width: 10, height: 10, borderRadius: 4, background: value, border: `0.5px solid ${token.colorBorderSecondary}`, flexShrink: 0 }} />
-        <span style={{ color: name ? token.colorText : token.colorTextTertiary, fontFamily: token.fontFamilyCode, wordBreak: 'break-word' }}>
-          {hex} · {name ?? 'No token match'}
+      <span style={{ color: token.colorTextTertiary, flexShrink: 0 }}>{label}</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+        <span style={{ width: 12, height: 12, borderRadius: 4, background: value, border: `0.5px solid ${token.colorBorderSecondary}`, flexShrink: 0 }} />
+        {/* No fontFamilyCode here — SideValues' padding/margin rows use the
+            plain UI font too, and monospace renders the " · " separator
+            with noticeably wider letter-spacing, which was the actual
+            cause of the gap reading as bigger than theirs. */}
+        <span title={text} style={{ color: name ? token.colorText : token.colorTextTertiary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {text}
+        </span>
+      </span>
+    </div>
+  )
+}
+
+// Same row shape again, but the swatch is a small box with the actual
+// box-shadow applied (so you can see it) instead of a solid-color dot, and
+// the value is just the matched token name — the raw multi-layer shadow
+// string is too long to usefully print in a 320px popover.
+function ShadowRow({ value, lookup, token }: { value: string; lookup: (v: string) => string | null; token: any }) {
+  if (!value || value === 'none') return null
+  const name = lookup(value)
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+      <span style={{ color: token.colorTextTertiary, flexShrink: 0 }}>Shadow</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+        <span style={{ width: 12, height: 12, borderRadius: 4, background: token.colorBgContainer, boxShadow: value, flexShrink: 0 }} />
+        <span title={name ?? value} style={{ color: name ? token.colorText : token.colorTextTertiary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {name ?? 'No token match'}
         </span>
       </span>
     </div>
@@ -165,6 +190,9 @@ export function InspectorOverlay() {
 
   const colorTokens = useMemo(() => getNamedColorTokens(token as unknown as Record<string, unknown>, iconColors), [token, iconColors])
   const lookupColor = useMemo(() => buildColorTokenLookup(colorTokens), [colorTokens])
+
+  const shadowTokens = useMemo(() => getNamedShadowTokens(token as unknown as Record<string, unknown>), [token])
+  const lookupShadow = useMemo(() => buildShadowTokenLookup(shadowTokens), [shadowTokens])
 
   // Crosshair cursor only over the simulated app window, not the whole page.
   useEffect(() => {
@@ -263,7 +291,9 @@ export function InspectorOverlay() {
   // Always to the right of the selected element — flips to the left only
   // when there's genuinely no room on the right, rather than ever dropping
   // below it.
-  const popoverWidth = 260
+  // Wide enough that the longest real token name (colorBorderSecondary,
+  // plus its hex value) fits a color row on one line without wrapping.
+  const popoverWidth = 320
   const popoverMaxHeight = 400
   const gap = 8
   const placeRight = rect.right + gap + popoverWidth <= window.innerWidth
@@ -368,6 +398,7 @@ export function InspectorOverlay() {
             {(borderT > 0 || borderR > 0 || borderB > 0 || borderL > 0) && (
               <ColorRow label="Border" value={cs.borderTopColor} lookup={lookupColor} token={token} />
             )}
+            <ShadowRow value={cs.boxShadow} lookup={lookupShadow} token={token} />
           </div>
         </div>
       )}

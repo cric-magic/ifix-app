@@ -49,6 +49,7 @@ export function SignInPage() {
               <span>Password</span>
               <Typography.Text
                 onClick={() => navigate('/forgot-password')}
+                className="ifix-text-link"
                 style={{ fontSize: 14, color: token.colorTextSecondary, cursor: 'pointer' }}
               >
                 Forgot password?

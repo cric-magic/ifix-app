@@ -144,7 +144,7 @@ export function UnitDetailPage() {
                         objectFit: 'cover',
                         borderRadius: 8,
                         border: `0.5px solid ${token.colorBorderSecondary}`,
-                        boxShadow: 'var(--ifix-panel-shadow)',
+                        boxShadow: 'var(--ant-box-shadow)',
                       }}
                     />
                   ))}
@@ -161,7 +161,7 @@ export function UnitDetailPage() {
                 gap: 8,
                 borderRadius: 8,
                 border: `0.5px solid ${token.colorBorderSecondary}`,
-                boxShadow: 'var(--ifix-panel-shadow)',
+                boxShadow: 'var(--ant-box-shadow)',
                 background: token.colorFillQuaternary,
                 color: iconColors.secondary,
               }}>

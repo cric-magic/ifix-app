@@ -475,7 +475,7 @@ export function AppLayout() {
         border: '0.5px solid var(--ifix-wrapper-border)',
         borderRadius: 12,
         overflow: 'hidden',
-        boxShadow: 'var(--ifix-panel-shadow)',
+        boxShadow: 'var(--ant-box-shadow)',
       }}>
         <Header style={{
           background: 'var(--ifix-wrapper-bg)',

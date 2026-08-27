@@ -28,6 +28,16 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
   colorSplit: string
   colorIcon: string
   colorIconHover: string
+  // boxShadow/boxShadowSecondary set directly per-variant here (rather than
+  // computed after the fact into a separate --ifix-panel-shadow/-dropdown-
+  // shadow custom property, as this used to work) — antd already gives every
+  // component two independent shadow slots; this app just needed to actually
+  // use both instead of introducing its own on top. boxShadow = flat
+  // surfaces (panels, table cards); boxShadowSecondary = floating overlays
+  // (Dropdown/Select/DatePicker), which still need to read as detached from
+  // the page even where flat surfaces don't.
+  boxShadow: string
+  boxShadowSecondary: string
 }> = {
   neutral: {
     colorPrimary: '#5b9aa8',
@@ -40,6 +50,13 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
     colorSplit: 'rgba(255, 255, 255, 0.12)',
     colorIcon: ICON_COLOR_SECONDARY,
     colorIconHover: ICON_COLOR_PRIMARY,
+    // antd's own default boxShadow (a soft 3-layer ambient glow, max alpha
+    // 0.12) is tuned for a light backdrop and reads as nearly invisible
+    // against near-black — this flatter, higher-contrast single line is
+    // legible on dark without antd's fixed boxShadowTertiary's even-fainter
+    // alpha (0.03) being an option either.
+    boxShadow: '0 0.5px 1px 1px rgba(0, 0, 0, 0.15)',
+    boxShadowSecondary: '0 0.5px 1px 1px rgba(0, 0, 0, 0.15)',
   },
   blue: {
     colorPrimary: '#5b9aa8',
@@ -52,6 +69,8 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
     colorSplit: 'rgba(255, 255, 255, 0.12)',
     colorIcon: ICON_COLOR_SECONDARY,
     colorIconHover: ICON_COLOR_PRIMARY,
+    boxShadow: '0 0.5px 1px 1px rgba(0, 0, 0, 0.15)',
+    boxShadowSecondary: '0 0.5px 1px 1px rgba(0, 0, 0, 0.15)',
   },
   light: {
     colorPrimary: '#3f7a88',
@@ -68,6 +87,13 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
     colorSplit: 'rgba(0, 0, 0, 0.12)',
     colorIcon: '#8c8c8c',
     colorIconHover: '#404040',
+    // Flat surfaces drop the shadow entirely in light mode — the border
+    // already separates them from the page, and antd's own soft glow reads
+    // as a smudge on a light backdrop rather than elevation. Floating
+    // overlays still need one to read as detached, so they keep a real
+    // (lighter, bordered) shadow via boxShadowSecondary instead.
+    boxShadow: 'none',
+    boxShadowSecondary: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px, rgba(0, 0, 0, 0.08) 0px 4px 12px 0px',
   },
 }
 
@@ -130,6 +156,7 @@ function buildTheme(variant: ThemeVariant) {
     colorIconHover: string
     colorBgElevated: string
     boxShadow: string
+    boxShadowSecondary: string
     [key: string]: string | number
   } = {
     ...variantSeed,
@@ -151,11 +178,8 @@ function buildTheme(variant: ThemeVariant) {
     lineWidth: 0.5,
     colorBgElevated: '#000000', // placeholder, replaced below once colorFillQuaternary is known
     controlHeight: 36,
-    // boxShadowTertiary is a fixed algorithm constant, not derived from any seed
-    // value, and its default alpha is too faint to read against this app's
-    // near-black background — so panels bind to this seed token instead, which
-    // the algorithm actually respects and which stays tweakable from one spot.
-    boxShadow: '0 0.5px 1px 1px rgba(0, 0, 0, 0.15)',
+    // boxShadow/boxShadowSecondary come from variantSeed above now, not a
+    // shared literal here — see the comment on VARIANT_SEEDS' type.
   }
 
   // First pass: derive colorFillQuaternary from the real neutrals (this seed's
@@ -256,17 +280,6 @@ function buildTheme(variant: ThemeVariant) {
   // `pageBg` (the single-layer flatten computed above) rather than the new
   // solid colorFillQuaternary, since the wrapper is only ever painted once.
   const wrapperBg = algorithmName === 'light' ? seedTokens.colorBgLayout : pageBg
-  // Light mode drops the shadow entirely on inputs/panels/buttons — flat
-  // bordered surfaces instead (the border already does the job of
-  // separating them from the page). Floating overlays (dropdowns, Select's
-  // option list, DatePicker) are the exception: they still need a shadow to
-  // read as detached from the page underneath, so they get their own
-  // dropdownShadow instead of sharing this one. Dark mode is unchanged —
-  // both stay the same boxShadow seed value as before.
-  const panelShadow = algorithmName === 'light' ? 'none' : baseToken.boxShadow
-  const dropdownShadow = algorithmName === 'light'
-    ? 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px, rgba(0, 0, 0, 0.08) 0px 4px 12px 0px'
-    : baseToken.boxShadow
   // The outer wrapper (Header + Content Layout in AppLayout.tsx) normally
   // borders with colorSplit and the nested .ifix-table-panel borders with the
   // fainter colorBorderSecondary. In light mode that reads backwards — the
@@ -282,22 +295,21 @@ function buildTheme(variant: ThemeVariant) {
   // whichever direction that theme's canvas actually goes.
   const [maskR, maskG, maskB] = parseColor(seedTokens.colorBgBase)
   const maskBg = `rgba(${maskR}, ${maskG}, ${maskB}, 0.45)`
-  return { seedTokens, baseToken, algorithm, panelBg, wrapperBg, panelShadow, dropdownShadow, wrapperBorder, panelBorder, maskBg }
+  return { seedTokens, baseToken, algorithm, panelBg, wrapperBg, wrapperBorder, panelBorder, maskBg }
 }
 
 function AppThemed() {
   const { themeVariant } = useDevTools()
-  const { seedTokens, baseToken, algorithm, panelBg, wrapperBg, panelShadow, dropdownShadow, wrapperBorder, panelBorder, maskBg } = useMemo(() => buildTheme(themeVariant), [themeVariant])
+  const { seedTokens, baseToken, algorithm, panelBg, wrapperBg, wrapperBorder, panelBorder, maskBg } = useMemo(() => buildTheme(themeVariant), [themeVariant])
 
-  // antd's cssVar mode doesn't export box-shadow tokens (only scalar/color
-  // tokens get a css var), so the panel/dropdown shadows and the
-  // nested-panel/wrapper backgrounds are set here from the computed
-  // baseToken and exposed as custom properties for index.css and
-  // AppLayout.tsx to reference — re-run whenever the theme variant changes
-  // so all of them stay in sync with the active theme.
+  // Shadows are no longer set here — boxShadow/boxShadowSecondary are real
+  // per-variant seed tokens now (VARIANT_SEEDS above), so index.css and
+  // AppLayout.tsx reference antd's own --ant-box-shadow/--ant-box-shadow-
+  // secondary cssVars directly instead of a custom bridge property. The
+  // nested-panel/wrapper backgrounds still need one, since those aren't
+  // color/shadow AliasTokens antd exports a cssVar for on its own — re-run
+  // whenever the theme variant changes so they stay in sync with it.
   useLayoutEffect(() => {
-    document.documentElement.style.setProperty('--ifix-panel-shadow', panelShadow)
-    document.documentElement.style.setProperty('--ifix-dropdown-shadow', dropdownShadow)
     document.documentElement.style.setProperty('--ifix-panel-bg', panelBg)
     document.documentElement.style.setProperty('--ifix-wrapper-bg', wrapperBg)
     document.documentElement.style.setProperty('--ifix-wrapper-border', wrapperBorder)
@@ -311,7 +323,7 @@ function AppThemed() {
     // other custom properties here.
     document.documentElement.style.setProperty('--ifix-scrollbar-thumb', baseToken.colorFillSecondary)
     document.documentElement.style.setProperty('--ifix-scrollbar-thumb-hover', baseToken.colorFill)
-  }, [baseToken, seedTokens, panelBg, wrapperBg, panelShadow, dropdownShadow, wrapperBorder, panelBorder])
+  }, [baseToken, seedTokens, panelBg, wrapperBg, wrapperBorder, panelBorder])
 
   return (
     <ConfigProvider theme={{

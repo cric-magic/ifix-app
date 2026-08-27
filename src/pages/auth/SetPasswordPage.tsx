@@ -1,12 +1,13 @@
-import { Form, Input, Button, Alert } from 'antd'
+import { Form, Input, Button, Alert, Typography, theme } from 'antd'
 import { Lock } from 'lucide-react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { AuthLayout } from './AuthLayout'
 
 export function SetPasswordPage() {
-  const { status, pendingAccount, setNewPassword } = useAuth()
+  const { status, pendingAccount, setNewPassword, logout } = useAuth()
   const navigate = useNavigate()
+  const { token } = theme.useToken()
 
   if (status === 'signed_out') return <Navigate to="/sign-in" replace />
   if (status === 'signed_in') return <Navigate to="/contracts" replace />
@@ -14,6 +15,11 @@ export function SetPasswordPage() {
   function handleSubmit(values: { password: string }) {
     setNewPassword(values.password)
     navigate('/contracts', { replace: true })
+  }
+
+  function handleSignOut() {
+    logout()
+    navigate('/sign-in', { replace: true })
   }
 
   const isFirstActivation = pendingAccount?.status === 'created'
@@ -29,8 +35,22 @@ export function SetPasswordPage() {
         type="info"
         showIcon
         message={`Signed in as ${pendingAccount?.name}`}
-        style={{ marginBottom: 16 }}
+        style={{ marginBottom: 8 }}
       />
+
+      {/* Forces the password change (no way to skip into the app with the
+          temp password still active) but still gives an exit — otherwise a
+          user who isn't ready to pick a password right now is just stuck on
+          this screen with no way out. Styled like SignInPage's "Forgot
+          password?" link (plain text, no button chrome) so it doesn't
+          compete with the primary action below. */}
+      <Typography.Text
+        onClick={handleSignOut}
+        className="ifix-text-link"
+        style={{ display: 'block', fontSize: 14, color: token.colorTextSecondary, cursor: 'pointer', marginBottom: 16 }}
+      >
+        Not you? Sign out
+      </Typography.Text>
 
       <Form layout="vertical" onFinish={handleSubmit} requiredMark={false}>
         <Form.Item

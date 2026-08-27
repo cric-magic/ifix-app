@@ -168,6 +168,18 @@ body {
   background: var(--ant-color-fill-secondary);
 }
 
+/* Plain clickable text (SignInPage's "Forgot password?", SetPasswordPage's
+   "Not you? Sign out") — a colorTextSecondary span with no button chrome.
+   Hover brightens to colorText (the primary/brightest neutral text tone —
+   not colorPrimary, the brand accent), matching the icon convention
+   elsewhere (secondary at rest, primary on hover/focus). The !important is
+   needed because these set color inline (theme.useToken() already in scope
+   there), which a plain CSS rule can't outrank on its own — but a
+   stylesheet rule marked !important does beat an inline style. */
+.ifix-text-link:hover {
+  color: var(--ant-color-text) !important;
+}
+
 /* Icon color convention: default = secondary, hover/focus = primary.
    Solid/primary buttons are excluded — they keep their forced light-on-color icon.
    References the colorIcon/colorIconHover seed tokens (via antd's cssVar
@@ -227,10 +239,18 @@ body {
    fields with no fill and no shadow, and buttons have their own separate
    shadow tokens zeroed out directly in App.tsx's Button component config
    (defaultShadow/primaryShadow/dangerShadow) rather than through this
-   shared var, since those are antd's own per-variant shadow tokens, not
+   shared token, since those are antd's own per-variant shadow tokens, not
    the shared seed boxShadow the rest of this rule targets. */
 .ant-segmented {
-  box-shadow: var(--ifix-panel-shadow) !important;
+  box-shadow: var(--ant-box-shadow) !important;
+}
+
+/* Segmented item's own horizontal padding (segmentedPaddingHorizontal)
+   isn't a public component token — like Select's own padding, it's an
+   internal calc (controlPaddingHorizontal - lineWidth = 12 - 0.5 = 11.5),
+   not a value set directly anywhere. Snapped to 12px (Spacing 3) instead. */
+.ant-segmented-item-label {
+  padding-inline: 12px !important;
 }
 
 .ant-input,
@@ -346,33 +366,37 @@ label[for="password"]::after {
 
 /* Dropdown floating panels — Dropdown menu, Select's option list, the
    DatePicker calendar, etc. — always keep a shadow even in light mode
-   (where every other panel/input/button drops theirs, see
-   --ifix-panel-shadow in App.tsx): unlike inline panels, these float above
-   the page with nothing else separating them from it, so a shadow is doing
-   real work here, not just decorative. Uses its own dropdownShadow value
-   rather than sharing --ifix-panel-shadow with everything else. */
+   (where every other panel/input/button drops theirs, see boxShadow in
+   App.tsx's VARIANT_SEEDS): unlike inline panels, these float above the
+   page with nothing else separating them from it, so a shadow is doing
+   real work here, not just decorative. Uses boxShadowSecondary, its own
+   independent seed value, rather than sharing boxShadow with everything
+   else. */
 .ant-dropdown-menu,
 .ant-select-dropdown,
 .ant-picker-dropdown,
 .ant-cascader-dropdown {
   border: 0.5px solid var(--ant-color-border);
-  box-shadow: var(--ifix-dropdown-shadow) !important;
+  box-shadow: var(--ant-box-shadow-secondary) !important;
 }
 
 /* Tag: a touch more breathing room than antd's default (0 top/bottom padding,
-   sized purely off line-height; ~7.5px sides) and explicitly normal weight. */
+   sized purely off line-height; antd's own tagPaddingHorizontal isn't a
+   public component token, so it comes out to 7.5px — an artifact of its
+   internal calc, not a value set directly anywhere) and explicitly normal
+   weight. Snapped to 8px (Spacing 2) instead. */
 .ant-tag {
-  padding: 2px 9.5px !important;
+  padding: 2px 8px !important;
   font-weight: normal;
 }
 
 /* The count pill inside a Segmented item sits alongside plain text at the
    same line-height, so the Tag's own vertical padding (added above) reads as
    too tall/unbalanced next to it — trim it back down here specifically.
-   Horizontal padding is excluded from the app-wide Tag bump for the same
-   reason — it stays at antd's original tighter side padding. */
+   Horizontal padding matches the app-wide Tag padding above (8px) rather
+   than antd's original tighter side padding, per the same scale-rounding. */
 .ant-segmented .ant-tag {
-  padding: 0 7.5px !important;
+  padding: 0 8px !important;
   color: var(--ant-color-text-secondary) !important;
 }
 
@@ -423,7 +447,7 @@ label[for="password"]::after {
   border: 0.5px solid var(--ifix-panel-border);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: var(--ifix-panel-shadow);
+  box-shadow: var(--ant-box-shadow);
 }
 
 /* Drawer: solid panel (see Drawer.colorBgElevated in App.tsx). Inset
@@ -439,11 +463,11 @@ label[for="password"]::after {
    from the page, the dimmed/lightened backdrop is what does that job. */
 
 /* antd's own default drawer shadow (a separate boxShadowDrawerRight-derived
-   value on the wrapper, not the .ant-drawer-section box-shadow already
-   bridged to --ifix-panel-shadow below) — same var, same light-mode-none /
-   dark-mode-unchanged behavior as every other panel. */
+   value on the wrapper, not the .ant-drawer-section box-shadow set below) —
+   same token, same light-mode-none / dark-mode-unchanged behavior as every
+   other panel. */
 .ant-drawer-content-wrapper {
-  box-shadow: var(--ifix-panel-shadow) !important;
+  box-shadow: var(--ant-box-shadow) !important;
 }
 
 .ant-drawer-content-wrapper {
@@ -456,7 +480,7 @@ label[for="password"]::after {
   border: 0.5px solid var(--ant-color-split);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: var(--ifix-panel-shadow);
+  box-shadow: var(--ant-box-shadow);
 }
 
 /* Fade instead of slide: the wrapper is already pinned at its final resting
