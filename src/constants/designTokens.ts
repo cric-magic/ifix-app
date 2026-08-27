@@ -51,6 +51,47 @@ export function findRadiusName(px: number): string | null {
   return RADIUS_SCALE.find(s => s.px === px)?.name ?? null
 }
 
+// Only two deliberate border weights in the app (App.tsx): 0.5, the global
+// seed lineWidth every component gets by default, and 1, a per-component
+// lineWidth override on the input family (Input/Select/InputNumber/
+// DatePicker/Button/Upload) to match their own text-field weight. Not
+// derivable from theme.useToken() the way RADIUS_SCALE's antd defaults are —
+// component-level token overrides aren't exposed through it — so this is a
+// static literal list, same reasoning as RADIUS_SCALE's XL/Pill additions.
+export const BORDER_WIDTH_SCALE = [
+  { name: '0.5', px: 0.5 },
+  { name: '1', px: 1 },
+]
+
+export function findBorderWidthName(px: number): string | null {
+  return BORDER_WIDTH_SCALE.find(s => s.px === px)?.name ?? null
+}
+
+// The typography scale — same rows/names as /design-docs's Typography
+// section (DesignDocsPage.tsx's TypeRow calls). Unlike SPACING_SCALE/
+// RADIUS_SCALE this can't be a fixed literal array: these are live
+// AliasToken values (antd's own fontSizeHeading1..5/fontSizeLG/fontSize/
+// fontSizeSM), so it's built from the current theme each time, the same
+// way getNamedColorTokens is. Heading 5 (16) and Body Large (16) happen to
+// collide by default — first match wins, same convention as color ties.
+export function getFontSizeScale(token: Record<string, unknown>): { name: string; px: number }[] {
+  const num = (v: unknown) => typeof v === 'number' ? v : 0
+  return [
+    { name: 'Heading 1', px: num(token.fontSizeHeading1) },
+    { name: 'Heading 2', px: num(token.fontSizeHeading2) },
+    { name: 'Heading 3', px: num(token.fontSizeHeading3) },
+    { name: 'Heading 4', px: num(token.fontSizeHeading4) },
+    { name: 'Heading 5', px: num(token.fontSizeHeading5) },
+    { name: 'Body Large', px: num(token.fontSizeLG) },
+    { name: 'Body', px: num(token.fontSize) },
+    { name: 'Body Small', px: num(token.fontSizeSM) },
+  ]
+}
+
+export function findFontSizeName(px: number, scale: { name: string; px: number }[]): string | null {
+  return scale.find(s => s.px === px)?.name ?? null
+}
+
 // The 5 semantic colors each expand into a full state ramp antd generates
 // internally (hover/active/bg/border/text variants) — a component's actual
 // computed color very often resolves to one of these, not the bare base

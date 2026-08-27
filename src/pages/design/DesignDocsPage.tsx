@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Typography, message, theme } from 'antd'
 import { Copy, Check } from 'lucide-react'
 import { useIconColors } from '../../constants/iconColors'
-import { SPACING_SCALE, RADIUS_SCALE } from '../../constants/designTokens'
+import { SPACING_SCALE, RADIUS_SCALE, BORDER_WIDTH_SCALE } from '../../constants/designTokens'
 import { toHex } from '../../utils/colorTokenLookup'
 
 const TOC_ITEMS = [
@@ -11,6 +11,7 @@ const TOC_ITEMS = [
   { id: 'spacing', label: 'Spacing' },
   { id: 'radius', label: 'Radius' },
   { id: 'shadow', label: 'Shadow' },
+  { id: 'border', label: 'Border' },
 ]
 
 // The scale itself (CLAUDE.md's Spacing section) lives in designTokens.ts —
@@ -337,6 +338,68 @@ function RadiusRow({ name, px }: { name: string; px: number }) {
   )
 }
 
+function BorderRow({ name, px }: { name: string; px: number }) {
+  const { token } = theme.useToken()
+  const iconColors = useIconColors()
+  const [copied, setCopied] = useState(false)
+  const displayValue = `${px}px`
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(displayValue)
+    } catch {
+      const textarea = document.createElement('textarea')
+      textarea.value = displayValue
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(textarea)
+      if (!ok) {
+        message.error('Copy failed — select and copy the value manually')
+        return
+      }
+    }
+    setCopied(true)
+    message.success(`Copied ${displayValue}`)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 16,
+      padding: '8px 0',
+      borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
+    }}>
+      <Typography.Text style={{ width: 32, fontSize: 13, fontFamily: token.fontFamilyCode, flexShrink: 0 }}>
+        {name}
+      </Typography.Text>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* The line weight itself, same reasoning as RadiusRow's shape — at
+            0.5px vs 1px, a proportional bar would round both to the same
+            rendered pixel; the border is the only way to actually show the
+            difference. */}
+        <div style={{ width: 32, height: 32, borderRadius: 6, border: `${px}px solid ${token.colorBorder}` }} />
+      </div>
+      <div
+        onClick={handleCopy}
+        title="Click to copy"
+        style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', width: 56, justifyContent: 'flex-end', flexShrink: 0 }}
+      >
+        <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode, color: token.colorText }}>
+          {displayValue}
+        </Typography.Text>
+        {copied
+          ? <Check size={11} strokeWidth={2.25} color={iconColors.secondary} style={{ flexShrink: 0 }} />
+          : <Copy size={11} strokeWidth={2.25} color={iconColors.secondary} style={{ flexShrink: 0 }} />}
+      </div>
+    </div>
+  )
+}
+
 function SubHeading({ children }: { children: React.ReactNode }) {
   const { token } = theme.useToken()
   return (
@@ -565,6 +628,15 @@ export function DesignDocsPage() {
             </Typography.Text>
             <ShadowRow name="Panel" tokenName="boxShadow" value={token.boxShadow} />
             <ShadowRow name="Dropdown" tokenName="boxShadowSecondary" value={token.boxShadowSecondary} />
+          </Section>
+
+          <Section id="border" title="Border">
+            <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
+              Two deliberate border weights, both plain numbers rather than a named antd token — 0.5px is the
+              global default every component gets; 1px is a per-component override on the input family
+              (Input/Select/InputNumber/DatePicker/Button/Upload) to match their own text-field weight.
+            </Typography.Text>
+            {BORDER_WIDTH_SCALE.map(s => <BorderRow key={s.name} name={s.name} px={s.px} />)}
           </Section>
         </div>
       </div>

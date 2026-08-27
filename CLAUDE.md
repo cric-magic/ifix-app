@@ -138,6 +138,24 @@ Every `borderRadius` in the app comes from this scale:
 
 A perfect circle (`borderRadius: '50%'`, e.g. `DotTag.tsx`'s status dot) is a distinct shape concept, not a corner-rounding amount, and isn't part of this scale.
 
+## Shadow
+Not a graduated scale like Spacing/Radius — just two elevation levels, each a real per-variant seed token in `App.tsx`'s `VARIANT_SEEDS`:
+
+| Token | Used for | neutral/blue | light |
+|---|---|---|---|
+| `boxShadow` | Flat surfaces (panels, table cards) | `0 0.5px 1px 1px rgba(0,0,0,0.15)` | `none` |
+| `boxShadowSecondary` | Floating overlays (Dropdown/Select/DatePicker) | same as `boxShadow` | `rgba(0,0,0,0.08) 0 0 0 1px, rgba(0,0,0,0.08) 0 4px 12px 0` |
+
+Panels drop the shadow entirely in light mode — the border already separates them from the page. Floating overlays keep one in every variant, since they have nothing else to read as detached from the page underneath. Reference `var(--ant-box-shadow)` / `var(--ant-box-shadow-secondary)` in plain CSS, or `token.boxShadow` / `token.boxShadowSecondary` in components — both are real antd AliasTokens now, not a custom bridge property.
+
+## Border
+Two deliberate border weights, both plain numbers (not antd tokens with public names, so there's no `token.borderWidth` to reference — just use the literal):
+
+| Width | Used for |
+|---|---|
+| `0.5px` | Everything by default (the global seed `lineWidth`) |
+| `1px` | The input family — `Input`/`Select`/`InputNumber`/`DatePicker`/`Button`/`Upload` — to match their own text-field weight instead of the thinner global hairline |
+
 ## Consistency
 When building a new feature (a table, a form, an empty state, a detail page, etc.), first check how the same kind of thing is already done elsewhere in the app and match it — don't invent a new pattern for something that already has one. This applies to visual treatment, component structure, and copy alike.
 

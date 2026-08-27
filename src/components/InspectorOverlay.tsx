@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { theme } from 'antd'
 import { useDevTools } from '../contexts/DevToolsContext'
 import { useIconColors } from '../constants/iconColors'
-import { getNamedColorTokens, getNamedShadowTokens, findSpacingName, findRadiusName } from '../constants/designTokens'
+import { getNamedColorTokens, getNamedShadowTokens, getFontSizeScale, findSpacingName, findRadiusName, findFontSizeName, findBorderWidthName } from '../constants/designTokens'
 import { buildColorTokenLookup, buildShadowTokenLookup, isTransparentColor, toHex } from '../utils/colorTokenLookup'
 
 // Dev-only box-model + token inspector, toggled from the "Inspect" button in
@@ -30,6 +30,18 @@ function formatPx(value: number): { text: string; onScale: boolean } {
 function formatRadius(value: number): { text: string; onScale: boolean } {
   const name = findRadiusName(value)
   if (name) return { text: `${value}px · ${name}`, onScale: true }
+  return { text: `${value}px`, onScale: value === 0 }
+}
+
+function formatFontSize(value: number, scale: { name: string; px: number }[]): { text: string; onScale: boolean } {
+  const name = findFontSizeName(value, scale)
+  if (name) return { text: `${value}px · ${name}`, onScale: true }
+  return { text: `${value}px`, onScale: false }
+}
+
+function formatBorderWidth(value: number): { text: string; onScale: boolean } {
+  const name = findBorderWidthName(value)
+  if (name) return { text: `${value}px · Border ${name}`, onScale: true }
   return { text: `${value}px`, onScale: value === 0 }
 }
 
@@ -82,10 +94,10 @@ function Badge({ x, y, value, color, token }: { x: number; y: number; value: num
   )
 }
 
-function SideValues({ label, t, r, b, l, token }: { label: string; t: number; r: number; b: number; l: number; token: any }) {
+function SideValues({ label, t, r, b, l, token, format = formatPx }: { label: string; t: number; r: number; b: number; l: number; token: any; format?: (v: number) => { text: string; onScale: boolean } }) {
   const uniform = t === r && r === b && b === l
   const Row = ({ side, v }: { side: string; v: number }) => {
-    const f = formatPx(v)
+    const f = format(v)
     return (
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
         <span style={{ color: token.colorTextTertiary }}>{side}</span>
@@ -194,6 +206,8 @@ export function InspectorOverlay() {
   const shadowTokens = useMemo(() => getNamedShadowTokens(token as unknown as Record<string, unknown>), [token])
   const lookupShadow = useMemo(() => buildShadowTokenLookup(shadowTokens), [shadowTokens])
 
+  const fontSizeScale = useMemo(() => getFontSizeScale(token as unknown as Record<string, unknown>), [token])
+
   // Crosshair cursor only over the simulated app window, not the whole page.
   useEffect(() => {
     if (!containerEl) return
@@ -277,6 +291,7 @@ export function InspectorOverlay() {
   const borderT = px(cs.borderTopWidth), borderR = px(cs.borderRightWidth), borderB = px(cs.borderBottomWidth), borderL = px(cs.borderLeftWidth)
   const paddingT = px(cs.paddingTop), paddingR = px(cs.paddingRight), paddingB = px(cs.paddingBottom), paddingL = px(cs.paddingLeft)
   const radiusTL = px(cs.borderTopLeftRadius), radiusTR = px(cs.borderTopRightRadius), radiusBR = px(cs.borderBottomRightRadius), radiusBL = px(cs.borderBottomLeftRadius)
+  const fontSize = px(cs.fontSize)
   const isFlexOrGrid = /flex|grid/.test(cs.display)
   const rowGap = isFlexOrGrid ? px(cs.rowGap) : 0
   const columnGap = isFlexOrGrid ? px(cs.columnGap) : 0
@@ -369,6 +384,9 @@ export function InspectorOverlay() {
 
           <SideValues label="Padding" t={paddingT} r={paddingR} b={paddingB} l={paddingL} token={token} />
           <SideValues label="Margin" t={marginT} r={marginR} b={marginB} l={marginL} token={token} />
+          {(borderT > 0 || borderR > 0 || borderB > 0 || borderL > 0) && (
+            <SideValues label="Border" t={borderT} r={borderR} b={borderB} l={borderL} token={token} format={formatBorderWidth} />
+          )}
           {(radiusTL > 0 || radiusTR > 0 || radiusBR > 0 || radiusBL > 0) && (
             <CornerValues label="Radius" tl={radiusTL} tr={radiusTR} br={radiusBR} bl={radiusBL} token={token} />
           )}
@@ -390,6 +408,19 @@ export function InspectorOverlay() {
               )}
             </div>
           )}
+
+          {fontSize > 0 && (() => {
+            const f = formatFontSize(fontSize, fontSizeScale)
+            return (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ color: token.colorTextTertiary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Typography</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ color: token.colorTextTertiary }}>Font size</span>
+                  <span style={{ color: f.onScale ? token.colorText : token.colorWarning }}>{f.text}</span>
+                </div>
+              </div>
+            )
+          })()}
 
           <div>
             <div style={{ color: token.colorTextTertiary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Colors</div>
