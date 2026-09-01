@@ -382,7 +382,13 @@ function AppThemed() {
     // other custom properties here.
     document.documentElement.style.setProperty('--ifix-scrollbar-thumb', baseToken.colorFillSecondary)
     document.documentElement.style.setProperty('--ifix-scrollbar-thumb-hover', baseToken.colorFill)
-  }, [baseToken, seedTokens, panelBg, wrapperBg, wrapperBorder, panelBorder])
+    // Exposes which variant is active to plain CSS (index.css's primary-
+    // button beam/glow swap colors specifically for Light) — cssVars alone
+    // can't express "use this token only in this variant", so this is the
+    // one place a variant name itself, not just its resolved tokens, needs
+    // to reach a stylesheet.
+    document.documentElement.setAttribute('data-ifix-theme', themeVariant)
+  }, [baseToken, seedTokens, panelBg, wrapperBg, wrapperBorder, panelBorder, themeVariant])
 
   return (
     <ConfigProvider theme={{

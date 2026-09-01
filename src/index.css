@@ -304,6 +304,22 @@ body {
   }
 }
 
+/* Light swaps the beam/glow colors: a white beam (the default, above) reads
+   as a highlight against Neutral/Bluish's dark surface, but against Light's
+   near-white surface it would barely register — so the ring becomes the
+   brand color instead, and the glow (which needs to read as a shadow/lift
+   here, not a colored highlight) becomes white. data-ifix-theme is set on
+   :root by App.tsx, since a plain cssVar can't express "different token in
+   this variant" the way this needs. */
+:root[data-ifix-theme="light"] .ant-btn-primary:not(.ant-btn-dangerous)::before {
+  background: conic-gradient(from var(--ifix-beam-angle) at 50% 50%, transparent 0%, transparent 75%, var(--ant-color-primary) 100%);
+}
+
+:root[data-ifix-theme="light"] .ant-btn-primary:not(.ant-btn-dangerous):hover,
+:root[data-ifix-theme="light"] .ant-btn-primary:not(.ant-btn-dangerous):focus-visible {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--ant-color-white) 70%, transparent);
+}
+
 /* Segmented's border matches the panel's own (0.5px colorBorderSecondary) —
    Input/Select/InputNumber/DatePicker now use the same token for their own
    border (App.tsx), so this is really just about the line weight: Segmented
