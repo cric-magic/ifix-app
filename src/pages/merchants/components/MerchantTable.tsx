@@ -1,5 +1,5 @@
 import { App, Avatar, Button, ConfigProvider, Dropdown, Table, theme } from 'antd'
-import { Ban, RotateCcw, ChevronDown, MoreHorizontal, Building2 } from 'lucide-react'
+import { Ban, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Building2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
 import type { Merchant } from '../../../types/merchant'
@@ -126,6 +126,8 @@ export function MerchantTable({ merchants, search, onToggleSuspend }: Props) {
                 pageSize: 10,
                 size: 'small',
                 showSizeChanger: false,
+                prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
+                nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
                 showTotal: (total, range) => (
                   <span style={{ color: token.colorTextTertiary }}>
                     {range[0]}–{range[1]} of {total}

@@ -1,5 +1,5 @@
 import { App, Button, ConfigProvider, Dropdown, Table, Typography, theme } from 'antd'
-import { Archive, ArchiveRestore, ChevronDown, MoreHorizontal, Store } from 'lucide-react'
+import { Archive, ArchiveRestore, ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Store } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
 import type { Branch } from '../../../types/branch'
@@ -156,6 +156,8 @@ export function BranchTable({ branches, search, canManage, onToggleArchive, head
                 pageSize: 10,
                 size: 'small',
                 showSizeChanger: false,
+                prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
+                nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
                 showTotal: (total, range) => (
                   <span style={{ color: token.colorTextTertiary }}>
                     {range[0]}–{range[1]} of {total}
