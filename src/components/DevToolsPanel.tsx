@@ -1,5 +1,5 @@
-import { Avatar, Dropdown, Space, Tag, Typography, theme } from 'antd'
-import { User, BookOpen, ChevronDown, Home, Crosshair } from 'lucide-react'
+import { Avatar, Dropdown, Space, Tag, Typography } from 'antd'
+import { User, BookOpen, ChevronDown, Home, Crosshair, ArrowLeft } from 'lucide-react'
 import { useDevTools, DEVICE_PRESETS, DEVICE_PRESET_LABELS, THEME_LABELS } from '../contexts/DevToolsContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ROLE_LABELS, ROLE_TAG_COLOR } from '../constants/roles'
@@ -9,6 +9,21 @@ import type { ThemeVariant } from '../contexts/DevToolsContext'
 import type { ItemType } from 'antd/es/menu/interface'
 
 const MENU_BAR_FONT_SIZE = 13
+
+// This bar is dev-only tooling chrome floating over the simulated desktop,
+// not branded app UI — it should read the same regardless of which theme
+// (including Light) the app underneath it is currently showing, so unlike
+// everywhere else in this codebase it deliberately does NOT read from
+// `theme.useToken()`. These are the same white-alpha values antd's own
+// dark algorithm computes by default for text/fill tiers on a dark
+// surface, used here as fixed constants instead of a reactive token.
+const BAR_BG = 'rgba(0, 0, 0, 0.5)'
+const BAR_TEXT = 'rgba(255, 255, 255, 0.85)'
+const BAR_TEXT_SECONDARY = 'rgba(255, 255, 255, 0.65)'
+const BAR_TEXT_TERTIARY = 'rgba(255, 255, 255, 0.45)'
+const BAR_FILL = 'rgba(255, 255, 255, 0.18)'
+const BAR_FILL_SECONDARY = 'rgba(255, 255, 255, 0.12)'
+const BAR_BLUR = 'blur(12px)'
 
 // A macOS-style menu bar item: plain text immediately followed by a chevron
 // (8px gap, no reserved trigger-box width) with no border/background/shadow
@@ -21,7 +36,6 @@ function MenuBarTrigger({ items, onSelect, children }: {
   onSelect?: (key: string) => void
   children: React.ReactNode
 }) {
-  const { token } = theme.useToken()
   return (
     <Dropdown
       menu={{ items, onClick: ({ key }) => onSelect?.(key) }}
@@ -32,7 +46,7 @@ function MenuBarTrigger({ items, onSelect, children }: {
         alignItems: 'center',
         gap: 8,
         cursor: 'pointer',
-        color: token.colorText,
+        color: BAR_TEXT,
         fontSize: MENU_BAR_FONT_SIZE,
       }}>
         <span>{children}</span>
@@ -45,7 +59,15 @@ function MenuBarTrigger({ items, onSelect, children }: {
 export function DevToolsPanel() {
   const { windowSize, setWindowSize, themeVariant, setThemeVariant, inspectMode, setInspectMode } = useDevTools()
   const { user, devSetUser } = useAuth()
-  const { token } = theme.useToken()
+  // DevToolsPanel renders as a sibling above <RouterProvider> in App.tsx
+  // (a shared flex parent for both the windowed app and the standalone
+  // /design-docs page), not inside the router tree — so useLocation() isn't
+  // available here. That's fine: /design-docs is only ever reached via a
+  // real page load (the Docs link opens it in a new tab; there's no
+  // SPA-internal navigate() to it anywhere), so a plain read of
+  // window.location.pathname at render time is already correct for this
+  // component's whole lifetime — no reactivity to in-app navigation needed.
+  const isDesignDocs = window.location.pathname === '/design-docs'
 
   const matchedPreset = Object.keys(DEVICE_PRESETS).find(
     key => DEVICE_PRESETS[key].width === windowSize.width && DEVICE_PRESETS[key].height === windowSize.height,
@@ -72,7 +94,7 @@ export function DevToolsPanel() {
           src={getAvatarUrl(u.id)}
           icon={<User size={15} strokeWidth={2.25} />}
           size={20}
-          style={{ background: token.colorFill, flexShrink: 0 }}
+          style={{ background: BAR_FILL, flexShrink: 0 }}
         />
         <span style={{ fontSize: MENU_BAR_FONT_SIZE }}>{u.name}</span>
         <Tag color={ROLE_TAG_COLOR[u.role]} style={{ margin: 0 }}>{ROLE_LABELS[u.role]}</Tag>
@@ -80,16 +102,67 @@ export function DevToolsPanel() {
     ),
   }))
 
+  // The design-docs page is a standalone reference, not the app itself —
+  // none of the normal menu bar's app-state controls (viewport, theme,
+  // signed-in user, Inspect) apply there, so instead of hiding them one by
+  // one, swap in a minimal bar with just a way back out. Same floating-pill
+  // treatment (rounded, inset from the edges) as the main bar below, for
+  // consistency between the two — this one just has no wallpaper to reveal
+  // on the sides, only the plain page background.
+  if (isDesignDocs) {
+    return (
+      <div data-ifix-devtools-bar style={{
+        flexShrink: 0,
+        height: 44,
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 8px',
+        margin: '8px 8px 0',
+        background: BAR_BG,
+        backdropFilter: BAR_BLUR,
+        WebkitBackdropFilter: BAR_BLUR,
+        borderRadius: 8,
+        position: 'relative',
+        zIndex: 100,
+      }}>
+        <a
+          href="/"
+          className="ifix-menubar-item"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, color: BAR_TEXT, fontSize: MENU_BAR_FONT_SIZE }}
+        >
+          <ArrowLeft size={14} strokeWidth={2.25} />
+          <span>Back to Prototype</span>
+        </a>
+      </div>
+    )
+  }
+
   return (
     <div data-ifix-devtools-bar style={{
       flexShrink: 0,
       height: 44,
       display: 'flex',
       alignItems: 'center',
-      padding: '0 16px',
-      background: token.colorBgElevated,
-      borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
-      position: 'relative',
+      padding: '0 8px',
+      // Pure black at reduced opacity + a blur of whatever's behind it
+      // (the desktop wallpaper) — a frosted-glass menu bar floating over
+      // the wallpaper instead of a solid strip that pushes it down. Fixed
+      // to the viewport (not `relative`, its previous value) so it stays
+      // pinned above the wallpaper as an overlay while the windowed app
+      // scrolls/resizes underneath, the same way a real OS's menu bar
+      // floats over the desktop rather than being laid out as part of it.
+      background: BAR_BG,
+      backdropFilter: BAR_BLUR,
+      WebkitBackdropFilter: BAR_BLUR,
+      // Rounded + inset 8px on all three visible sides (top/left/right —
+      // was flush edge-to-edge, radius 0) so it reads as a floating pill
+      // with the wallpaper visible around it, rather than a flat strip
+      // spanning the full viewport width.
+      borderRadius: 8,
+      position: 'fixed',
+      top: 8,
+      left: 8,
+      right: 8,
       // Below antd's own popup z-index (zIndexPopupBase, ~1000) so Select/
       // Dropdown menus render above the bar instead of behind it — this only
       // needs to clear the desktop stage/app content below it, not popups.
@@ -106,7 +179,7 @@ export function DevToolsPanel() {
           <a
             href="/"
             className="ifix-menubar-item"
-            style={{ display: 'flex', alignItems: 'center', color: token.colorText }}
+            style={{ display: 'flex', alignItems: 'center', color: BAR_TEXT }}
           >
             <Home size={15} strokeWidth={2.25} />
           </a>
@@ -122,7 +195,7 @@ export function DevToolsPanel() {
           </MenuBarTrigger>
         </div>
         {user && (
-          <Typography.Text style={{ color: token.colorTextTertiary, fontSize: MENU_BAR_FONT_SIZE }}>
+          <Typography.Text style={{ color: BAR_TEXT_TERTIARY, fontSize: MENU_BAR_FONT_SIZE }}>
             {user.branch ?? 'All branches'}
           </Typography.Text>
         )}
@@ -154,8 +227,8 @@ export function DevToolsPanel() {
         className="ifix-menubar-item"
         style={{
           display: 'flex', alignItems: 'center', gap: 8, border: 'none', cursor: 'pointer',
-          background: inspectMode ? token.colorFillSecondary : 'transparent',
-          color: inspectMode ? token.colorText : token.colorTextSecondary,
+          background: inspectMode ? BAR_FILL_SECONDARY : 'transparent',
+          color: inspectMode ? BAR_TEXT : BAR_TEXT_SECONDARY,
           fontSize: MENU_BAR_FONT_SIZE,
         }}
       >
@@ -171,7 +244,7 @@ export function DevToolsPanel() {
         target="_blank"
         rel="noreferrer"
         className="ifix-menubar-item"
-        style={{ display: 'flex', alignItems: 'center', gap: 8, color: token.colorText, fontSize: MENU_BAR_FONT_SIZE, flexShrink: 0 }}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, color: BAR_TEXT, fontSize: MENU_BAR_FONT_SIZE, flexShrink: 0 }}
       >
         <BookOpen size={14} strokeWidth={2.25} />
         <span>Docs</span>

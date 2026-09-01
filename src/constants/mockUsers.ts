@@ -1,7 +1,11 @@
 import type { UserAccount } from '../types/user'
 
 export const MERCHANT_ID = 'merchant-1'
-export const MERCHANT_NAME = 'IFix'
+// Renamed away from "IFix" — that's the platform's own product name, and
+// reusing it for the seeded demo merchant made the two impossible to tell
+// apart once real multi-merchant data existed (a Super Admin's platform-
+// level "IFix" and this merchant's workspace "IFix" looked identical).
+export const MERCHANT_NAME = 'Siam Gadget Repair'
 
 export const MOCK_USER_ACCOUNTS: UserAccount[] = [
   {

@@ -38,6 +38,23 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
   // the page even where flat surfaces don't.
   boxShadow: string
   boxShadowSecondary: string
+  // Optional per-variant override for the functional colors — omitted only
+  // for neutral, which keeps the shared muted family below (tuned around
+  // that variant's own teal-ish primary). Bluish and Light both use the
+  // real brand primary (#3283F8), a lot more saturated than that muted
+  // family, so success/warning/error/info need their own more vivid family
+  // to actually look like they belong next to it instead of reading dull/
+  // mismatched. colorInfo intentionally equals colorPrimary here — "info"
+  // already means "brand blue" in most systems, and having a second,
+  // different blue for it next to a genuinely blue primary would just read
+  // as two competing blues rather than one consistent brand color used in
+  // an informational context.
+  functionalColors?: {
+    colorSuccess: string
+    colorWarning: string
+    colorError: string
+    colorInfo: string
+  }
 }> = {
   neutral: {
     colorPrimary: '#5b9aa8',
@@ -59,10 +76,27 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
     boxShadowSecondary: '0 0.5px 1px 1px rgba(0, 0, 0, 0.15)',
   },
   blue: {
-    colorPrimary: '#5b9aa8',
-    colorBgBase: '#07080b',
-    colorBgContainer: '#0c0e12',
-    colorBgLayout: '#07080b',
+    // Real brand colors (as of this pass): primary #3283F8, dark navy
+    // #121B22, plus a lighter sky-blue #68D2F9 that has no seed slot to
+    // land in yet — this token schema only has one accent color
+    // (colorPrimary), with every hover/active shade auto-derived from it
+    // by antd's algorithm rather than hand-specified per state. Left
+    // unused for now rather than force it into colorPrimaryHover or
+    // similar without knowing that's actually the intended role.
+    colorPrimary: '#3283F8',
+    // Base/container/layout all one flat #121B22 — no manual gap between
+    // the page canvas and the container seed here. The visible elevation
+    // step between the page and an actual panel (.ifix-table-panel) still
+    // exists and comes entirely from colorBgElevated's own double-layered
+    // colorFillQuaternary blend further down (same mechanism every variant
+    // already relies on) — a same-magnitude gap that read as barely
+    // perceptible near pure black apparently reads as a much more obvious
+    // seam at this navy's higher base lightness, so removing the extra
+    // seed-level gap here brings it back in line with how flat neutral's
+    // own base/layout vs. container felt.
+    colorBgBase: '#121b22',
+    colorBgContainer: '#121b22',
+    colorBgLayout: '#121b22',
     algorithm: 'dark',
     colorBorder: 'rgba(255, 255, 255, 0.12)',
     colorBorderSecondary: 'rgba(255, 255, 255, 0.08)',
@@ -71,9 +105,20 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
     colorIconHover: ICON_COLOR_PRIMARY,
     boxShadow: '0 0.5px 1px 1px rgba(0, 0, 0, 0.15)',
     boxShadowSecondary: '0 0.5px 1px 1px rgba(0, 0, 0, 0.15)',
+    functionalColors: {
+      colorSuccess: '#22C55E',
+      colorWarning: '#F59E0B',
+      colorError: '#EF4444',
+      colorInfo: '#3283F8',
+    },
   },
   light: {
-    colorPrimary: '#3f7a88',
+    // Same real brand primary as Bluish (#3283F8), not the old muted teal —
+    // this is the one accent color meant to represent the actual brand, so
+    // Light shouldn't show a different one just because the surface flipped
+    // to white. Functional colors below are the same vivid family Bluish
+    // uses for the same reason (see that variant's own comment).
+    colorPrimary: '#3283F8',
     // Elevation runs the opposite direction from dark mode: the outer page
     // canvas is the grayest surface and elevated components (Drawer/Card)
     // are pure white — see the colorBgElevated override in buildTheme below
@@ -94,6 +139,12 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
     // (lighter, bordered) shadow via boxShadowSecondary instead.
     boxShadow: 'none',
     boxShadowSecondary: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px, rgba(0, 0, 0, 0.08) 0px 4px 12px 0px',
+    functionalColors: {
+      colorSuccess: '#22C55E',
+      colorWarning: '#F59E0B',
+      colorError: '#EF4444',
+      colorInfo: '#3283F8',
+    },
   },
 }
 
@@ -135,8 +186,26 @@ function ensureContrast(color: string, against: string, minDelta: number, direct
   return `rgb(${clamp(cr + shift)},${clamp(cg + shift)},${clamp(cb + shift)})`
 }
 
+// Shared fallback for variants that don't specify their own functionalColors
+// override (neutral, light) — muted, moderate-saturation family tuned
+// around those variants' own teal-ish primary. Kept as the default rather
+// than duplicated onto every variant so only Bluish (the one with an
+// actual brand primary so far) needs to specify anything different.
+const DEFAULT_FUNCTIONAL_COLORS = {
+  colorSuccess: '#6a9c72',
+  colorWarning: '#c99753',
+  colorError: '#b8655a',
+  // antd's own default colorInfo is a vivid saturated blue with no relation
+  // to this muted palette, which is what made Alert/Message's "info"
+  // variant look jarring next to everything else — colorSuccess/Warning/
+  // Error being in this family is also the only reason Tags already look
+  // consistent, since Tag doesn't get its own component override; it just
+  // inherits these seed tokens like Alert/Message/Notification/Badge all do.
+  colorInfo: '#5d87a6',
+}
+
 function buildTheme(variant: ThemeVariant) {
-  const { algorithm: algorithmName, ...variantSeed } = VARIANT_SEEDS[variant]
+  const { algorithm: algorithmName, functionalColors, ...variantSeed } = VARIANT_SEEDS[variant]
   const algorithm = algorithmName === 'light' ? theme.defaultAlgorithm : theme.darkAlgorithm
 
   // colorBorder/colorFill*/colorText* etc. get assigned solid overrides
@@ -160,17 +229,7 @@ function buildTheme(variant: ThemeVariant) {
     [key: string]: string | number
   } = {
     ...variantSeed,
-    colorSuccess: '#6a9c72',
-    colorWarning: '#c99753',
-    colorError: '#b8655a',
-    // Same muted, moderate-saturation family as the three above (antd's own
-    // default colorInfo is a vivid saturated blue with no relation to this
-    // palette, which is what made Alert/Message's "info" variant look
-    // jarring next to everything else — colorSuccess/Warning/Error being in
-    // this family is also the only reason Tags already look consistent,
-    // since Tag doesn't get its own component override; it just inherits
-    // these seed tokens like Alert/Message/Notification/Badge all do).
-    colorInfo: '#5d87a6',
+    ...(functionalColors ?? DEFAULT_FUNCTIONAL_COLORS),
     // Google Sans loaded via Google Fonts (see index.html) — falls back to
     // the system stack (antd's own default fontFamily) if it hasn't loaded
     // yet or the page is ever opened offline.
@@ -442,6 +501,20 @@ function AppThemed() {
           colorBorder: baseToken.colorBorderSecondary,
           lineWidth: 1,
           paddingInline: 12,
+        },
+        Checkbox: {
+          // Same transparent-background convention as the Input family
+          // above — antd's default paints the unchecked box with
+          // colorBgContainer (a near-solid fill in this dark theme), which
+          // reads as a filled square instead of an empty bordered box.
+          // Transparent lets it show whatever surface it sits on (panel,
+          // drawer, page) instead of a fixed shade that can clash.
+          colorBgContainer: 'transparent',
+        },
+        Radio: {
+          // Same reasoning as Checkbox above — the unchecked dot's
+          // background should be transparent by default, not a solid fill.
+          colorBgContainer: 'transparent',
         },
         Table: {
           // Explicit colorBgElevated (not 'transparent') on every cell —

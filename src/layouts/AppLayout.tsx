@@ -7,12 +7,17 @@ import {
 } from 'lucide-react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth, useCurrentUser } from '../contexts/AuthContext'
-import { canManageUsers, scopedUserList } from '../constants/roles'
+import { useDevTools } from '../contexts/DevToolsContext'
+import { canManageUsers, scopedUserList, scopedBranchList } from '../constants/roles'
 import { useIconColors } from '../constants/iconColors'
-import { MOCK_USER_ACCOUNTS, MERCHANT_ID } from '../constants/mockUsers'
+import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
 import { MOCK_PRODUCTS } from '../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../constants/mockProductUnits'
+import { MOCK_MERCHANTS } from '../constants/mockMerchants'
+import { MOCK_BRANCHES } from '../constants/mockBranches'
 import { getAvatarUrl, getWorkspaceAvatarUrl } from '../utils/avatar'
+import ifixLogoDark from '../assets/logo.png'
+import ifixLogoLight from '../assets/logo-light.png'
 
 const { Header, Sider, Content } = Layout
 
@@ -27,12 +32,13 @@ const PAGE_TITLES: Record<string, string> = {
 }
 
 const SETTINGS_ITEMS = [
-  { key: 'general', label: 'General' },
+  { key: 'account', label: 'Account' },
+  { key: 'bank-accounts', label: 'Bank Accounts' },
   { key: 'members', label: 'Members' },
 ]
 
 const ACCOUNT_ITEMS = [
-  { key: 'general', label: 'General' },
+  { key: 'general', label: 'Account' },
 ]
 
 const PRODUCTS_ITEMS = [
@@ -46,8 +52,31 @@ export function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { token } = theme.useToken()
+  const { themeVariant } = useDevTools()
   const iconColors = useIconColors()
   const [collapsed, setCollapsed] = useState(false)
+
+  // Sidebar workspace identity — was hardcoded to the seeded demo merchant
+  // regardless of who was signed in, so every merchant's own users saw that
+  // merchant's name/logo instead of their real one. Now looked up from the
+  // actual signed-in user's merchantId. Super Admin has none — they operate
+  // at the platform level, not inside any single merchant's workspace — so
+  // they see the platform's own identity ("IFix") instead of any merchant's:
+  // the real IFix logo, not a generated placeholder, since this one actually
+  // has a real brand mark, unlike individual merchants (who still fall back
+  // to a DiceBear identicon when they haven't uploaded their own logo). Two
+  // real logo files exist — a light mark for dark surfaces, a dark mark for
+  // the Light theme's white surfaces — so pick per variant instead of just
+  // using one everywhere and having it disappear/clash in Light mode.
+  const ifixLogo = themeVariant === 'light' ? ifixLogoLight : ifixLogoDark
+  const workspaceMerchant = user.merchantId ? MOCK_MERCHANTS.find(m => m.id === user.merchantId) : undefined
+  const workspaceName = workspaceMerchant?.name ?? 'IFix'
+  const workspaceLogoSrc = workspaceMerchant
+    ? (workspaceMerchant.logoUrl ?? getWorkspaceAvatarUrl(workspaceMerchant.id))
+    : ifixLogo
+  const workspaceMemberCount = workspaceMerchant
+    ? MOCK_USER_ACCOUNTS.filter(u => u.merchantId === workspaceMerchant.id).length
+    : undefined
 
   // Main nav icons sit in a 28×28 box — same size as the workspace logo box
   // and the avatar — so every icon anchor in the sidebar lines up on the
@@ -70,14 +99,14 @@ export function AppLayout() {
 
   const selectedKey = Object.keys(PAGE_TITLES).find(key => location.pathname.startsWith(`/${key}`)) ?? ''
   const inSettings = location.pathname.startsWith('/settings')
-  const settingsKey = location.pathname.split('/')[2] ?? 'general'
+  const settingsKey = location.pathname.split('/')[2] ?? 'account'
   const inAccount = location.pathname.startsWith('/account')
   const accountKey = location.pathname.split('/')[2] ?? 'general'
   const inProducts = location.pathname.startsWith('/products')
   const productsKey = location.pathname.split('/')[2] ?? 'catalog'
 
   const pageTitle = inSettings
-    ? (settingsKey === 'general' ? 'Workspace Settings' : SETTINGS_ITEMS.find(i => i.key === settingsKey)?.label ?? 'Workspace Settings')
+    ? (settingsKey === 'account' ? 'Workspace Settings' : SETTINGS_ITEMS.find(i => i.key === settingsKey)?.label ?? 'Workspace Settings')
     : inProducts
     ? (productsKey === 'unit' ? 'Units' : 'Products')
     : PAGE_TITLES[selectedKey] ?? 'IFix'
@@ -102,17 +131,57 @@ export function AppLayout() {
     ? scopedUserList(user, MOCK_USER_ACCOUNTS).find(u => u.id === memberDetailId)?.name
     : undefined
 
+  // Merchant detail route (/merchants/:id) — same 2-level treatment
+  // ("Merchants / <name>"), parallel to the breadcrumbs above. Not scoped
+  // through a permission-filtered list like scopedUserList — Merchants is
+  // already Super-Admin-only end to end (MerchantDetailPage blocks anyone
+  // else before this name would ever be read), so there's no narrower list
+  // to look it up through the way member/product lookups are scoped.
+  const merchantDetailId = selectedKey === 'merchants' ? location.pathname.split('/')[2] : undefined
+  const merchantDetailName = merchantDetailId
+    ? MOCK_MERCHANTS.find(m => m.id === merchantDetailId)?.name
+    : undefined
+
+  // Branch detail route (/branches/:id) — same 2-level treatment
+  // ("Branches / <name>"). Looked up through scopedBranchList so a
+  // Merchant Owner/Admin viewing another merchant's branch by guessed id
+  // (blocked by the page itself) doesn't leak its name into the breadcrumb
+  // either — same reasoning as the member breadcrumb above.
+  //
+  // Super Admin reaches a branch through Merchant Detail's own Branches tab,
+  // not the /branches list (they can't view that — no merchantId of their
+  // own to scope it to). Clicking a "Branches" crumb that 404s/blocks them
+  // is exactly the dead-end the list nav item was already excluded to
+  // avoid, so their crumb leads back to the merchant instead: "<Merchant> /
+  // <Branch>" → /merchants/:id, not "Branches / <Branch>" → /branches.
+  const branchDetailId = selectedKey === 'branches' ? location.pathname.split('/')[2] : undefined
+  const branchDetail = branchDetailId
+    ? scopedBranchList(user, MOCK_BRANCHES).find(b => b.id === branchDetailId)
+    : undefined
+  const branchDetailName = branchDetail?.name
+  const branchDetailMerchantName = user.role === 'super_admin' && branchDetail
+    ? MOCK_MERCHANTS.find(m => m.id === branchDetail.merchantId)?.name
+    : undefined
+
   const breadcrumbParts = productDetailName
     ? ['Products', productDetailName]
     : unitDetailImei
     ? ['Units', unitDetailImei]
     : memberDetailName
     ? ['Members', memberDetailName]
+    : merchantDetailName
+    ? ['Merchants', merchantDetailName]
+    : branchDetailName
+    ? [branchDetailMerchantName ?? 'Branches', branchDetailName]
     : [pageTitle]
   const breadcrumbBackUrl = unitDetailImei
     ? '/products/unit'
     : memberDetailName
     ? '/settings/members'
+    : merchantDetailName
+    ? '/merchants'
+    : branchDetailName
+    ? (branchDetailMerchantName ? `/merchants/${branchDetail?.merchantId}` : '/branches')
     : '/products/catalog'
 
   function handleLogout() {
@@ -163,7 +232,7 @@ export function AppLayout() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <img
                         className="ifix-logo-box"
-                        src={getWorkspaceAvatarUrl(MERCHANT_ID)}
+                        src={workspaceLogoSrc}
                         alt=""
                         style={{
                           width: 32,
@@ -175,8 +244,10 @@ export function AppLayout() {
                         }}
                       />
                       <div>
-                        <div style={{ fontSize: 14, lineHeight: '18px', fontWeight: 600, color: token.colorText }}>IFix</div>
-                        <div style={{ fontSize: 12, lineHeight: '16px', color: token.colorTextSecondary }}>{MOCK_USER_ACCOUNTS.length} members</div>
+                        <div style={{ fontSize: 14, lineHeight: '18px', fontWeight: 600, color: token.colorText }}>{workspaceName}</div>
+                        {workspaceMemberCount !== undefined && (
+                          <div style={{ fontSize: 12, lineHeight: '16px', color: token.colorTextSecondary }}>{workspaceMemberCount} members</div>
+                        )}
                       </div>
                     </div>
                   ),
@@ -188,7 +259,7 @@ export function AppLayout() {
                   : []),
               ],
               onClick: ({ key }) => {
-                if (key === 'settings') navigate('/settings/general')
+                if (key === 'settings') navigate('/settings/account')
                 if (key === 'invite') navigate('/settings/members?invite=1')
               },
             }}
@@ -213,7 +284,7 @@ export function AppLayout() {
             }}>
               <img
                 className="ifix-logo-box"
-                src={getWorkspaceAvatarUrl(MERCHANT_ID)}
+                src={workspaceLogoSrc}
                 alt=""
                 style={{
                   width: 28,
@@ -224,7 +295,7 @@ export function AppLayout() {
                   objectFit: 'cover',
                 }}
               />
-              <Typography.Text strong style={{ fontSize: 15, flex: 1, minWidth: 0 }} ellipsis>IFix</Typography.Text>
+              <Typography.Text strong style={{ fontSize: 15, flex: 1, minWidth: 0 }} ellipsis>{workspaceName}</Typography.Text>
               <Button type="text" size="small" style={{ borderRadius: 6 }} icon={<ChevronsUpDown size={14} strokeWidth={2.25} />} />
             </div>
           </Dropdown>
@@ -264,10 +335,17 @@ export function AppLayout() {
                   inlineIndent={16}
                   selectedKeys={[settingsKey]}
                   style={{ border: 'none', background: 'transparent' }}
-                  items={SETTINGS_ITEMS.map(item => ({
-                    ...item,
-                    onClick: () => navigate(`/settings/${item.key}`),
-                  }))}
+                  items={SETTINGS_ITEMS
+                    // Bank accounts are merchant business data — Super Admin
+                    // manages them per-merchant from Merchant Detail instead
+                    // (same BankAccountsTab, non-standalone), not from their
+                    // own platform-level Workspace Settings, which has no
+                    // merchant behind it for this tab to mean anything.
+                    .filter(item => item.key !== 'bank-accounts' || user.role !== 'super_admin')
+                    .map(item => ({
+                      ...item,
+                      onClick: () => navigate(`/settings/${item.key}`),
+                    }))}
                 />
               </div>
             ) : inAccount ? (
@@ -291,7 +369,7 @@ export function AppLayout() {
                       label: (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
                           <Button type="text" size="small" style={{ borderRadius: 6, justifySelf: 'start' }} icon={<ChevronLeft size={17} strokeWidth={2.25} />} />
-                          <span>Account</span>
+                          <span>Settings</span>
                           <span />
                         </div>
                       ),
@@ -398,12 +476,17 @@ export function AppLayout() {
                       label: 'Merchants',
                       onClick: () => navigate('/merchants'),
                     }] : []),
-                    {
+                    // Super Admin reaches branches through Merchant Detail's
+                    // own Branches tab instead (they have no merchantId for
+                    // a global /branches list to be scoped to) — same
+                    // exclusion as Merchants being Super-Admin-only, just
+                    // the opposite direction.
+                    ...(user.role !== 'super_admin' ? [{
                       key: 'branches',
                       icon: navIcon(<Store size={17} strokeWidth={2.25} />),
                       label: 'Branches',
                       onClick: () => navigate('/branches'),
-                    },
+                    }] : []),
                   ]}
                 />
               </div>

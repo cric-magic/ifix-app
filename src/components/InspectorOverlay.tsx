@@ -247,20 +247,49 @@ export function InspectorOverlay() {
       if (!(target instanceof Element)) return true
       if (rootRef.current?.contains(target)) return true
       if (target.closest('[data-ifix-devtools-bar]')) return true
+      // A page's own controls that happen to live inside the inspectable
+      // container (e.g. DesignDocsPage's Inspect toggle, positioned over its
+      // own component demo area) — opt out explicitly so Inspect doesn't
+      // intercept clicks meant for the control itself.
+      if (target.closest('[data-ifix-inspect-exclude]')) return true
       if (inPortaledPopup(target)) return false
       return !containerEl.contains(target)
     }
 
+    // Snap up to the nearest atomic interactive element — hovering a
+    // Button's inner <span> label (or its icon) should inspect the button
+    // itself, not that leaf node. Only applies to genuinely atomic controls;
+    // plain layout divs are deliberately left alone, since inspecting a
+    // specific container's own padding/gap (a table cell, a card section)
+    // is a real, distinct use case this shouldn't collapse away.
+    //
+    // Inside a container marked [data-ifix-inspect-atomic-only] (DesignDocsPage's
+    // component demo areas), that fallback is dropped instead of kept — the
+    // demo's own caption labels ("Default", "Hover", ...) and backdrop div
+    // aren't the thing being documented, so hovering them should show
+    // nothing rather than incorrectly implying they're part of the spec.
+    const resolveTarget = (target: Element): HTMLElement | null => {
+      const atomic = target.closest('button, a, input, textarea, select, .ant-btn, [role="button"]') as HTMLElement | null
+      if (atomic) return atomic
+      if (target.closest('[data-ifix-inspect-atomic-only]')) return null
+      return target as HTMLElement
+    }
+
     function onMove(e: MouseEvent) {
       if (isExcluded(e.target)) return
-      setHoverEl(e.target as HTMLElement)
+      setHoverEl(resolveTarget(e.target as Element))
     }
     function onClick(e: MouseEvent) {
       if (isExcluded(e.target)) return
-      const target = e.target as HTMLElement
-      if (!isRevealTrigger(target)) {
+      const rawTarget = e.target as HTMLElement
+      const target = resolveTarget(rawTarget)
+      if (!isRevealTrigger(rawTarget)) {
         e.preventDefault()
         e.stopPropagation()
+      }
+      if (!target) {
+        setPinnedEl(null)
+        return
       }
       setPinnedEl(prev => (prev === target ? null : target))
     }

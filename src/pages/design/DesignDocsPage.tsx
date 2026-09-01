@@ -1,17 +1,36 @@
-import { useEffect, useState } from 'react'
-import { Typography, message, theme } from 'antd'
-import { Copy, Check } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Typography, Button, message, theme } from 'antd'
+import { Copy, Check, ChevronDown, Crosshair } from 'lucide-react'
 import { useIconColors } from '../../constants/iconColors'
+import { useDevTools } from '../../contexts/DevToolsContext'
 import { SPACING_SCALE, RADIUS_SCALE, BORDER_WIDTH_SCALE } from '../../constants/designTokens'
 import { toHex } from '../../utils/colorTokenLookup'
 
-const TOC_ITEMS = [
-  { id: 'typography', label: 'Typography' },
-  { id: 'colors', label: 'Colors' },
-  { id: 'spacing', label: 'Spacing' },
-  { id: 'radius', label: 'Radius' },
-  { id: 'shadow', label: 'Shadow' },
-  { id: 'border', label: 'Border' },
+// Grouped nav, same shape as antd's own docs sidebar (a group label that
+// toggles collapse, non-navigable itself, over a set of real section links).
+// "Foundations" holds the token scales; "Components" holds real rendered
+// component specs (Button first — Input/Tag/etc. join this array as they're
+// documented the same way, not as a new top-level group).
+const TOC_GROUPS = [
+  {
+    id: 'foundations',
+    label: 'Foundations',
+    items: [
+      { id: 'typography', label: 'Typography' },
+      { id: 'colors', label: 'Colors' },
+      { id: 'spacing', label: 'Spacing' },
+      { id: 'radius', label: 'Radius' },
+      { id: 'shadow', label: 'Shadow' },
+      { id: 'border', label: 'Border' },
+    ],
+  },
+  {
+    id: 'components',
+    label: 'Components',
+    items: [
+      { id: 'button', label: 'Button' },
+    ],
+  },
 ]
 
 // The scale itself (CLAUDE.md's Spacing section) lives in designTokens.ts —
@@ -25,7 +44,7 @@ const TOC_ITEMS = [
 // recognized display/copy form) lives in utils/colorTokenLookup.ts, shared
 // with InspectorOverlay.tsx so its popover prints colors the same way.
 
-const TOC_IDS = TOC_ITEMS.map(item => item.id)
+const TOC_IDS = TOC_GROUPS.flatMap(group => group.items.map(item => item.id))
 
 function Section({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
   const { token } = theme.useToken()
@@ -400,6 +419,28 @@ function BorderRow({ name, px }: { name: string; px: number }) {
   )
 }
 
+// Each swatch renders the REAL antd Button (same padding/radius/font/shadow
+// wiring as everywhere else in the app) — only Hover/Active/Focus need an
+// inline style override to pin a state that can't be held still by just
+// rendering it, since those only exist as live pseudo-classes. Loading and
+// Disabled are genuine props, not visual approximations. Default is left
+// completely real and interactive — hovering/clicking it live demonstrates
+// the same Hover/Active states the pinned swatches show statically.
+function ButtonStateSwatch({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      {children}
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>{label}</Typography.Text>
+    </div>
+  )
+}
+
+// Component token specs used to be shown as hand-maintained tables here
+// (property → token name → value). Replaced by InspectToggle + the real
+// InspectorOverlay (see its definition below) — hovering/clicking an actual
+// rendered instance shows the same info, live off computed styles, so it
+// can't drift out of sync the way a manually-copied table could.
+
 function SubHeading({ children }: { children: React.ReactNode }) {
   const { token } = theme.useToken()
   return (
@@ -440,47 +481,122 @@ function useActiveSection(ids: string[]) {
   return activeId
 }
 
-function TableOfContents() {
+// One collapsible group ("Foundations", "Components") — the group label
+// itself isn't a nav target (it has no section/anchor of its own, same as
+// antd's own docs sidebar), it only toggles its children's visibility.
+function TocGroup({ label, items, activeId }: { label: string; items: { id: string; label: string }[]; activeId: string }) {
   const { token } = theme.useToken()
+  const iconColors = useIconColors()
+  // Default open — a group containing the active section should never load
+  // collapsed, so this only ever needs to go one direction (open -> closed)
+  // via user action once expanded state exists per-group.
+  const [open, setOpen] = useState(true)
+
+  return (
+    <div>
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '4px 8px',
+          cursor: 'pointer',
+        }}
+      >
+        <Typography.Text
+          style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, color: token.colorTextTertiary }}
+        >
+          {label}
+        </Typography.Text>
+        <ChevronDown
+          size={13}
+          strokeWidth={2.25}
+          color={iconColors.secondary}
+          style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s ease', flexShrink: 0 }}
+        />
+      </div>
+      {open && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
+          {items.map(item => {
+            const isActive = item.id === activeId
+            return (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                style={{
+                  fontSize: 13,
+                  padding: '4px 8px 4px 16px',
+                  borderRadius: 6,
+                  color: isActive ? token.colorText : token.colorTextTertiary,
+                  background: isActive ? token.colorFillTertiary : 'transparent',
+                  fontWeight: isActive ? token.fontWeightStrong : 'normal',
+                  textDecoration: 'none',
+                }}
+              >
+                {item.label}
+              </a>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TableOfContents() {
   const activeId = useActiveSection(TOC_IDS)
 
   return (
-    <nav style={{ position: 'sticky', top: 48, width: 160, flexShrink: 0 }}>
-      <Typography.Text
-        type="secondary"
-        style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 8, color: token.colorTextTertiary }}
-      >
-        On this page
-      </Typography.Text>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {TOC_ITEMS.map(item => {
-          const isActive = item.id === activeId
-          return (
-            <a
-              key={item.id}
-              href={`#${item.id}`}
-              style={{
-                fontSize: 13,
-                padding: '4px 8px',
-                borderRadius: 6,
-                color: isActive ? token.colorText : token.colorTextTertiary,
-                background: isActive ? token.colorFillTertiary : 'transparent',
-                fontWeight: isActive ? token.fontWeightStrong : 'normal',
-                textDecoration: 'none',
-              }}
-            >
-              {item.label}
-            </a>
-          )
-        })}
-      </div>
+    <nav style={{ position: 'sticky', top: 48, width: 176, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {TOC_GROUPS.map(group => (
+        <TocGroup key={group.id} label={group.label} items={group.items} activeId={activeId} />
+      ))}
     </nav>
+  )
+}
+
+// Toggles the same Inspect mode as the main app's DevTools bar, scoped to
+// whatever DOM node componentsAreaRef points at (here, the Components
+// section) via appWindowEl — the exact mechanism DesktopStageLayout uses to
+// scope Inspect to the simulated app window. This is what replaces the
+// hand-maintained token-spec tables for components: hovering/clicking a real
+// rendered instance shows its actual computed padding/radius/color via
+// InspectorOverlay (already mounted globally in App.tsx), which can never
+// drift out of sync with the component the way a manually-copied table of
+// token names could.
+function InspectToggle() {
+  const { token } = theme.useToken()
+  const { inspectMode, setInspectMode } = useDevTools()
+  return (
+    <button
+      type="button"
+      onClick={() => setInspectMode(!inspectMode)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6, border: 'none', cursor: 'pointer',
+        background: inspectMode ? token.colorFillSecondary : token.colorFillTertiary,
+        color: inspectMode ? token.colorText : token.colorTextSecondary,
+        fontSize: 12, padding: '4px 10px', borderRadius: 6,
+      }}
+    >
+      <Crosshair size={13} strokeWidth={2.25} />
+      <span>{inspectMode ? 'Inspecting — hover or click a swatch' : 'Inspect'}</span>
+    </button>
   )
 }
 
 export function DesignDocsPage() {
   const { token } = theme.useToken()
   const iconColors = useIconColors()
+  const { setAppWindowEl } = useDevTools()
+  const componentsAreaRef = useRef<HTMLDivElement>(null)
+
+  // Scope InspectorOverlay to just the Components section's rendered demos —
+  // same registration DesktopStageLayout does for the simulated app window.
+  useEffect(() => {
+    setAppWindowEl(componentsAreaRef.current)
+    return () => setAppWindowEl(null)
+  }, [setAppWindowEl])
 
   return (
     <div style={{ minHeight: '100%', background: token.colorBgLayout, padding: '48px 24px' }}>
@@ -604,27 +720,21 @@ export function DesignDocsPage() {
 
           <Section id="spacing" title="Spacing">
             <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
-              Every padding, margin, and gap in the app comes from this scale — no other raw pixel values for spacing.
-              The scale still has deliberate gaps (nothing between 16 and 24, or 24 and 32); when a spacing decision falls
-              between two values here, round down to the tighter one.
+              Gaps are deliberate (nothing between 16–24 or 24–32) — round down to the tighter value.
             </Typography.Text>
             {SPACING_SCALE.map(s => <SpacingRow key={s.name} name={s.name} px={s.px} />)}
           </Section>
 
           <Section id="radius" title="Radius">
             <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
-              Every borderRadius in the app comes from this scale. XS/SM/Base/LG are antd's own default tokens; XL and
-              Pill are this project's own additions for surfaces antd's scale doesn't reach.
+              XS/SM/Base/LG are antd's defaults; XL and Pill are this project's own additions.
             </Typography.Text>
             {RADIUS_SCALE.map(s => <RadiusRow key={s.name} name={s.name} px={s.px} />)}
           </Section>
 
           <Section id="shadow" title="Shadow">
             <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
-              Not a graduated scale like Spacing/Radius — just two elevation levels, each a real per-variant seed
-              token (App.tsx's VARIANT_SEEDS). Panel drops to none in light mode (the border already separates it
-              from the page); Dropdown always keeps one, since floating overlays have nothing else to read as
-              detached.
+              Panel drops to none in light mode; Dropdown always keeps one.
             </Typography.Text>
             <ShadowRow name="Panel" tokenName="boxShadow" value={token.boxShadow} />
             <ShadowRow name="Dropdown" tokenName="boxShadowSecondary" value={token.boxShadowSecondary} />
@@ -632,11 +742,88 @@ export function DesignDocsPage() {
 
           <Section id="border" title="Border">
             <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
-              Two deliberate border weights, both plain numbers rather than a named antd token — 0.5px is the
-              global default every component gets; 1px is a per-component override on the input family
-              (Input/Select/InputNumber/DatePicker/Button/Upload) to match their own text-field weight.
+              0.5px is the global default; 1px is a per-component override on the input family.
             </Typography.Text>
             {BORDER_WIDTH_SCALE.map(s => <BorderRow key={s.name} name={s.name} px={s.px} />)}
+          </Section>
+
+          <Section id="button" title="Button">
+            <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
+              Starting with the most-used config first (Primary, no icon); other types/variants follow.
+            </Typography.Text>
+
+            <SubHeading>Primary</SubHeading>
+            {/* Same backdrop treatment as the Shadow section's example boxes
+                (colorBgLayout, the real page canvas color, radius 8) — the
+                swatches read as floating on the app's own background instead
+                of blending into this panel's own colorBgElevated. Wrapped in
+                componentsAreaRef so Inspect (toggled top-right) can scope its
+                hover/click listeners here — see InspectToggle's comment for
+                why this replaced the old hand-maintained token tables. */}
+            <div
+              ref={componentsAreaRef}
+              data-ifix-inspect-atomic-only
+              style={{
+                position: 'relative',
+                background: token.colorBgLayout,
+                borderRadius: 8,
+                paddingTop: 32,
+                paddingBottom: 32,
+                paddingLeft: 24,
+                paddingRight: 24,
+                display: 'flex',
+                gap: 24,
+                flexWrap: 'wrap',
+                marginBottom: 8,
+            }}>
+              {/* data-ifix-inspect-exclude: this toggle lives inside the
+                  same container Inspect scopes to (componentsAreaRef), so
+                  without opting out, Inspect's own click-capture would pin
+                  the toggle itself instead of firing its onClick. */}
+              <div data-ifix-inspect-exclude style={{ position: 'absolute', top: 8, right: 8 }}>
+                <InspectToggle />
+              </div>
+              <ButtonStateSwatch label="Default">
+                <Button type="primary">Button</Button>
+              </ButtonStateSwatch>
+              <ButtonStateSwatch label="Hover">
+                <Button type="primary" style={{ background: token.colorPrimaryHover }}>Button</Button>
+              </ButtonStateSwatch>
+              <ButtonStateSwatch label="Active">
+                <Button type="primary" style={{ background: token.colorPrimaryActive }}>Button</Button>
+              </ButtonStateSwatch>
+              <ButtonStateSwatch label="Focus">
+                <Button
+                  type="primary"
+                  style={{ boxShadow: `0 0 0 ${token.controlOutlineWidth}px ${token.controlOutline}` }}
+                >
+                  Button
+                </Button>
+              </ButtonStateSwatch>
+              <ButtonStateSwatch label="Loading">
+                <Button type="primary" loading>Button</Button>
+              </ButtonStateSwatch>
+              <ButtonStateSwatch label="Disabled">
+                {/* No `disabled` prop — a native disabled attribute stops the
+                    browser from firing pointer events on it at all, which is
+                    exactly why this swatch alone couldn't be inspected. Same
+                    pin-via-style approach already used for Hover/Active/Focus
+                    above: the real disabled tokens, applied manually, so it
+                    looks identical but stays hoverable/clickable. */}
+                <Button
+                  type="primary"
+                  style={{
+                    cursor: 'not-allowed',
+                    background: token.colorBgContainerDisabled,
+                    color: token.colorTextDisabled,
+                    borderColor: token.colorBorderDisabled,
+                    boxShadow: 'none',
+                  }}
+                >
+                  Button
+                </Button>
+              </ButtonStateSwatch>
+            </div>
           </Section>
         </div>
       </div>

@@ -5,7 +5,7 @@ import type { ColumnsType } from 'antd/es/table'
 import type { AuthUser } from '../../../types/installment'
 import type { UserAccount } from '../../../types/user'
 import { ROLE_LABELS, canManageTargetUser } from '../../../constants/roles'
-import { MERCHANT_NAME } from '../../../constants/mockUsers'
+import { MOCK_MERCHANTS } from '../../../constants/mockMerchants'
 import { getAvatarUrl } from '../../../utils/avatar'
 import { UserStatusTag } from './UserStatusTag'
 import { mockCreatedContracts, mockMonthlyCollection } from '../mockStats'
@@ -69,7 +69,10 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
     ...(actor.role === 'super_admin' ? [{
       title: 'Merchant',
       key: 'merchant',
-      render: (_: unknown, r: UserAccount) => r.merchantId ? MERCHANT_NAME : <span style={{ color: token.colorTextDisabled }}>—</span>,
+      render: (_: unknown, r: UserAccount) => {
+        const merchantName = r.merchantId ? MOCK_MERCHANTS.find(m => m.id === r.merchantId)?.name : undefined
+        return merchantName ?? <span style={{ color: token.colorTextDisabled }}>—</span>
+      },
     }] : []),
     {
       title: 'Created Contracts',
@@ -148,7 +151,12 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
               rowKey="id"
               columns={columns}
               dataSource={accounts}
-              scroll={{ x: 'max-content' }}
+              // Only when there's real data to scroll through — an empty
+              // table still computes a fixed-column width slightly wider
+              // than the container (the shadow reserved for
+              // .ant-table-cell-fix-start/-end), which otherwise triggers a
+              // pointless horizontal scrollbar with nothing to scroll to.
+              scroll={accounts.length > 0 ? { x: 'max-content' } : undefined}
               onRow={record => ({
                 onClick: () => navigate(`/settings/members/${record.id}`),
                 style: { cursor: 'pointer' },

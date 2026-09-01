@@ -4,7 +4,8 @@ import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { AuthUser } from '../../../types/installment'
 import type { UserAccount, UserRole } from '../../../types/user'
 import { assignableRoles, ROLE_LABELS } from '../../../constants/roles'
-import { MOCK_USER_ACCOUNTS, generateTempPassword, MERCHANT_ID, MERCHANT_NAME } from '../../../constants/mockUsers'
+import { MOCK_USER_ACCOUNTS, generateTempPassword, MERCHANT_ID } from '../../../constants/mockUsers'
+import { MOCK_MERCHANTS } from '../../../constants/mockMerchants'
 import { BRANCHES } from '../../../constants/mockData'
 
 interface Props {
@@ -26,17 +27,17 @@ interface FormValues {
 
 const BRANCH_ROLES: UserRole[] = ['branch_manager', 'staff']
 
-// Only one merchant exists in this prototype (Merchants itself is still a
-// placeholder page), so this is a stand-in single-option picker — it wires
-// up the field the User Account doc calls for ("merchant assignment (for
-// Super Admin)") without pretending there's a real merchant list to pick
-// from yet.
-const MERCHANT_OPTIONS = [{ value: MERCHANT_ID, label: MERCHANT_NAME }]
-
 export function CreateUserModal({ open, actor, onClose, onCreated }: Props) {
   const [form] = Form.useForm<FormValues>()
   const role = Form.useWatch('role', form)
   const roleOptions = assignableRoles(actor).map(r => ({ value: r, label: ROLE_LABELS[r] }))
+  // Real merchant list now that Merchants exists (used to be a stand-in
+  // single-option picker before that page was built). Suspended merchants
+  // are excluded — Super Admin shouldn't be able to invite a new user into
+  // a workspace that's currently deactivated.
+  const merchantOptions = MOCK_MERCHANTS
+    .filter(m => m.status === 'active')
+    .map(m => ({ value: m.id, label: m.name }))
   const appWindow = useAppWindowContainer()
 
   function handleSubmit(values: FormValues) {
@@ -99,7 +100,7 @@ export function CreateUserModal({ open, actor, onClose, onCreated }: Props) {
         </Form.Item>
         {actor.role === 'super_admin' && (
           <Form.Item label="Merchant" name="merchantId" initialValue={MERCHANT_ID} rules={[{ required: true, message: 'Required' }]}>
-            <Select placeholder="Select merchant" options={MERCHANT_OPTIONS} />
+            <Select placeholder="Select merchant" options={merchantOptions} />
           </Form.Item>
         )}
         {role && BRANCH_ROLES.includes(role) && (

@@ -110,7 +110,14 @@ export function UnitDetailPage() {
         }}>
           <Typography.Text strong style={{ fontSize: 15 }}>Unit Details</Typography.Text>
           {canEdit && (
-            <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+            // paddingRight: 2 on top of the header row's own 8px — matches
+            // the button's own top/bottom centering gap (10px, the derived
+            // (56 - 36) / 2 remainder from centering a 36px-tall button in
+            // this 56px-tall row), so the button sits equidistant from all
+            // three edges instead of closer to the right one.
+            <div style={{ paddingRight: 2 }}>
+              <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+            </div>
           )}
         </div>
 

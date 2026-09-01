@@ -159,13 +159,13 @@ body {
 }
 
 .ifix-menubar-item:hover {
-  /* Was --ant-color-fill-tertiary — this theme's solid-color conversion
-     blends Tertiary against colorBgLayout, which happens to land on the
-     exact same value as colorBgElevated (the surface the menu bar itself
-     sits on), so the hover silently stopped rendering. Same bug already
-     fixed for Select/Table/Button/Tag in App.tsx and DotTag.tsx —
-     colorFillSecondary is the tier that's actually distinguishable. */
-  background: var(--ant-color-fill-secondary);
+  /* Fixed white-alpha, not a theme cssVar — DevToolsPanel's bar is now a
+     fixed dark/blurred strip regardless of which theme (including Light)
+     the app underneath is showing, so a hover fill tied to the CURRENT
+     theme's fill token (e.g. black-alpha in Light mode) would go the wrong
+     direction and disappear against this bar's own always-dark surface.
+     Same value as DevToolsPanel.tsx's own BAR_FILL_SECONDARY constant. */
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* Plain clickable text (SignInPage's "Forgot password?", SetPasswordPage's
@@ -466,8 +466,15 @@ label[for="password"]::after {
    value on the wrapper, not the .ant-drawer-section box-shadow set below) —
    same token, same light-mode-none / dark-mode-unchanged behavior as every
    other panel. */
+/* border-radius here too, not just on .ant-drawer-section below — this
+   wrapper is what actually casts the box-shadow (.ant-drawer-section clips
+   its own content to the same radius, but that's a separate box one level
+   in, and doesn't affect the *shadow*'s silhouette). Without it the panel
+   itself renders with rounded corners while its drop shadow still falls
+   in a plain rectangle around it. */
 .ant-drawer-content-wrapper {
   box-shadow: var(--ant-box-shadow) !important;
+  border-radius: 12px;
 }
 
 .ant-drawer-content-wrapper {

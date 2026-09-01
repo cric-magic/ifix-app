@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 export interface WindowSize {
   width: number
@@ -47,11 +47,45 @@ interface DevToolsContextValue {
 
 const DevToolsContext = createContext<DevToolsContextValue | null>(null)
 
+// Persisted so a theme choice survives a reload and — critically — carries
+// over to /design-docs, which the "Docs" link always opens in a genuinely
+// new tab/page load (see DevToolsPanel.tsx's comment on why), not an
+// SPA-internal navigation. Without this, that fresh tab's DevToolsProvider
+// re-mounts with the 'neutral' default no matter what was selected in the
+// tab it was opened from, so the docs page silently stopped reflecting
+// whatever theme the app itself was showing.
+const THEME_STORAGE_KEY = 'ifix-theme-variant'
+
+function readStoredThemeVariant(): ThemeVariant {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY)
+  return stored === 'neutral' || stored === 'blue' || stored === 'light' ? stored : 'neutral'
+}
+
 export function DevToolsProvider({ children }: { children: React.ReactNode }) {
   const [windowSize, setWindowSize] = useState<WindowSize>(DEVICE_PRESETS.desktop)
-  const [themeVariant, setThemeVariant] = useState<ThemeVariant>('neutral')
+  const [themeVariant, setThemeVariantState] = useState<ThemeVariant>(readStoredThemeVariant)
   const [inspectMode, setInspectMode] = useState(false)
   const [appWindowEl, setAppWindowEl] = useState<HTMLElement | null>(null)
+
+  function setThemeVariant(variant: ThemeVariant) {
+    setThemeVariantState(variant)
+    localStorage.setItem(THEME_STORAGE_KEY, variant)
+  }
+
+  // Keeps an already-open tab (e.g. /design-docs opened before a later
+  // theme switch in the main app tab) in sync too — the storage event only
+  // fires in OTHER tabs than the one that called setItem, which is exactly
+  // the cross-tab case this exists for.
+  useEffect(() => {
+    function handleStorage(e: StorageEvent) {
+      if (e.key === THEME_STORAGE_KEY && e.newValue) {
+        setThemeVariantState(readStoredThemeVariant())
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
+
   return (
     <DevToolsContext.Provider value={{ windowSize, setWindowSize, themeVariant, setThemeVariant, inspectMode, setInspectMode, appWindowEl, setAppWindowEl }}>
       {children}

@@ -1,6 +1,8 @@
 import type { AuthUser, InstallmentRecord } from '../types/installment'
 import type { UserAccount, UserRole } from '../types/user'
 import type { Product, ProductUnit } from '../types/product'
+import type { Merchant } from '../types/merchant'
+import type { Branch } from '../types/branch'
 import { MOCK_USER_ACCOUNTS } from './mockUsers'
 
 export const ROLE_LEVEL: Record<UserRole, number> = {
@@ -144,4 +146,75 @@ export function scopedAllUnits(actor: AuthUser, allUnits: ProductUnit[], allProd
   const inMerchant = allUnits.filter(u => merchantProductIds.has(u.productId))
   if (actor.role === 'branch_manager') return inMerchant.filter(u => u.branch === actor.branch)
   return inMerchant
+}
+
+// Merchant permissions — per the Merchant doc's Non-functional Requirements
+// ("Only Super Admin can CRUD merchants") and Features section ("Merchant
+// Owner can edit his/her merchant details"). Unlike Products/Units, this is
+// platform-level data — there's no "view only" tier below management for
+// Super Admin (they either are one, platform-wide, or aren't), and no actor
+// below Merchant Owner ever touches merchant records at all.
+export function canViewMerchantList(user: AuthUser): boolean {
+  return user.role === 'super_admin'
+}
+
+export function canManageMerchants(user: AuthUser): boolean {
+  return user.role === 'super_admin'
+}
+
+// Whether `actor` can edit (name/legal name/address/contract settings) or
+// manage bank accounts for this specific merchant — Super Admin for any,
+// Merchant Owner for their own only. Merchant Admin and below never can,
+// even within their own merchant (doc names Owner specifically, not Admin).
+export function canEditMerchant(actor: AuthUser, merchant: Merchant): boolean {
+  if (actor.role === 'super_admin') return true
+  return actor.role === 'merchant_owner' && actor.merchantId === merchant.id
+}
+
+export const canManageBankAccounts = canEditMerchant
+
+// Counts for the Merchant list table ("number of branches, number of users").
+export function merchantUserCount(merchantId: string, allUsers: UserAccount[]): number {
+  return allUsers.filter(u => u.merchantId === merchantId).length
+}
+
+// Now backed by real Branch records (was a user-assigned-branch-names proxy
+// before the Branch feature existed) — counts active branches only, same
+// convention as a merchant's user list not counting suspended accounts out
+// of the total shown elsewhere.
+export function merchantBranchCount(merchantId: string, allBranches: Branch[]): number {
+  return allBranches.filter(b => b.merchantId === merchantId && b.status === 'active').length
+}
+
+// Branch permissions — per the Branch doc's Features section. Unlike
+// Merchant (Owner-only edit), Branch management includes Merchant Admin
+// too, matching Product/Unit-tier permissions (isMerchantAdminOrAbove).
+// Super Admin can create/edit/archive any branch "to help the merchant
+// setup," same carve-out the doc gives Merchant creation — but reaches
+// branches through Merchant Detail (they have no merchantId of their own
+// to scope BranchesPage's list to), so canViewBranchList excludes them
+// explicitly rather than via isMerchantAdminOrAbove's role-level ordering,
+// which would otherwise also pass Super Admin (level 5 >= merchant_admin's
+// 3) into a page whose own merchantId-scoped Create button would silently
+// break for them — same explicit-exclusion pattern as canViewProducts.
+export function canViewBranchList(user: AuthUser): boolean {
+  return user.role !== 'super_admin' && isMerchantAdminOrAbove(user)
+}
+
+// General "can this actor create a branch for this merchant" check — used
+// by both BranchesPage (Owner/Admin creating in their own workspace) and
+// Merchant Detail's BranchesTab (Super Admin creating in whichever
+// merchant they're viewing).
+export function canCreateBranch(user: AuthUser): boolean {
+  return user.role === 'super_admin' || isMerchantAdminOrAbove(user)
+}
+
+export function canManageBranch(actor: AuthUser, branch: Branch): boolean {
+  if (actor.role === 'super_admin') return true
+  return isMerchantAdminOrAbove(actor) && actor.merchantId === branch.merchantId
+}
+
+export function scopedBranchList(actor: AuthUser, all: Branch[]): Branch[] {
+  if (actor.role === 'super_admin') return all
+  return all.filter(b => b.merchantId === actor.merchantId)
 }

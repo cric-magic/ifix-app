@@ -1,9 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { SlidersHorizontal } from 'lucide-react'
 import { DesktopStageLayout } from '../layouts/DesktopStageLayout'
 import { AppLayout } from '../layouts/AppLayout'
 import { RequireAuth } from './RequireAuth'
-import { PlaceholderPage } from '../components/PlaceholderPage'
 import { InstallmentListPage } from '../pages/installments/InstallmentListPage'
 import { InstallmentDetailPage } from '../pages/installments/InstallmentDetailPage'
 import { PenaltySettingsPage } from '../pages/penalty/PenaltySettingsPage'
@@ -16,10 +14,14 @@ import { UnitsListPage } from '../pages/products/UnitsListPage'
 import { UnitDetailPage } from '../pages/products/UnitDetailPage'
 import { CustomersPage } from '../pages/customers/CustomersPage'
 import { MerchantsPage } from '../pages/merchants/MerchantsPage'
+import { MerchantDetailPage } from '../pages/merchants/MerchantDetailPage'
 import { BranchesPage } from '../pages/branches/BranchesPage'
+import { BranchDetailPage } from '../pages/branches/BranchDetailPage'
 import { UserListPage } from '../pages/users/UserListPage'
 import { UserDetailPage } from '../pages/users/UserDetailPage'
 import { AccountGeneralPage } from '../pages/account/AccountGeneralPage'
+import { WorkspaceAccountPage } from '../pages/settings/WorkspaceAccountPage'
+import { WorkspaceBankAccountsPage } from '../pages/settings/WorkspaceBankAccountsPage'
 import { DesignDocsPage } from '../pages/design/DesignDocsPage'
 import { SignInPage } from '../pages/auth/SignInPage'
 import { SetPasswordPage } from '../pages/auth/SetPasswordPage'
@@ -56,9 +58,12 @@ export const router = createBrowserRouter([
           { path: 'products/unit/:id', element: <UnitDetailPage /> },
           { path: 'customers', element: <CustomersPage /> },
           { path: 'merchants', element: <MerchantsPage /> },
+          { path: 'merchants/:id', element: <MerchantDetailPage /> },
           { path: 'branches', element: <BranchesPage /> },
-          { path: 'settings', element: <Navigate to="/settings/general" replace /> },
-          { path: 'settings/general', element: <PlaceholderPage icon={<SlidersHorizontal size={26} strokeWidth={2} />} title="General" /> },
+          { path: 'branches/:id', element: <BranchDetailPage /> },
+          { path: 'settings', element: <Navigate to="/settings/account" replace /> },
+          { path: 'settings/account', element: <WorkspaceAccountPage /> },
+          { path: 'settings/bank-accounts', element: <WorkspaceBankAccountsPage /> },
           { path: 'settings/members', element: <UserListPage /> },
           { path: 'settings/members/:id', element: <UserDetailPage /> },
           { path: 'account', element: <Navigate to="/account/general" replace /> },
