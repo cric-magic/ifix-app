@@ -222,12 +222,19 @@ body {
   color: var(--ant-color-icon-hover) !important;
 }
 
-/* Primary button "border beam": on hover/focus, a spinning conic-gradient
-   ring appears just outside the button, plus a soft lift and a
-   colorPrimary-tinted glow. The button's own fill, text, and every other
-   antd state (active/loading/disabled) are untouched — this is a purely
-   additive hover treatment, not a rebuilt button.
-   Danger buttons opt out (they keep their own red state, not a blue beam).
+/* Primary button "border beam": the surface is no longer a flat
+   colorPrimary fill — it's a neutral elevated-surface gradient
+   (colorBgElevated → colorBgLayout, the same pairing Card/Drawer use for
+   "raised surface sitting on the page"), which is why it reads as
+   near-black in Neutral/Bluish and near-white in Light: those tokens
+   already resolve that way per theme, same as everywhere else in the app.
+   The only color signal left is the spinning conic-gradient ring and glow
+   that appear on hover/focus, both colorPrimary-based, plus a 2px lift.
+   Text/icon color follows the same secondary→primary convention as every
+   other icon in the app (default = colorTextSecondary, hover/focus =
+   colorText) instead of antd's forced light-on-color solid-button text,
+   since the surface is no longer guaranteed dark.
+   Danger buttons opt out (they keep antd's normal solid red treatment).
    Everything traces to a real token: the ring's highlight is colorWhite,
    its base is colorPrimary, and the glow is colorPrimary mixed with
    transparent via color-mix() — the CSS-side equivalent of the withAlpha()
@@ -240,7 +247,24 @@ body {
 
 .ant-btn-primary:not(.ant-btn-dangerous) {
   position: relative;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(to bottom, var(--ant-color-bg-elevated), var(--ant-color-bg-layout)) !important;
+  border-color: var(--ant-color-border-secondary) !important;
+  color: var(--ant-color-text-secondary) !important;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous):hover,
+.ant-btn-primary:not(.ant-btn-dangerous):focus-visible {
+  color: var(--ant-color-text) !important;
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous) .ant-btn-icon svg {
+  color: var(--ant-color-icon);
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous):hover .ant-btn-icon svg,
+.ant-btn-primary:not(.ant-btn-dangerous):focus-visible .ant-btn-icon svg {
+  color: var(--ant-color-icon-hover);
 }
 
 .ant-btn-primary:not(.ant-btn-dangerous)::before {
