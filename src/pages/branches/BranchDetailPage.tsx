@@ -41,6 +41,8 @@ export function BranchDetailPage() {
   }
 
   function handleToggleArchive() {
+    if (!branch) return
+
     if (branch.status === 'archived') {
       branch.status = 'active'
       branch.archivedBy = null
