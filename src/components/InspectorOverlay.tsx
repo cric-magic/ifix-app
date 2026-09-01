@@ -79,6 +79,29 @@ function getGapBands(el: HTMLElement, cs: CSSStyleDeclaration, contentBox: { lef
   return bands
 }
 
+// Chrome-devtools-style size chip — the one badge that isn't a token/scale
+// value, so it gets its own treatment (solid primary fill, not an outlined
+// pill like Badge) to read as a measurement rather than a spacing callout.
+// Anchored to the element's bottom-left corner, flipping above the element
+// when there isn't room below, same flip logic the popover itself uses.
+function SizeLabel({ rect, token }: { rect: DOMRect; token: any }) {
+  const width = Math.round(rect.width)
+  const height = Math.round(rect.height)
+  const labelHeight = 16
+  const spaceBelow = window.innerHeight - rect.bottom
+  const top = spaceBelow > labelHeight + 4 ? rect.bottom + 4 : rect.top - labelHeight - 4
+  return (
+    <div style={{
+      position: 'fixed', left: rect.left, top, pointerEvents: 'none', zIndex: 99998,
+      background: token.colorPrimary, color: token.colorWhite,
+      fontSize: 10, lineHeight: `${labelHeight}px`, fontFamily: token.fontFamilyCode,
+      padding: '0 4px', borderRadius: 4, whiteSpace: 'nowrap',
+    }}>
+      {width} × {height}
+    </div>
+  )
+}
+
 function Badge({ x, y, value, color, token }: { x: number; y: number; value: number; color: string; token: any }) {
   if (value <= 0) return null
   return (
@@ -354,6 +377,7 @@ export function InspectorOverlay() {
         left: rect.left, top: rect.top, width: rect.width, height: rect.height,
         outline: `1px solid ${token.colorPrimary}`, outlineOffset: -1,
       }} />
+      <SizeLabel rect={rect} token={token} />
       {/* Margin band — content-box div sized to the border box; its border
           widths equal the margin amounts, so the border itself is the band. */}
       <div style={{
@@ -409,6 +433,18 @@ export function InspectorOverlay() {
         }}>
           <div style={{ marginBottom: 8 }}>
             <span style={{ color: token.colorText, fontFamily: token.fontFamilyCode, fontWeight: 600 }}>{tagLabel}</span>
+          </div>
+
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ color: token.colorTextTertiary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Size</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+              <span style={{ color: token.colorTextTertiary }}>Width</span>
+              <span style={{ color: token.colorText }}>{Math.round(rect.width)}px</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+              <span style={{ color: token.colorTextTertiary }}>Height</span>
+              <span style={{ color: token.colorText }}>{Math.round(rect.height)}px</span>
+            </div>
           </div>
 
           <SideValues label="Padding" t={paddingT} r={paddingR} b={paddingB} l={paddingL} token={token} />
