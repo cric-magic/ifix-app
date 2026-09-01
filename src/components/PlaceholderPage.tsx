@@ -12,7 +12,14 @@ export function PlaceholderPage({ icon, title }: Props) {
 
   return (
     <div style={{
-      minHeight: '60vh',
+      // Was 60vh — measured against the real browser viewport, not the
+      // simulated desktop window/Content area this actually renders
+      // inside, so it could exceed the visible content height and trigger
+      // a scrollbar for a page with nothing to scroll to. height: 100%
+      // fills exactly the Content area's own real height (AppLayout.tsx's
+      // wrapper div now passes that down), so this centers correctly with
+      // no overshoot.
+      height: '100%',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',

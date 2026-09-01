@@ -1,5 +1,5 @@
 import { Avatar, Dropdown, Space, Tag, Typography } from 'antd'
-import { User, BookOpen, ChevronDown, Home, Crosshair, ArrowLeft } from 'lucide-react'
+import { User, BookOpen, ChevronDown, Home, Crosshair } from 'lucide-react'
 import { useDevTools, DEVICE_PRESETS, DEVICE_PRESET_LABELS, THEME_LABELS } from '../contexts/DevToolsContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ROLE_LABELS, ROLE_TAG_COLOR } from '../constants/roles'
@@ -104,37 +104,11 @@ export function DevToolsPanel() {
 
   // The design-docs page is a standalone reference, not the app itself —
   // none of the normal menu bar's app-state controls (viewport, theme,
-  // signed-in user, Inspect) apply there, so instead of hiding them one by
-  // one, swap in a minimal bar with just a way back out. Same floating-pill
-  // treatment (rounded, inset from the edges) as the main bar below, for
-  // consistency between the two — this one just has no wallpaper to reveal
-  // on the sides, only the plain page background.
+  // signed-in user, Inspect) apply there, and per explicit direction the
+  // page no longer gets any top bar at all, not even the minimal
+  // "Back to Prototype" one this used to swap in.
   if (isDesignDocs) {
-    return (
-      <div data-ifix-devtools-bar style={{
-        flexShrink: 0,
-        height: 44,
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 8px',
-        margin: '8px 8px 0',
-        background: BAR_BG,
-        backdropFilter: BAR_BLUR,
-        WebkitBackdropFilter: BAR_BLUR,
-        borderRadius: 8,
-        position: 'relative',
-        zIndex: 100,
-      }}>
-        <a
-          href="/"
-          className="ifix-menubar-item"
-          style={{ display: 'flex', alignItems: 'center', gap: 8, color: BAR_TEXT, fontSize: MENU_BAR_FONT_SIZE }}
-        >
-          <ArrowLeft size={14} strokeWidth={2.25} />
-          <span>Back to Prototype</span>
-        </a>
-      </div>
-    )
+    return null
   }
 
   return (

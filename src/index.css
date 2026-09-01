@@ -168,16 +168,59 @@ body {
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* Every menu bar item (Home link, Inspect toggle, the viewport/theme/user
+   dropdown triggers, Docs link) is a plain <a>/<button>, not an antd
+   Button, so none of them pick up antd's own token-driven focus-visible
+   outline — they fell back to the browser's mismatched default ring
+   instead. Same fixed-white-alpha reasoning as the hover fill above (this
+   bar ignores the current theme on purpose), matching BAR_TEXT's own
+   alpha so it reads as "this bar's own accent," not a random default.
+   1.5px to match antd's own real focus outline width (measured directly
+   off an actual antd Button) — 2px read as a different, thicker ring
+   next to it. */
+.ifix-menubar-item:focus-visible {
+  outline: 1.5px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 2px;
+}
+
 /* Plain clickable text (SignInPage's "Forgot password?", SetPasswordPage's
-   "Not you? Sign out") — a colorTextSecondary span with no button chrome.
-   Hover brightens to colorText (the primary/brightest neutral text tone —
-   not colorPrimary, the brand accent), matching the icon convention
-   elsewhere (secondary at rest, primary on hover/focus). The !important is
-   needed because these set color inline (theme.useToken() already in scope
+   "Not you? Sign out", DesignDocsPage's "Back to Prototype") — a
+   colorTextSecondary span/link with no button chrome. Hover/focus brighten
+   to colorText (the primary/brightest neutral text tone — not
+   colorPrimary, the brand accent), matching the icon convention elsewhere
+   (secondary at rest, primary on hover/focus). The !important is needed
+   because these set color inline (theme.useToken() already in scope
    there), which a plain CSS rule can't outrank on its own — but a
-   stylesheet rule marked !important does beat an inline style. */
-.ifix-text-link:hover {
+   stylesheet rule marked !important does beat an inline style.
+   Unlike .ifix-menubar-item above, this lives in real themed app content
+   (not the theme-independent DevTools bar), so its focus outline uses
+   colorPrimaryBorder — the exact token antd's own default Button focus
+   outline resolves to (measured directly off a real antd Button) — at
+   the same 1.5px width, instead of a hand-picked color/width, so it reads
+   as the same focus treatment rather than a different one nearby. These
+   are plain <a>/<span> elements too, so without this they'd fall back to
+   the same mismatched browser-default ring. */
+.ifix-text-link:hover,
+.ifix-text-link:focus-visible {
   color: var(--ant-color-text) !important;
+}
+
+.ifix-text-link:focus-visible {
+  outline: 1.5px solid var(--ant-color-primary-border);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Generic fallback for any other plain, unstyled <button>/<a> that renders
+   its own look via inline theme.useToken() colors instead of antd's
+   Button component (e.g. DesignDocsPage's InspectToggle) — same root
+   cause as .ifix-menubar-item/.ifix-text-link above: no antd Button means
+   no antd focus-visible outline, so it falls back to the mismatched
+   browser default. Same colorPrimaryBorder/1.5px match as .ifix-text-link
+   above, for the same reason. */
+.ifix-focus-ring:focus-visible {
+  outline: 1.5px solid var(--ant-color-primary-border);
+  outline-offset: 2px;
 }
 
 /* Icon color convention: default = secondary, hover/focus = primary.
@@ -222,23 +265,29 @@ body {
   color: var(--ant-color-icon-hover) !important;
 }
 
-/* Primary button "border beam": the surface is no longer a flat
-   colorPrimary fill — it's a neutral elevated-surface gradient
-   (colorBgElevated → colorBgLayout, the same pairing Card/Drawer use for
-   "raised surface sitting on the page"), which is why it reads as
-   near-black in Neutral/Bluish and near-white in Light: those tokens
-   already resolve that way per theme, same as everywhere else in the app.
-   The only color signal left is the spinning conic-gradient ring and glow
-   that appear on hover/focus, both colorPrimary-based, plus a 2px lift.
+/* Primary button "border beam" — applies to every theme (Neutral, Bluish,
+   Light) now. data-ifix-theme (set on :root by App.tsx) is still used
+   below to swap the beam's own color for Light specifically.
+
+   The surface is no longer a flat colorPrimary fill — it's a neutral
+   elevated-surface gradient (colorBgElevated → colorBgLayout, the same
+   pairing Card/Drawer use for "raised surface sitting on the page"),
+   which is why it reads as near-black in Neutral/Bluish and near-white
+   in Light: those tokens already resolve that way per theme, same as
+   everywhere else in the app. The only color signal left is the spinning
+   conic-gradient ring that appears on hover (colorWhite in Neutral/
+   Bluish, swapped to colorPrimary in Light — see below), plus a top inner
+   highlight (the border-beam demo's bevel). Active and Focus each have
+   their own distinct look further down — not just hover-with-extras.
    Text/icon color follows the same secondary→primary convention as every
-   other icon in the app (default = colorTextSecondary, hover/focus =
-   colorText) instead of antd's forced light-on-color solid-button text,
-   since the surface is no longer guaranteed dark.
+   other icon in the app (default = colorTextSecondary, hover = colorText)
+   instead of antd's forced light-on-color solid-button text, since the
+   surface is no longer guaranteed dark.
    Danger buttons opt out (they keep antd's normal solid red treatment).
    Everything traces to a real token: the ring's highlight is colorWhite,
-   its base is colorPrimary, and the glow is colorPrimary mixed with
-   transparent via color-mix() — the CSS-side equivalent of the withAlpha()
-   helper used for the same purpose in DesktopStageLayout.tsx. */
+   its base is colorPrimary, and the glow/bevel are colorPrimary/colorWhite
+   mixed with transparent via color-mix() — the CSS-side equivalent of the
+   withAlpha() helper used for the same purpose in DesktopStageLayout.tsx. */
 @property --ifix-beam-angle {
   syntax: '<angle>';
   inherits: false;
@@ -250,11 +299,25 @@ body {
   background: linear-gradient(to bottom, var(--ant-color-bg-elevated), var(--ant-color-bg-layout)) !important;
   border-color: var(--ant-color-border-secondary) !important;
   color: var(--ant-color-text-secondary) !important;
+  /* Top inner highlight — the "light catching the top edge" bevel from the
+     border-beam demo (its inset 0 1px 0 rgba(255,255,255,0.3)), derived
+     from colorWhite via color-mix() instead of a literal so it's a real
+     token underneath. Kept at rest, not just on hover, since a bevel reads
+     as part of the surface's own material, not a hover-only cue. */
+  --ifix-btn-inset: inset 0 1px 0 color-mix(in srgb, var(--ant-color-white) 30%, transparent);
+  box-shadow: var(--ifix-btn-inset) !important;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* .ifix-btn-force-hover: every rule below that responds to :hover also
+   matches this class, so DesignDocsPage's pinned Hover/Active swatches
+   (which need to hold the look still without a real pointer event) can
+   trigger it with a plain className — an inline style override can't win
+   against this block's own !importants the way it could before this
+   button had a real background of its own. Focus is its own thing now
+   (see the :focus-visible rule further down) — not grouped in here. */
 .ant-btn-primary:not(.ant-btn-dangerous):hover,
-.ant-btn-primary:not(.ant-btn-dangerous):focus-visible {
+.ant-btn-primary:not(.ant-btn-dangerous).ifix-btn-force-hover {
   color: var(--ant-color-text) !important;
 }
 
@@ -263,7 +326,7 @@ body {
 }
 
 .ant-btn-primary:not(.ant-btn-dangerous):hover .ant-btn-icon svg,
-.ant-btn-primary:not(.ant-btn-dangerous):focus-visible .ant-btn-icon svg {
+.ant-btn-primary:not(.ant-btn-dangerous).ifix-btn-force-hover .ant-btn-icon svg {
   color: var(--ant-color-icon-hover);
 }
 
@@ -283,13 +346,12 @@ body {
 }
 
 .ant-btn-primary:not(.ant-btn-dangerous):hover,
-.ant-btn-primary:not(.ant-btn-dangerous):focus-visible {
-  transform: translateY(-2px);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--ant-color-primary) 40%, transparent);
+.ant-btn-primary:not(.ant-btn-dangerous).ifix-btn-force-hover {
+  box-shadow: var(--ifix-btn-inset) !important;
 }
 
 .ant-btn-primary:not(.ant-btn-dangerous):hover::before,
-.ant-btn-primary:not(.ant-btn-dangerous):focus-visible::before {
+.ant-btn-primary:not(.ant-btn-dangerous).ifix-btn-force-hover::before {
   opacity: 1;
   animation: ifix-beam-spin 3s linear infinite;
 }
@@ -298,26 +360,136 @@ body {
   to { --ifix-beam-angle: 360deg; }
 }
 
+/* Loading: the beam ring IS the loading indicator — no separate spinner
+   icon, and the label swaps to "Loading…" instead of whatever the button
+   normally says. antd's own .ant-btn-loading-icon (a spinning antd Icon)
+   is hidden; the real label is hidden visually (color: transparent, not
+   display:none, so it's still announced to assistive tech) and "Loading…"
+   is drawn over it via ::after, centered on the same box. */
+.ant-btn-primary:not(.ant-btn-dangerous).ant-btn-loading {
+  color: transparent !important;
+  /* The button's own box is still sized by its real (now-invisible) label
+     — a short one like "Save" leaves nowhere near enough room for
+     "Loading…" (needs ~85px including padding at this font size), since
+     the ::after overlay below is positioned absolutely and can't grow the
+     box to fit itself. 96px (Spacing 24) comfortably covers it with a
+     little breathing room, without depending on what the real label was. */
+  min-width: 96px;
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous).ant-btn-loading .ant-btn-loading-icon {
+  display: none !important;
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous).ant-btn-loading::after {
+  content: 'Loading…';
+  position: absolute;
+  inset: 0;
+  /* inset: 0 sizes this to the button's full border-box, edge to edge —
+     it doesn't inherit the button's own horizontal padding just because
+     it's positioned inside it, which is why the text read as flush
+     against the sides with no inset at all. padding: inherit pulls the
+     button's actual computed padding (whatever it resolves to) rather
+     than hardcoding a value that could drift out of sync with it. The
+     overflow/ellipsis trio is a safety net for a button too narrow to
+     fit "Loading…" even with that padding restored. */
+  padding: inherit;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ant-color-text-secondary);
+  pointer-events: none;
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous).ant-btn-loading::before {
+  opacity: 1;
+  animation: ifix-beam-spin 3s linear infinite;
+}
+
+/* Focus (:focus-visible — keyboard/programmatic focus, not a mouse click)
+   just suppresses the beam and leaves everything else — surface, inset
+   bevel, and the outline itself — to antd's own default focus-visible
+   treatment, rather than drawing a custom one on top of it. !important on
+   the beam suppression so it wins even in the edge case where the pointer
+   happens to be hovering the same button a keyboard focus lands on. */
+.ant-btn-primary:not(.ant-btn-dangerous):focus-visible::before,
+.ant-btn-primary:not(.ant-btn-dangerous).ifix-btn-force-focus::before {
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+/* Pressed (:active) reads as the surface pushing in, not lighting up: the
+   gradient direction reverses (dark end now on top) and the top inset
+   highlight — light catching a RAISED edge — drops out, since there's no
+   raised edge to catch light on while pressed. The beam doesn't play
+   either; a spinning ring mid-press would read as a glitch, not feedback.
+   Declared after the hover rules so equal specificity resolves in this
+   block's favor for a real click (:hover and :active both match at once).
+   .ifix-btn-force-active mirrors .ifix-btn-force-hover's reasoning — a
+   click is even less holdable-for-a-screenshot than a hover, so
+   DesignDocsPage's Active swatch pins it with a class instead. */
+.ant-btn-primary:not(.ant-btn-dangerous):active,
+.ant-btn-primary:not(.ant-btn-dangerous).ifix-btn-force-active {
+  background: linear-gradient(to bottom, var(--ant-color-bg-layout), var(--ant-color-bg-elevated)) !important;
+  box-shadow: none !important;
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous):active::before,
+.ant-btn-primary:not(.ant-btn-dangerous).ifix-btn-force-active::before {
+  opacity: 0 !important;
+  animation: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ant-btn-primary:not(.ant-btn-dangerous)::before {
     animation: none !important;
   }
 }
 
-/* Light swaps the beam/glow colors: a white beam (the default, above) reads
-   as a highlight against Neutral/Bluish's dark surface, but against Light's
-   near-white surface it would barely register — so the ring becomes the
-   brand color instead, and the glow (which needs to read as a shadow/lift
-   here, not a colored highlight) becomes white. data-ifix-theme is set on
-   :root by App.tsx, since a plain cssVar can't express "different token in
-   this variant" the way this needs. */
-:root[data-ifix-theme="light"] .ant-btn-primary:not(.ant-btn-dangerous)::before {
-  background: conic-gradient(from var(--ifix-beam-angle) at 50% 50%, transparent 0%, transparent 75%, var(--ant-color-primary) 100%);
+/* Disabled: no beam, ever — a disabled control shouldn't invite interaction,
+   so the ring/inset stay off and the surface flattens to the plain disabled
+   tokens instead of the elevated-surface gradient. Real disabled buttons
+   match :disabled (native <button>) or .ant-btn-disabled (antd's own class,
+   used on non-<button> elements); .ifix-btn-force-hover is included in the
+   negation too so a docs swatch can't accidentally combine both classes.
+   .ifix-btn-force-disabled lets DesignDocsPage pin this look on a plain,
+   still-hoverable/inspectable button, same reasoning as
+   .ifix-btn-force-hover above. Placed after the hover rules so equal
+   specificity resolves in this block's favor for a real element that
+   happens to also be hovered while disabled. */
+.ant-btn-primary:not(.ant-btn-dangerous):disabled,
+.ant-btn-primary:not(.ant-btn-dangerous).ant-btn-disabled,
+.ant-btn-primary:not(.ant-btn-dangerous).ifix-btn-force-disabled {
+  background: var(--ant-color-bg-container-disabled) !important;
+  border-color: var(--ant-color-border) !important;
+  color: var(--ant-color-text-tertiary) !important;
+  box-shadow: none !important;
 }
 
-:root[data-ifix-theme="light"] .ant-btn-primary:not(.ant-btn-dangerous):hover,
-:root[data-ifix-theme="light"] .ant-btn-primary:not(.ant-btn-dangerous):focus-visible {
-  box-shadow: 0 0 20px color-mix(in srgb, var(--ant-color-white) 70%, transparent);
+.ant-btn-primary:not(.ant-btn-dangerous):disabled .ant-btn-icon svg,
+.ant-btn-primary:not(.ant-btn-dangerous).ant-btn-disabled .ant-btn-icon svg,
+.ant-btn-primary:not(.ant-btn-dangerous).ifix-btn-force-disabled .ant-btn-icon svg {
+  color: var(--ant-color-text-tertiary);
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous):disabled::before,
+.ant-btn-primary:not(.ant-btn-dangerous).ant-btn-disabled::before,
+.ant-btn-primary:not(.ant-btn-dangerous).ifix-btn-force-disabled::before {
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+/* Light swaps the beam color: a white beam (the default, above) reads as a
+   highlight against Bluish's dark surface, but against Light's near-white
+   surface it would barely register — so the ring becomes the brand color
+   instead. No glow to swap anymore (removed from both variants), just the
+   ring's own color. */
+:root[data-ifix-theme="light"] .ant-btn-primary:not(.ant-btn-dangerous)::before {
+  background: conic-gradient(from var(--ifix-beam-angle) at 50% 50%, transparent 0%, transparent 75%, var(--ant-color-primary) 100%);
 }
 
 /* Segmented's border matches the panel's own (0.5px colorBorderSecondary) —

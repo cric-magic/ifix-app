@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Typography, Button, message, theme } from 'antd'
-import { Copy, Check, ChevronDown, Crosshair } from 'lucide-react'
+import { Copy, Check, ChevronDown, Crosshair, ArrowLeft } from 'lucide-react'
 import { useIconColors } from '../../constants/iconColors'
 import { useDevTools } from '../../contexts/DevToolsContext'
 import { SPACING_SCALE, RADIUS_SCALE, BORDER_WIDTH_SCALE } from '../../constants/designTokens'
@@ -546,9 +546,26 @@ function TocGroup({ label, items, activeId }: { label: string; items: { id: stri
 
 function TableOfContents() {
   const activeId = useActiveSection(TOC_IDS)
+  const { token } = theme.useToken()
 
   return (
     <nav style={{ position: 'sticky', top: 48, width: 176, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <a
+        href="/"
+        className="ifix-text-link"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '4px 8px',
+          borderRadius: 6,
+          fontSize: 13,
+          color: token.colorTextSecondary,
+        }}
+      >
+        <ArrowLeft size={14} strokeWidth={2.25} />
+        <span>Back to Prototype</span>
+      </a>
       {TOC_GROUPS.map(group => (
         <TocGroup key={group.id} label={group.label} items={group.items} activeId={activeId} />
       ))}
@@ -572,6 +589,7 @@ function InspectToggle() {
     <button
       type="button"
       onClick={() => setInspectMode(!inspectMode)}
+      className="ifix-focus-ring"
       style={{
         display: 'flex', alignItems: 'center', gap: 6, border: 'none', cursor: 'pointer',
         background: inspectMode ? token.colorFillSecondary : token.colorFillTertiary,
@@ -787,18 +805,31 @@ export function DesignDocsPage() {
                 <Button type="primary">Button</Button>
               </ButtonStateSwatch>
               <ButtonStateSwatch label="Hover">
-                <Button type="primary" style={{ background: token.colorPrimaryHover }}>Button</Button>
+                {/* The border-beam treatment (App.tsx/index.css) reads
+                    hover/active/focus off real :hover/:active/:focus-visible
+                    pseudo-classes and its own !important background — an
+                    inline style override can no longer pin the look the
+                    way it could when this button was a flat colorPrimary
+                    fill, so these swatches force each one via its own
+                    plain class instead (.ifix-btn-force-hover/-active/
+                    -focus in index.css) — each state has its own distinct
+                    look now: Hover beams+glows, Active reverses the
+                    gradient with no beam/glow, Focus is a plain white
+                    outline with no beam. */}
+                <Button type="primary" className="ifix-btn-force-hover">Button</Button>
               </ButtonStateSwatch>
               <ButtonStateSwatch label="Active">
-                <Button type="primary" style={{ background: token.colorPrimaryActive }}>Button</Button>
+                <Button type="primary" className="ifix-btn-force-active">Button</Button>
               </ButtonStateSwatch>
               <ButtonStateSwatch label="Focus">
-                <Button
-                  type="primary"
-                  style={{ boxShadow: `0 0 0 ${token.controlOutlineWidth}px ${token.controlOutline}` }}
-                >
-                  Button
-                </Button>
+                {/* Real focus, not a pinned approximation — antd's own
+                    default focus-visible ring can't be faked with an
+                    inline style (blocked by this button's own !important
+                    box-shadow, same reason Hover/Active/Disabled moved to
+                    force-classes), but autoFocus gets genuine browser
+                    focus on mount, which the browser does treat as
+                    focus-visible with no prior pointer interaction. */}
+                <Button type="primary" autoFocus className="ifix-btn-force-focus">Button</Button>
               </ButtonStateSwatch>
               <ButtonStateSwatch label="Loading">
                 <Button type="primary" loading>Button</Button>
@@ -807,19 +838,13 @@ export function DesignDocsPage() {
                 {/* No `disabled` prop — a native disabled attribute stops the
                     browser from firing pointer events on it at all, which is
                     exactly why this swatch alone couldn't be inspected. Same
-                    pin-via-style approach already used for Hover/Active/Focus
-                    above: the real disabled tokens, applied manually, so it
-                    looks identical but stays hoverable/clickable. */}
-                <Button
-                  type="primary"
-                  style={{
-                    cursor: 'not-allowed',
-                    background: token.colorBgContainerDisabled,
-                    color: token.colorTextDisabled,
-                    borderColor: token.colorBorderDisabled,
-                    boxShadow: 'none',
-                  }}
-                >
+                    force-class approach as Hover/Active/Focus above
+                    (.ifix-btn-force-disabled in index.css): the real
+                    disabled tokens, applied via CSS instead of inline style
+                    (which can't win against this button's own !important
+                    rules), so it looks identical but stays
+                    hoverable/clickable/inspectable. */}
+                <Button type="primary" className="ifix-btn-force-disabled" style={{ cursor: 'not-allowed' }}>
                   Button
                 </Button>
               </ButtonStateSwatch>

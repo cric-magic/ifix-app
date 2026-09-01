@@ -59,7 +59,14 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
   neutral: {
     colorPrimary: '#5b9aa8',
     colorBgBase: '#000000',
-    colorBgContainer: '#0a0a0a',
+    // Was '#0a0a0a' — that's also the exact hex colorFillQuaternary
+    // solidizes to further down when blended onto colorBgLayout (pure
+    // black), so the Sider (showing this seed directly) and the Content
+    // wrapper (painted with that solidized quaternary tint) rendered
+    // identically, erasing the seam between them. Moved to '#050505' so it
+    // no longer collides with that ~#0a0a0a computed value — colorLayout
+    // is already floored at pure black, so this side had to move instead.
+    colorBgContainer: '#050505',
     colorBgLayout: '#000000',
     algorithm: 'dark',
     colorBorder: 'rgba(255, 255, 255, 0.12)',
@@ -84,19 +91,17 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
     // unused for now rather than force it into colorPrimaryHover or
     // similar without knowing that's actually the intended role.
     colorPrimary: '#3283F8',
-    // Base/container/layout all one flat #121B22 — no manual gap between
-    // the page canvas and the container seed here. The visible elevation
-    // step between the page and an actual panel (.ifix-table-panel) still
-    // exists and comes entirely from colorBgElevated's own double-layered
-    // colorFillQuaternary blend further down (same mechanism every variant
-    // already relies on) — a same-magnitude gap that read as barely
-    // perceptible near pure black apparently reads as a much more obvious
-    // seam at this navy's higher base lightness, so removing the extra
-    // seed-level gap here brings it back in line with how flat neutral's
-    // own base/layout vs. container felt.
-    colorBgBase: '#121b22',
+    // Base/layout darker than container — mirrors Neutral's own pattern
+    // (colorBgBase === colorBgLayout as the darkest "page canvas" tier,
+    // colorBgContainer one step lighter as the "elevated surface" tier).
+    // An earlier pass here flattened all three to one value, reasoning
+    // that the same-magnitude gap read as a more obvious seam at navy's
+    // higher base lightness than it did near pure black — reverted per
+    // explicit direction: colorBgLayout should read darker than
+    // colorBgContainer, not equal to it.
+    colorBgBase: '#0e141a',
     colorBgContainer: '#121b22',
-    colorBgLayout: '#121b22',
+    colorBgLayout: '#0e141a',
     algorithm: 'dark',
     colorBorder: 'rgba(255, 255, 255, 0.12)',
     colorBorderSecondary: 'rgba(255, 255, 255, 0.08)',

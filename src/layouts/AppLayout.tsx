@@ -607,7 +607,12 @@ export function AppLayout() {
         </Header>
 
         <Content style={{ padding: 16, overflow: 'auto', background: 'var(--ifix-wrapper-bg)' }}>
-          <div style={{ maxWidth: 1440, margin: '0 auto' }}>
+          {/* height: 100% (not the default shrink-wrap) so a short page like
+              PlaceholderPage can size itself against the Content area's own
+              real height instead of an arbitrary vh guess — a real page's
+              taller content still overflows this normally and scrolls via
+              Content's own overflow:auto above, same as before. */}
+          <div style={{ maxWidth: 1440, margin: '0 auto', height: '100%' }}>
             <Outlet />
           </div>
         </Content>
