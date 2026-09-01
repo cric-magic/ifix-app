@@ -222,6 +222,64 @@ body {
   color: var(--ant-color-icon-hover) !important;
 }
 
+/* Primary button "border beam": on hover/focus, a spinning conic-gradient
+   ring appears just outside the button, plus a soft lift and a
+   colorPrimary-tinted glow. The button's own fill, text, and every other
+   antd state (active/loading/disabled) are untouched — this is a purely
+   additive hover treatment, not a rebuilt button.
+   Danger buttons opt out (they keep their own red state, not a blue beam).
+   Everything traces to a real token: the ring's highlight is colorWhite,
+   its base is colorPrimary, and the glow is colorPrimary mixed with
+   transparent via color-mix() — the CSS-side equivalent of the withAlpha()
+   helper used for the same purpose in DesktopStageLayout.tsx. */
+@property --ifix-beam-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous) {
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous)::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--ifix-beam-angle) at 50% 50%, transparent 0%, transparent 75%, var(--ant-color-white) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous):hover,
+.ant-btn-primary:not(.ant-btn-dangerous):focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--ant-color-primary) 40%, transparent);
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous):hover::before,
+.ant-btn-primary:not(.ant-btn-dangerous):focus-visible::before {
+  opacity: 1;
+  animation: ifix-beam-spin 3s linear infinite;
+}
+
+@keyframes ifix-beam-spin {
+  to { --ifix-beam-angle: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ant-btn-primary:not(.ant-btn-dangerous)::before {
+    animation: none !important;
+  }
+}
+
 /* Segmented's border matches the panel's own (0.5px colorBorderSecondary) —
    Input/Select/InputNumber/DatePicker now use the same token for their own
    border (App.tsx), so this is really just about the line weight: Segmented
