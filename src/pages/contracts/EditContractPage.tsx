@@ -339,6 +339,7 @@ export function EditContractPage() {
       title: selectedTemplate!.title,
       bindingStatement: selectedTemplate!.bindingStatement,
       legalDeclarations: selectedTemplate!.legalDeclarations,
+      penalty: selectedTemplate!.penalty,
     }
     contract.financing = financing
 

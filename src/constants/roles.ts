@@ -148,7 +148,37 @@ export function canVoidPaymentRecord(actor: AuthUser, contract: Contract): boole
   return contract.status !== 'settled'
 }
 
-export function canConfigurePenalty(user: AuthUser): boolean {
+// Penalty doc's rework: penalty rules now live on the Contract Template
+// (see canManageContractTemplates below), not a standalone settings page —
+// this old helper stays only as the shared "money-adjustment" actor gate
+// for the actions below (Collection Fee, Penalty Discount), all of which
+// the doc puts at Admin/Owner (Branch Manager is explicitly marked TBD in
+// the doc's own Permissions table — defaulted to false here, same
+// conservative call as everywhere else in this app a TBD role boundary
+// comes up).
+function isMoneyAdjustmentActor(user: AuthUser): boolean {
+  return isMerchantAdminOrAbove(user)
+}
+
+// Collection fees and penalty discounts are both locked once Settled, same
+// as void/adjustment actions elsewhere in the app — nothing can touch a
+// contract's money once it's fully paid off.
+export function canManageCollectionFee(actor: AuthUser, contract: Contract): boolean {
+  if (!isMoneyAdjustmentActor(actor)) return false
+  if (!canManageContract(actor, contract)) return false
+  return contract.status !== 'settled'
+}
+
+export function canAdjustPenalty(actor: AuthUser, contract: Contract): boolean {
+  if (!isMoneyAdjustmentActor(actor)) return false
+  if (!canManageContract(actor, contract)) return false
+  return contract.status !== 'settled'
+}
+
+// Merchant-level Collection Fee toggle/amount — per the doc, "can be set at
+// the merchant or branch level" by Admin/Owner; branch-level override isn't
+// modeled yet (see Merchant.collectionFeeEnabled's own comment).
+export function canManageCollectionFeeSettings(user: AuthUser): boolean {
   return isMerchantAdminOrAbove(user)
 }
 

@@ -47,6 +47,7 @@ function templateSnapshotFor(template: ContractTemplate): TemplateSnapshot {
     title: template.title,
     bindingStatement: template.bindingStatement,
     legalDeclarations: template.legalDeclarations,
+    penalty: template.penalty,
   }
 }
 
@@ -211,6 +212,11 @@ export const MOCK_CONTRACTS: Contract[] = SEEDS.map(seed => {
     financing,
     schedule: isPreActivation ? [] : schedule,
     payments: isPreActivation ? [] : payments,
+    collectionFees: [],
+    penaltyAdjustments: [],
+    penaltyChargedTotal: 0,
+    penaltyBalance: 0,
+    collectionFeeBalance: 0,
     rejectionNote: seed.rejectionNote ?? null,
     signedContractUploaded: seed.signedContractUploaded ?? false,
     createdBy: seed.createdBy,

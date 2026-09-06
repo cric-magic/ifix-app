@@ -34,7 +34,6 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
       key: 'device',
       render: (_, c) => `${c.device.brand} ${c.device.model}${c.device.storage ? ` · ${c.device.storage}` : ''}`,
     },
-    { title: 'Status', key: 'status', render: (_, c) => <ContractStatusTag status={c.status} /> },
     {
       title: 'Outstanding',
       key: 'outstanding',
@@ -68,6 +67,11 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
         },
       },
     ] : []),
+    // Status pinned last + fixed right, matching every other list table in
+    // the app (Branch/Merchant/Product/User) — this table was the one
+    // outlier with Status buried mid-row, scrolling out of view once the
+    // Admin variant's extra Branch/Net Position columns are added.
+    { title: 'Status', key: 'status', fixed: 'right', render: (_, c) => <ContractStatusTag status={c.status} /> },
   ]
 
   return (

@@ -48,7 +48,7 @@ export function ProductsPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <ProductTypeTabs activeType={typeFilter} allProducts={products} onChange={setTypeFilter} />
+        <ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />
         {canManageProducts(user) && (
           <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
             Create Product

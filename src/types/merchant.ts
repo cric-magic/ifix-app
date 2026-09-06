@@ -31,6 +31,13 @@ export interface Merchant {
   contractPrefix: string
   lineQrUrl?: string
   bankAccounts: BankAccountProfile[]
+  // Per the Penalty doc: "Collection fees can be turned on or off for each
+  // merchant or branch" / "The fee amount can be set at the merchant or
+  // branch level." Branch-level override isn't modeled yet (the doc's own
+  // permission table marks Branch Manager's role here as TBD) — this is
+  // the merchant-wide default every branch uses until that's built.
+  collectionFeeEnabled: boolean
+  collectionFeeAmount: number
   // Captured at creation time (the doc's "Initial Owner account — name +
   // email"); ownerUserId links to the actual provisioned UserAccount once
   // one exists for this merchant. Kept separate rather than only storing

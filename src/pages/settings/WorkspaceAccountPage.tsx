@@ -4,9 +4,10 @@ import { Pencil } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { useDevTools } from '../../contexts/DevToolsContext'
 import { MOCK_MERCHANTS, previewContractNumber } from '../../constants/mockMerchants'
-import { canEditMerchant } from '../../constants/roles'
+import { canEditMerchant, canManageCollectionFeeSettings } from '../../constants/roles'
 import { MerchantStatusTag } from '../merchants/components/MerchantStatusTag'
 import { EditMerchantModal } from '../merchants/components/EditMerchantModal'
+import { CollectionFeeSettingsModal } from './components/CollectionFeeSettingsModal'
 import { SettingsCard, SettingsRow } from '../../components/SettingsCard'
 import { getWorkspaceAvatarUrl } from '../../utils/avatar'
 import ifixLogoDark from '../../assets/logo.png'
@@ -32,6 +33,7 @@ export function WorkspaceAccountPage() {
   const { themeVariant } = useDevTools()
   const actor = useCurrentUser()
   const [editOpen, setEditOpen] = useState(false)
+  const [collectionFeeOpen, setCollectionFeeOpen] = useState(false)
   const [version, setVersion] = useState(0)
   void version
 
@@ -75,6 +77,7 @@ export function WorkspaceAccountPage() {
   if (!merchant) return null
 
   const canEdit = canEditMerchant(actor, merchant)
+  const canManageCollectionFee = canManageCollectionFeeSettings(actor)
 
   function refresh() {
     setVersion(v => v + 1)
@@ -116,6 +119,22 @@ export function WorkspaceAccountPage() {
         </SettingsRow>
       </SettingsCard>
 
+      <SettingsCard title="Collection Fee">
+        <SettingsRow label="Status">
+          {merchant.collectionFeeEnabled ? 'Enabled' : 'Disabled'}
+        </SettingsRow>
+        {merchant.collectionFeeEnabled && (
+          <SettingsRow label="Default amount">
+            <span style={{ fontFamily: token.fontFamilyCode }}>฿{merchant.collectionFeeAmount.toLocaleString()}</span>
+          </SettingsRow>
+        )}
+        {canManageCollectionFee && (
+          <Button style={{ marginTop: 16 }} icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setCollectionFeeOpen(true)}>
+            Edit
+          </Button>
+        )}
+      </SettingsCard>
+
       <EditMerchantModal
         open={editOpen}
         merchant={merchant}
@@ -124,6 +143,17 @@ export function WorkspaceAccountPage() {
           setEditOpen(false)
           refresh()
           message.success('Workspace updated')
+        }}
+      />
+
+      <CollectionFeeSettingsModal
+        open={collectionFeeOpen}
+        merchant={merchant}
+        onClose={() => setCollectionFeeOpen(false)}
+        onSaved={() => {
+          setCollectionFeeOpen(false)
+          refresh()
+          message.success('Collection Fee settings updated')
         }}
       />
     </div>

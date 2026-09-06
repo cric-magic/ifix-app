@@ -12,6 +12,12 @@ interface PreviewValues {
   type?: 'fixed_rate' | 'free_rate'
   fixedRateTerms?: { months: number; ratePercent: number }[]
   maxLoanAmount?: number
+  // The table's row-level Preview passes a full ContractTemplate (nested
+  // `penalty.legalText`); the in-form Preview passes flat form values
+  // (`penaltyLegalText`) — supporting both shapes here avoids needing two
+  // separate preview components for the same content.
+  penaltyLegalText?: string
+  penalty?: { legalText?: string }
 }
 
 interface Props {
@@ -65,29 +71,35 @@ export function ContractTemplatePreviewDrawer({ open, onClose, values }: Props) 
 
         <Divider />
 
-        <Typography.Title level={5}>สรุปข้อมูลทางการเงิน · Contract Financial Summary</Typography.Title>
+        <Typography.Title level={5}>Contract Financial Summary</Typography.Title>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 16 }}>
-          <Typography.Text type="secondary">ราคาสินค้า: <CurrencyDisplay amount={SAMPLE_DEVICE_PRICE} /></Typography.Text>
-          <Typography.Text type="secondary">ชำระงวดแรก: <CurrencyDisplay amount={downPaymentAmount} /> (20%)</Typography.Text>
-          <Typography.Text type="secondary">แบ่งจ่ายเดือนละ: <CurrencyDisplay amount={calc.monthlyInstallment} /></Typography.Text>
-          <Typography.Text type="secondary">จำนวนเดือน: {term.months} เดือน{values.type === 'fixed_rate' ? ` (${term.ratePercent}%/mo)` : ''}</Typography.Text>
+          <Typography.Text type="secondary">Device Price: <CurrencyDisplay amount={SAMPLE_DEVICE_PRICE} /></Typography.Text>
+          <Typography.Text type="secondary">Down Payment: <CurrencyDisplay amount={downPaymentAmount} /> (20%)</Typography.Text>
+          <Typography.Text type="secondary">Monthly Installment: <CurrencyDisplay amount={calc.monthlyInstallment} /></Typography.Text>
+          <Typography.Text type="secondary">Term: {term.months} months{values.type === 'fixed_rate' ? ` (${term.ratePercent}%/mo)` : ''}</Typography.Text>
         </div>
 
         <Typography.Paragraph style={{ fontSize: 12, color: token.colorTextTertiary }}>
           {values.legalDeclarations || <span style={{ color: token.colorTextDisabled }}>No legal declarations yet.</span>}
         </Typography.Paragraph>
 
+        {(values.penaltyLegalText ?? values.penalty?.legalText) && (
+          <Typography.Paragraph style={{ fontSize: 12, color: token.colorTextTertiary }}>
+            {values.penaltyLegalText ?? values.penalty?.legalText}
+          </Typography.Paragraph>
+        )}
+
         <Divider />
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
           <div style={{ textAlign: 'center', width: '40%' }}>
             <div style={{ borderTop: `0.5px solid ${token.colorBorderSecondary}`, paddingTop: 8 }}>
-              <Typography.Text type="secondary">(Sample Customer)<br />ผู้เช่าซื้อ</Typography.Text>
+              <Typography.Text type="secondary">(Sample Customer)<br />Lessee</Typography.Text>
             </div>
           </div>
           <div style={{ textAlign: 'center', width: '40%' }}>
             <div style={{ borderTop: `0.5px solid ${token.colorBorderSecondary}`, paddingTop: 8 }}>
-              <Typography.Text type="secondary">({merchant?.name})<br />ผู้ให้เช่าซื้อ</Typography.Text>
+              <Typography.Text type="secondary">({merchant?.name})<br />Lessor</Typography.Text>
             </div>
           </div>
         </div>

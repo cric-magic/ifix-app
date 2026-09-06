@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Drawer, Button, Space, Form, Input, InputNumber, Radio } from 'antd'
+import { Drawer, Button, Space, Form, Input, InputNumber, Radio, Divider, Typography } from 'antd'
 import { Plus, Trash2, Eye } from 'lucide-react'
 import { useAppWindowContainer } from '../../../../contexts/AppWindowContext'
 import { useCurrentUser } from '../../../../contexts/AuthContext'
-import type { ContractTemplate, ContractTemplateType } from '../../../../types/contractTemplate'
+import type { ContractTemplate, ContractTemplateType, PenaltyType } from '../../../../types/contractTemplate'
 import { generateContractTemplateId } from '../../../../constants/mockContractTemplates'
 import { ContractTemplatePreviewDrawer } from './ContractTemplatePreviewDrawer'
 
@@ -26,6 +26,12 @@ interface FormValues {
   title: string
   bindingStatement: string
   legalDeclarations: string
+  penaltyType: PenaltyType
+  penaltyRatePercent?: number
+  penaltyFlatFeeAmount?: number
+  penaltyGraceDays: number
+  penaltyMaxCap: number
+  penaltyLegalText: string
 }
 
 const DEFAULT_VALUES: FormValues = {
@@ -35,9 +41,14 @@ const DEFAULT_VALUES: FormValues = {
   maxDownPaymentPercent: 50,
   maxLoanAmount: 100000,
   fixedRateTerms: [{ months: 12, ratePercent: 1.75 }],
-  title: 'สัญญาเช่าซื้อสินค้า (Hire Purchase Agreement)',
+  title: 'Hire Purchase Agreement',
   bindingStatement: '',
   legalDeclarations: '',
+  penaltyType: 'fixed_rate',
+  penaltyRatePercent: 1.5,
+  penaltyGraceDays: 3,
+  penaltyMaxCap: 3000,
+  penaltyLegalText: '',
 }
 
 // Same modal for create/edit/duplicate — `template` is null for "create",
@@ -50,6 +61,7 @@ export function ContractTemplateModal({ open, template, onClose, onSaved }: Prop
   const actor = useCurrentUser()
   const [previewOpen, setPreviewOpen] = useState(false)
   const type = Form.useWatch('type', form)
+  const penaltyType = Form.useWatch('penaltyType', form)
 
   useEffect(() => {
     if (template) {
@@ -65,6 +77,12 @@ export function ContractTemplateModal({ open, template, onClose, onSaved }: Prop
         title: template.title,
         bindingStatement: template.bindingStatement,
         legalDeclarations: template.legalDeclarations,
+        penaltyType: template.penalty.type,
+        penaltyRatePercent: template.penalty.ratePercent,
+        penaltyFlatFeeAmount: template.penalty.flatFeeAmount,
+        penaltyGraceDays: template.penalty.graceDays,
+        penaltyMaxCap: template.penalty.maxCap,
+        penaltyLegalText: template.penalty.legalText,
       })
     } else {
       form.resetFields()
@@ -89,6 +107,14 @@ export function ContractTemplateModal({ open, template, onClose, onSaved }: Prop
       title: values.title,
       bindingStatement: values.bindingStatement,
       legalDeclarations: values.legalDeclarations,
+      penalty: {
+        type: values.penaltyType,
+        ratePercent: values.penaltyType === 'fixed_rate' ? values.penaltyRatePercent : undefined,
+        flatFeeAmount: values.penaltyType === 'fixed_fee' ? values.penaltyFlatFeeAmount : undefined,
+        graceDays: values.penaltyGraceDays,
+        maxCap: values.penaltyMaxCap,
+        legalText: values.penaltyLegalText,
+      },
       createdBy: template?.createdBy ?? actor.id,
       createdAt: template?.createdAt ?? new Date().toISOString(),
       updatedBy: template ? actor.id : null,
@@ -188,6 +214,43 @@ export function ContractTemplateModal({ open, template, onClose, onSaved }: Prop
         </Form.Item>
         <Form.Item label="Legal Declarations" name="legalDeclarations" rules={[{ required: true, message: 'Required' }]}>
           <Input.TextArea rows={3} />
+        </Form.Item>
+
+        <Divider style={{ margin: '8px 0 16px' }} />
+        <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 4 }}>Penalty Settings</Typography.Title>
+        <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 16, fontSize: 13 }}>
+          Copied onto every new contract created from this template — later edits here never affect existing contracts.
+        </Typography.Text>
+
+        <Form.Item label="Penalty Type" name="penaltyType" rules={[{ required: true, message: 'Required' }]}>
+          <Radio.Group optionType="button" buttonStyle="solid" options={[
+            { label: 'Fixed Rate (%/mo)', value: 'fixed_rate' },
+            { label: 'Fixed Fee (THB/mo)', value: 'fixed_fee' },
+          ]} />
+        </Form.Item>
+
+        {penaltyType === 'fixed_rate' && (
+          <Form.Item label="Penalty Rate (%/mo)" name="penaltyRatePercent" rules={[{ required: true, message: 'Required' }]}>
+            <InputNumber style={{ width: '100%' }} min={0} step={0.1} precision={2} addonAfter="%/mo" />
+          </Form.Item>
+        )}
+        {penaltyType === 'fixed_fee' && (
+          <Form.Item label="Penalty Flat Fee (฿/mo)" name="penaltyFlatFeeAmount" rules={[{ required: true, message: 'Required' }]}>
+            <InputNumber style={{ width: '100%' }} min={0} step={50} addonBefore="฿" addonAfter="/mo" />
+          </Form.Item>
+        )}
+
+        <Space.Compact block>
+          <Form.Item label="Grace Period (days)" name="penaltyGraceDays" rules={[{ required: true, message: 'Required' }]} style={{ width: '50%' }}>
+            <InputNumber style={{ width: '100%' }} min={0} max={30} addonAfter="days" />
+          </Form.Item>
+          <Form.Item label="Max Penalty Cap (฿)" name="penaltyMaxCap" rules={[{ required: true, message: 'Required' }]} style={{ width: '50%' }}>
+            <InputNumber style={{ width: '100%' }} min={0} step={500} addonBefore="฿" />
+          </Form.Item>
+        </Space.Compact>
+
+        <Form.Item label="Penalty Legal Text" name="penaltyLegalText" rules={[{ required: true, message: 'Required' }]}>
+          <Input.TextArea rows={2} />
         </Form.Item>
       </Form>
 

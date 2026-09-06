@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
-import type { Contract, ContractPaymentRecord, FinancingTerms, ScheduleItem } from '../types/contract'
+import type { Contract, ContractPaymentRecord, FinancingTerms, ScheduleItem, CollectionFeeRecord, PenaltyAdjustment } from '../types/contract'
 import type { Merchant } from '../types/merchant'
+import type { PenaltyRule } from '../types/contractTemplate'
 
 // Derived, not stored — the doc's List Contract columns (outstanding
 // balance, next due, overdue days, net position) are all computable from
@@ -118,6 +119,41 @@ export function buildActivationSchedule(
 // date has passed, Settled once every installment is paid, Active
 // otherwise. Period 0 (the down payment) is untouched here — it's always
 // paid at activation and isn't part of this recalculation.
+// Fresh, deterministic penalty accrual for one schedule item — a pure
+// function of "how many days past its grace period has this item's due
+// date been," never a hand-incremented running total. This is what the
+// Penalty doc's own non-functional requirement ("the same input data must
+// always produce the same calculation result") calls for, and it's also
+// what keeps voiding a payment trivially correct: nothing was ever added
+// that now needs subtracting, it just gets recomputed from whatever
+// payment history remains. Capped at the template snapshot's own maxCap.
+export function calcAccruedPenalty(item: ScheduleItem | undefined, penalty: PenaltyRule): number {
+  if (!item) return 0
+  const graceEnd = dayjs(item.dueDate).add(penalty.graceDays, 'day')
+  const today = dayjs()
+  if (!today.isAfter(graceEnd, 'day')) return 0
+  const daysOverdue = today.diff(graceEnd, 'day')
+  const monthsOverdue = daysOverdue / 30
+  const raw = penalty.type === 'fixed_rate'
+    ? item.amount * ((penalty.ratePercent ?? 0) / 100) * monthsOverdue
+    // A flat fee is charged per month (or partial month) overdue, so a
+    // fee that just started its first day still owes one full month's fee.
+    : Math.ceil(daysOverdue / 30) * (penalty.flatFeeAmount ?? 0)
+  return Math.min(Math.round(raw), penalty.maxCap)
+}
+
+export function getActiveCollectionFeeTotal(contract: Contract): number {
+  return contract.collectionFees
+    .filter(f => !f.voided && !f.waived)
+    .reduce((sum, f) => sum + f.amount, 0)
+}
+
+function getPenaltyDiscountTotal(contract: Contract): number {
+  return contract.penaltyAdjustments
+    .filter(a => !a.voided)
+    .reduce((sum, a) => sum + a.amount, 0)
+}
+
 export function recalculateSchedule(contract: Contract): void {
   // No-op before activation (schedule is only ever generated at that
   // point — see buildActivationSchedule) — calling this defensively on
@@ -137,8 +173,22 @@ export function recalculateSchedule(contract: Contract): void {
     }
   })
 
-  let idx = contract.schedule.findIndex(s => s.period === 1)
+  // Penalty/collection-fee targets, fixed once per call against the
+  // schedule's first still-open installment — i.e. the one a fresh replay
+  // would treat as "the" overdue item before any of this contract's own
+  // payments are applied. A deliberate simplification for a prototype with
+  // no real day-by-day ledger: only one installment is ever genuinely "the"
+  // overdue one at a time in the scenarios this app needs to handle, so
+  // using its due date as the basis is stable in every realistic case.
+  const firstOpenIdx = contract.schedule.findIndex(s => s.period === 1)
+  const penaltyBasisItem = firstOpenIdx !== -1 ? contract.schedule[firstOpenIdx] : undefined
+  const penaltyTarget = calcAccruedPenalty(penaltyBasisItem, contract.template.penalty)
+  const collectionFeeTarget = getActiveCollectionFeeTotal(contract)
+
+  let idx = firstOpenIdx
   let carry = 0
+  let penaltyPaidTotal = 0
+  let collectionFeePaidTotal = 0
   for (const payment of orderedPayments) {
     let remaining = payment.amount + carry
     carry = 0
@@ -149,6 +199,20 @@ export function recalculateSchedule(contract: Contract): void {
       item.paidDate = payment.paymentDate
       remaining -= item.amount
       idx++
+    }
+    // Payment Waterfall, per the Penalty doc: installment first (above),
+    // then penalty, then collection fee — only once both of those are
+    // satisfied does anything left over carry forward to pre-pay a future
+    // installment (unchanged `carry` behavior from before this rework).
+    if (remaining > 0) {
+      const penaltyPayoff = Math.min(remaining, Math.max(0, penaltyTarget - penaltyPaidTotal))
+      penaltyPaidTotal += penaltyPayoff
+      remaining -= penaltyPayoff
+    }
+    if (remaining > 0) {
+      const feePayoff = Math.min(remaining, Math.max(0, collectionFeeTarget - collectionFeePaidTotal))
+      collectionFeePaidTotal += feePayoff
+      remaining -= feePayoff
     }
     carry = remaining
   }
@@ -171,6 +235,10 @@ export function recalculateSchedule(contract: Contract): void {
     }
   }
 
+  contract.penaltyChargedTotal = penaltyTarget
+  contract.penaltyBalance = Math.max(0, penaltyTarget - penaltyPaidTotal - getPenaltyDiscountTotal(contract))
+  contract.collectionFeeBalance = Math.max(0, collectionFeeTarget - collectionFeePaidTotal)
+
   const installments = contract.schedule.filter(s => s.period > 0)
   const allSettled = installments.length > 0 && installments.every(s => s.status === 'paid' || s.status === 'paid_late')
   if (allSettled) {
@@ -181,6 +249,81 @@ export function recalculateSchedule(contract: Contract): void {
   } else {
     contract.status = 'active'
   }
+}
+
+// Add a Collection Fee — per the doc, manually added by Admin/Owner against
+// an overdue contract, kept as its own balance (never counted toward the
+// Max Penalty Cap — see recalculateSchedule, which sums this into its own
+// target entirely separately from the penalty one).
+export function addCollectionFee(contract: Contract, amount: number, reason: string | undefined, actorId: string): void {
+  const record: CollectionFeeRecord = {
+    id: `cfee-${Date.now()}`,
+    amount,
+    reason,
+    addedBy: actorId,
+    addedAt: new Date().toISOString(),
+    waived: false,
+    waivedBy: null,
+    waivedAt: null,
+    waiveReason: null,
+    voided: false,
+    voidReason: null,
+    voidedBy: null,
+    voidedAt: null,
+  }
+  contract.collectionFees.push(record)
+  recalculateSchedule(contract)
+}
+
+export function waiveCollectionFee(contract: Contract, feeId: string, reason: string, actorId: string): void {
+  const fee = contract.collectionFees.find(f => f.id === feeId)
+  if (!fee) return
+  fee.waived = true
+  fee.waivedBy = actorId
+  fee.waivedAt = new Date().toISOString()
+  fee.waiveReason = reason
+  recalculateSchedule(contract)
+}
+
+export function voidCollectionFee(contract: Contract, feeId: string, reason: string, actorId: string): void {
+  const fee = contract.collectionFees.find(f => f.id === feeId)
+  if (!fee) return
+  fee.voided = true
+  fee.voidReason = reason
+  fee.voidedBy = actorId
+  fee.voidedAt = new Date().toISOString()
+  recalculateSchedule(contract)
+}
+
+// Penalty Discount — the doc's "Penalty Discount" adjustment. Penalty has
+// no discrete record of its own to void the way a payment or collection
+// fee does (it's a live-recomputed balance — see calcAccruedPenalty), so a
+// discount is its own append-only record, reducing the balance by its
+// amount until/unless voided.
+export function addPenaltyDiscount(contract: Contract, amount: number, reason: string, actorId: string): void {
+  const adjustment: PenaltyAdjustment = {
+    id: `pdisc-${Date.now()}`,
+    amount,
+    reason,
+    createdBy: actorId,
+    createdAt: new Date().toISOString(),
+    voided: false,
+    voidReason: null,
+    voidedBy: null,
+    voidedAt: null,
+  }
+  contract.penaltyAdjustments.push(adjustment)
+  recalculateSchedule(contract)
+}
+
+export function voidPenaltyDiscount(contract: Contract, adjustmentId: string, reason: string, actorId: string): void {
+  const adjustment = contract.penaltyAdjustments.find(a => a.id === adjustmentId)
+  if (!adjustment) return
+  adjustment.voided = true
+  adjustment.voidReason = reason
+  adjustment.voidedBy = actorId
+  adjustment.voidedAt = new Date().toISOString()
+  recalculateSchedule(contract)
 }
 
 export interface RecordPaymentInput {

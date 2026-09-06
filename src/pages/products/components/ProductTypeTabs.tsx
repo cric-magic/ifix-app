@@ -1,19 +1,15 @@
-import { Segmented, Tag } from 'antd'
-import type { Product, ProductType } from '../../../types/product'
+import { ConfigProvider, Segmented } from 'antd'
+import type { ProductType } from '../../../types/product'
 import { TYPE_LABELS } from '../../../constants/products'
 
 export type TypeFilter = 'all' | ProductType
 
 interface Props {
   activeType: TypeFilter
-  allProducts: Product[]
   onChange: (type: TypeFilter) => void
 }
 
-export function ProductTypeTabs({ activeType, allProducts, onChange }: Props) {
-  const count = (type: TypeFilter) =>
-    type === 'all' ? allProducts.length : allProducts.filter(p => p.type === type).length
-
+export function ProductTypeTabs({ activeType, onChange }: Props) {
   const tabs: { key: TypeFilter; label: string }[] = [
     { key: 'all', label: 'All' },
     { key: 'new', label: TYPE_LABELS.new },
@@ -21,18 +17,18 @@ export function ProductTypeTabs({ activeType, allProducts, onChange }: Props) {
   ]
 
   return (
-    <Segmented
-      value={activeType}
-      onChange={key => onChange(key as TypeFilter)}
-      options={tabs.map(t => ({
-        value: t.key,
-        label: (
-          <span>
-            {t.label}{' '}
-            <Tag style={{ margin: 0 }}>{count(t.key)}</Tag>
-          </span>
-        ),
-      }))}
-    />
+    // Segmented's own real 1px border (index.css) adds its own width on top
+    // of antd's internal item-height math instead of being absorbed into
+    // it, which otherwise leaves this control 2px taller than the Button
+    // it sits next to in the same row (ProductsPage) — a locally scoped
+    // controlHeight compensates so the two stay pixel-matched without
+    // touching the app's shared controlHeight (36) that Button itself uses.
+    <ConfigProvider theme={{ token: { controlHeight: 34 } }}>
+      <Segmented
+        value={activeType}
+        onChange={key => onChange(key as TypeFilter)}
+        options={tabs.map(t => ({ value: t.key, label: t.label }))}
+      />
+    </ConfigProvider>
   )
 }

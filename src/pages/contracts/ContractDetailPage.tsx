@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Result, Space } from 'antd'
+import { Button, Result, Space, Tabs } from 'antd'
 import { Pencil } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_CONTRACTS } from '../../constants/mockContracts'
@@ -10,6 +10,7 @@ import { OverviewTab } from './detail/OverviewTab'
 import { CustomerTab } from './detail/CustomerTab'
 import { ScheduleTab } from './detail/ScheduleTab'
 import { PaymentHistoryTab } from './detail/PaymentHistoryTab'
+import { PenaltyTab } from './detail/PenaltyTab'
 import { ContractPreviewTab } from './detail/ContractPreviewTab'
 import { LifecycleActions } from './components/LifecycleActions'
 
@@ -61,6 +62,8 @@ export function ContractDetailPage() {
     setVersion(v => v + 1)
   }
 
+  const hasSchedule = contract.schedule.some(s => s.period > 0)
+
   return (
     <div>
       <OverviewTab
@@ -77,13 +80,40 @@ export function ContractDetailPage() {
         }
       />
 
-      <CustomerTab customer={contract.customer} />
-
-      <ScheduleTab contract={contract} actor={actor} onChanged={refresh} />
-
-      <PaymentHistoryTab contract={contract} actor={actor} onChanged={refresh} />
-
-      <ContractPreviewTab contract={contract} />
+      {/* Grouped by purpose, not one tab per panel — Schedule and Payment
+          History are the same "what's due / what's been paid" story, and
+          Penalty + Collection Fees (PenaltyTab renders both) are their own
+          concern. Overview stays outside the tabs, same as every other
+          detail page's header section. */}
+      <Tabs
+        items={[
+          {
+            key: 'customer',
+            label: 'Customer',
+            children: <CustomerTab customer={contract.customer} />,
+          },
+          {
+            key: 'payments',
+            label: 'Payments',
+            children: (
+              <>
+                <ScheduleTab contract={contract} actor={actor} onChanged={refresh} />
+                <PaymentHistoryTab contract={contract} actor={actor} onChanged={refresh} />
+              </>
+            ),
+          },
+          ...(hasSchedule ? [{
+            key: 'penalty',
+            label: 'Penalty & Fees',
+            children: <PenaltyTab contract={contract} actor={actor} onChanged={refresh} />,
+          }] : []),
+          {
+            key: 'preview',
+            label: 'Contract Preview',
+            children: <ContractPreviewTab contract={contract} />,
+          },
+        ]}
+      />
     </div>
   )
 }

@@ -531,15 +531,24 @@ body {
   background: conic-gradient(from var(--ifix-beam-angle) at 50% 50%, transparent 0%, transparent 75%, var(--ant-color-primary) 100%);
 }
 
-/* Segmented's border matches the panel's own (0.5px colorBorderSecondary) —
-   Input/Select/InputNumber/DatePicker now use the same token for their own
-   border (App.tsx), so this is really just about the line weight: Segmented
-   reads more like a track/panel than a text field, so the thinner 0.5px
-   panel-style hairline fits better than the (still 1px) input treatment.
-   Segmented's own trackPadding (App.tsx) is set to this same 0.5px so the
-   thumb sits inset by exactly the border's width, not an arbitrary gap. */
+/* Segmented's border uses the input-family weight (1px colorBorderSecondary,
+   same as Input/Select/InputNumber/DatePicker/Button/Upload in App.tsx) —
+   it sits directly next to those controls in a filter row often enough that
+   the thinner 0.5px global hairline read as inconsistent there. Segmented's
+   own trackPadding (App.tsx) is set to this same 1px so the thumb sits
+   inset by exactly the border's width, not an arbitrary gap.
+   A real `border` (not a box-shadow ring — that was tried here first, but
+   this app's shared panel boxShadow token is the literal keyword `none` in
+   Light theme, per the Shadow section, and a box-shadow value can't mix
+   `none` into a comma-separated list with a real shadow without the whole
+   property being dropped as invalid — silently losing the border in Light
+   theme specifically). A real border does add its own width on top of
+   antd's internal item-height math instead of being absorbed into it,
+   which would make Segmented 2px taller than a Button in the same row —
+   ProductTypeTabs.tsx compensates with a locally scoped controlHeight so
+   the two stay pixel-matched without touching Button's own height. */
 .ant-segmented {
-  border: 0.5px solid var(--ant-color-border-secondary);
+  border: 1px solid var(--ant-color-border-secondary);
 }
 
 /* Segmented keeps the shared panel drop shadow — it reads as a raised
@@ -549,7 +558,11 @@ body {
    shadow tokens zeroed out directly in App.tsx's Button component config
    (defaultShadow/primaryShadow/dangerShadow) rather than through this
    shared token, since those are antd's own per-variant shadow tokens, not
-   the shared seed boxShadow the rest of this rule targets. */
+   the shared seed boxShadow the rest of this rule targets. Kept as its own
+   separate rule (not merged with the border above) — border and box-shadow
+   are independent CSS properties, so there's no reason to combine them,
+   and box-shadow's single value here stays valid even when the token
+   resolves to the literal `none` in Light theme. */
 .ant-segmented {
   box-shadow: var(--ant-box-shadow) !important;
 }

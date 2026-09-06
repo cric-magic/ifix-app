@@ -8,7 +8,7 @@
 // types/installment.ts itself is left alone — Product/AuthUser/UserRole/
 // ScheduleResult there are shared far outside this module (SmartCalculator,
 // Products pages, roles.ts) and aren't part of the rename.
-import type { ContractTemplateType } from './contractTemplate'
+import type { ContractTemplateType, PenaltyRule } from './contractTemplate'
 
 // The doc's full lifecycle. Defaulted/Closed are explicitly called out as
 // "proposed — TBD" / out of scope, but included here (unused by the
@@ -67,6 +67,10 @@ export interface TemplateSnapshot {
   title: string
   bindingStatement: string
   legalDeclarations: string
+  // Per the Penalty doc: copied from the template at creation; a later
+  // edit to the template's penalty rule never changes an existing
+  // contract's own snapshot.
+  penalty: PenaltyRule
 }
 
 export interface FinancingTerms {
@@ -132,6 +136,45 @@ export interface IdCardPhotos {
   idCardWithOwner?: string
 }
 
+// Per the Penalty doc: "kept separate from penalty fees and installments,"
+// added manually by Admin/Owner against an overdue contract, waivable, and
+// excluded from the Max Penalty Cap entirely. Void/reversal reuses the same
+// audit-trail shape as ContractPaymentRecord's own void fields below —
+// the original record stays, marked rather than removed.
+export interface CollectionFeeRecord {
+  id: string
+  amount: number
+  reason?: string
+  addedBy: string
+  addedAt: string
+  waived: boolean
+  waivedBy: string | null
+  waivedAt: string | null
+  waiveReason: string | null
+  voided: boolean
+  voidReason: string | null
+  voidedBy: string | null
+  voidedAt: string | null
+}
+
+// Per the Penalty doc's "Penalty Discount" adjustment — penalty itself has
+// no discrete record to void the way a payment or collection fee does (it's
+// a continuously-recomputed balance, see recalculateSchedule), so a discount
+// is its own record type: an amount taken off the accrued balance, with the
+// same void-for-audit shape as everything else here rather than being
+// deleted if it needs undoing.
+export interface PenaltyAdjustment {
+  id: string
+  amount: number
+  reason: string
+  createdBy: string
+  createdAt: string
+  voided: boolean
+  voidReason: string | null
+  voidedBy: string | null
+  voidedAt: string | null
+}
+
 export interface Contract {
   id: string
   contractNumber: string
@@ -151,6 +194,15 @@ export interface Contract {
   financing: FinancingTerms
   schedule: ScheduleItem[]
   payments: ContractPaymentRecord[]
+  collectionFees: CollectionFeeRecord[]
+  penaltyAdjustments: PenaltyAdjustment[]
+  // Both derived, recomputed fresh on every recalculateSchedule call — not
+  // hand-maintained running totals. penaltyChargedTotal is what's accrued
+  // to date (capped at the template snapshot's maxCap); penaltyBalance is
+  // what's still owed after payments and discounts.
+  penaltyChargedTotal: number
+  penaltyBalance: number
+  collectionFeeBalance: number
   rejectionNote: string | null
   signedContractUploaded: boolean
   createdBy: string

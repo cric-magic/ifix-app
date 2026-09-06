@@ -55,12 +55,12 @@ export function ContractPreviewTab({ contract }: Props) {
 
           <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
             <div style={{ flex: 1 }}>
-              <Typography.Text strong style={{ display: 'block', marginBottom: 4 }}>ผู้ให้เช่าซื้อ (LESSOR)</Typography.Text>
+              <Typography.Text strong style={{ display: 'block', marginBottom: 4 }}>LESSOR</Typography.Text>
               <Typography.Text type="secondary" style={{ display: 'block' }}>{merchant?.name} ({contract.branch})</Typography.Text>
               <Typography.Text type="secondary" style={{ display: 'block' }}>{merchant?.address}</Typography.Text>
             </div>
             <div style={{ flex: 1 }}>
-              <Typography.Text strong style={{ display: 'block', marginBottom: 4 }}>ผู้เช่าซื้อ (LESSEE)</Typography.Text>
+              <Typography.Text strong style={{ display: 'block', marginBottom: 4 }}>LESSEE</Typography.Text>
               <Typography.Text type="secondary" style={{ display: 'block' }}>{customer.fullName}</Typography.Text>
               <Typography.Text type="secondary" style={{ display: 'block' }}>{customer.nationalId} · {customer.phone}</Typography.Text>
             </div>
@@ -72,39 +72,45 @@ export function ContractPreviewTab({ contract }: Props) {
 
           <Divider />
 
-          <Typography.Title level={5}>รายละเอียดสินค้า · Asset Specification</Typography.Title>
+          <Typography.Title level={5}>Asset Specification</Typography.Title>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
-            <Typography.Text type="secondary">แบรนด์: {device.brand}</Typography.Text>
-            <Typography.Text type="secondary">รุ่นสินค้า: {device.model}</Typography.Text>
-            <Typography.Text type="secondary">สภาพเครื่อง: {device.condition}</Typography.Text>
-            <Typography.Text type="secondary">สี: {device.color}</Typography.Text>
+            <Typography.Text type="secondary">Brand: {device.brand}</Typography.Text>
+            <Typography.Text type="secondary">Model: {device.model}</Typography.Text>
+            <Typography.Text type="secondary">Condition: {device.condition}</Typography.Text>
+            <Typography.Text type="secondary">Color: {device.color}</Typography.Text>
             <Typography.Text type="secondary">IMEI: {device.imei}</Typography.Text>
             <Typography.Text type="secondary">Serial: {device.serialNumber}</Typography.Text>
           </div>
 
-          <Typography.Title level={5}>สรุปข้อมูลทางการเงิน · Contract Financial Summary</Typography.Title>
+          <Typography.Title level={5}>Contract Financial Summary</Typography.Title>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 16 }}>
-            <Typography.Text type="secondary">ราคาสินค้า: <CurrencyDisplay amount={financing.devicePrice} /></Typography.Text>
-            <Typography.Text type="secondary">ชำระงวดแรก: <CurrencyDisplay amount={financing.downPaymentAmount} /> ({financing.downPaymentPercent}%)</Typography.Text>
-            <Typography.Text type="secondary">แบ่งจ่ายเดือนละ: <CurrencyDisplay amount={financing.installmentAmount} /></Typography.Text>
-            <Typography.Text type="secondary">จำนวนเดือน: {financing.paymentTermMonths} เดือน</Typography.Text>
+            <Typography.Text type="secondary">Device Price: <CurrencyDisplay amount={financing.devicePrice} /></Typography.Text>
+            <Typography.Text type="secondary">Down Payment: <CurrencyDisplay amount={financing.downPaymentAmount} /> ({financing.downPaymentPercent}%)</Typography.Text>
+            <Typography.Text type="secondary">Monthly Installment: <CurrencyDisplay amount={financing.installmentAmount} /></Typography.Text>
+            <Typography.Text type="secondary">Term: {financing.paymentTermMonths} months</Typography.Text>
           </div>
 
           <Typography.Paragraph style={{ fontSize: 12, color: token.colorTextTertiary }}>
             {template.legalDeclarations}
           </Typography.Paragraph>
 
+          {template.penalty.legalText && (
+            <Typography.Paragraph style={{ fontSize: 12, color: token.colorTextTertiary }}>
+              {template.penalty.legalText}
+            </Typography.Paragraph>
+          )}
+
           <Divider />
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
             <div style={{ textAlign: 'center', width: '40%' }}>
               <div style={{ borderTop: `0.5px solid ${token.colorBorderSecondary}`, paddingTop: 8 }}>
-                <Typography.Text type="secondary">({customer.fullName})<br />ผู้เช่าซื้อ</Typography.Text>
+                <Typography.Text type="secondary">({customer.fullName})<br />Lessee</Typography.Text>
               </div>
             </div>
             <div style={{ textAlign: 'center', width: '40%' }}>
               <div style={{ borderTop: `0.5px solid ${token.colorBorderSecondary}`, paddingTop: 8 }}>
-                <Typography.Text type="secondary">({merchant?.name})<br />ผู้ให้เช่าซื้อ</Typography.Text>
+                <Typography.Text type="secondary">({merchant?.name})<br />Lessor</Typography.Text>
               </div>
             </div>
           </div>

@@ -46,6 +46,8 @@ export function CreateMerchantModal({ open, actor, onClose, onCreated }: Props) 
       contractFormat: values.contractFormat,
       contractPrefix: values.contractPrefix,
       bankAccounts: [],
+      collectionFeeEnabled: false,
+      collectionFeeAmount: 0,
       ownerName: values.ownerName,
       ownerEmail: values.ownerEmail,
       ownerUserId: null,
