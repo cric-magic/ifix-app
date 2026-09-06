@@ -3,17 +3,25 @@ import { Form, Input, Button, Alert, Typography, theme } from 'antd'
 import { Mail, Lock } from 'lucide-react'
 import { useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { MOCK_USER_ACCOUNTS } from '../../constants/mockUsers'
+import { homePath, toAuthUser } from '../../constants/roles'
 import { AuthLayout } from './AuthLayout'
 
 export function SignInPage() {
-  const { status, login } = useAuth()
+  const { status, user, login } = useAuth()
   const { token } = theme.useToken()
   const navigate = useNavigate()
   const location = useLocation()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  if (status === 'signed_in') return <Navigate to="/contracts" replace />
+  // Role-aware — Super Admin's own home is Merchants, not Contracts (which
+  // isn't applicable to their role at all). Covers both paths into this
+  // page while already authenticated: landing here directly (below) and a
+  // real form submission (handleSubmit, which looks the account up fresh
+  // since `login`'s own result doesn't carry it and `user` from context
+  // hasn't re-rendered with the new session yet at that point).
+  if (status === 'signed_in') return <Navigate to={homePath(user!)} replace />
   if (status === 'must_set_password') return <Navigate to="/set-password" replace />
 
   function handleSubmit(values: { email: string; password: string }) {
@@ -25,7 +33,9 @@ export function SignInPage() {
       setError(result.error ?? 'Unable to sign in.')
       return
     }
-    const redirectTo = (location.state as { from?: string } | null)?.from ?? '/contracts'
+    const account = MOCK_USER_ACCOUNTS.find(a => a.email.toLowerCase() === values.email.trim().toLowerCase())
+    const fallback = account ? homePath(toAuthUser(account)) : '/contracts'
+    const redirectTo = (location.state as { from?: string } | null)?.from ?? fallback
     navigate(redirectTo, { replace: true })
   }
 

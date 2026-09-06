@@ -99,11 +99,15 @@ export function generateBankAccountId(): string {
   return `bank-${Date.now()}`
 }
 
-// Purely a display preview of "what the next contract number would look
-// like" — not wired to real contract creation, since Contracts itself
-// isn't final yet (no MOCK_CONTRACTS to count against). auto_running shows
-// the first number of the current month; random shows a real sample UUID
-// so the "not traceable" property is visible, not just described.
+// A display-only preview of "what the next contract number would look
+// like" for the Merchant settings screen — shown before any contract has
+// been created against this exact number. Real generation (which counts
+// actual same-month contracts for auto_running) lives in
+// utils/contract.ts's generateContractNumber; this one always previews the
+// first number of the month so the settings page doesn't need real
+// contract data just to show the format. auto_running shows the first
+// number of the current month; random shows a real sample UUID so the
+// "not traceable" property is visible, not just described.
 export function previewContractNumber(merchant: Pick<Merchant, 'contractFormat' | 'contractPrefix'>): string {
   if (merchant.contractFormat === 'random') {
     const uuid = crypto.randomUUID().toUpperCase()

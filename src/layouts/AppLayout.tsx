@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Avatar, Button, Dropdown, Layout, Menu, Typography, theme } from 'antd'
+import { Avatar, Button, Drawer, Dropdown, Layout, Menu, Typography, theme } from 'antd'
 import {
   User, Package, FileText, Contact, Building2, Store,
   MoreHorizontal, LogOut, IdCard, ChevronsUpDown, UserPlus,
@@ -8,13 +8,17 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth, useCurrentUser } from '../contexts/AuthContext'
 import { useDevTools } from '../contexts/DevToolsContext'
-import { canManageUsers, scopedUserList, scopedBranchList } from '../constants/roles'
+import { useAppWindowContainer } from '../contexts/AppWindowContext'
+import { useHeaderContent } from '../contexts/HeaderContentContext'
+import { canManageUsers, homePath, scopedUserList, scopedBranchList, scopedContractList, scopedCustomerList } from '../constants/roles'
 import { useIconColors } from '../constants/iconColors'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
 import { MOCK_PRODUCTS } from '../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../constants/mockProductUnits'
 import { MOCK_MERCHANTS } from '../constants/mockMerchants'
 import { MOCK_BRANCHES } from '../constants/mockBranches'
+import { MOCK_CONTRACTS } from '../constants/mockContracts'
+import { MOCK_CUSTOMERS } from '../constants/mockCustomers'
 import { getAvatarUrl, getWorkspaceAvatarUrl } from '../utils/avatar'
 import ifixLogoDark from '../assets/logo.png'
 import ifixLogoLight from '../assets/logo-light.png'
@@ -34,6 +38,7 @@ const PAGE_TITLES: Record<string, string> = {
 const SETTINGS_ITEMS = [
   { key: 'account', label: 'Account' },
   { key: 'bank-accounts', label: 'Bank Accounts' },
+  { key: 'contract-templates', label: 'Contract Templates' },
   { key: 'members', label: 'Members' },
 ]
 
@@ -52,9 +57,34 @@ export function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { token } = theme.useToken()
-  const { themeVariant } = useDevTools()
+  const { themeVariant, windowSize } = useDevTools()
+  const appWindow = useAppWindowContainer()
+  const headerContent = useHeaderContent()
   const iconColors = useIconColors()
   const [collapsed, setCollapsed] = useState(false)
+  // Mobile's own sidebar visibility — separate from desktop's `collapsed`.
+  // Desktop's Sider defaults open (collapsed: false); mobile's Drawer
+  // defaults closed, since a permanently-open overlay on a narrow screen
+  // would just cover the page on first load.
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  // Below antd's own `md` breakpoint (768px) — this app's own device-size
+  // control (the "Desktop/Tablet/Mobile" picker; see DevToolsContext) is
+  // what actually constrains the rendered width, not the true browser
+  // viewport, so windowSize is the right signal to key off, not
+  // window.innerWidth or a media query. The Header (collapse toggle +
+  // breadcrumb) is identical on both — only what its toggle button does
+  // differs: on desktop it slides the persistent Sider off/on; on mobile
+  // there's no permanent side column at all, so the same button instead
+  // opens/closes the sidebar as a sliding Drawer (see isMobile below).
+  const isMobile = windowSize.width <= 768
+  // Which boolean the Header's toggle button reads/flips, and whether the
+  // sidebar is currently visible — unified here so the button and its icon
+  // don't need their own isMobile branching at the call site.
+  const sidebarVisible = isMobile ? mobileNavOpen : !collapsed
+  function toggleSidebar() {
+    if (isMobile) setMobileNavOpen(o => !o)
+    else setCollapsed(c => !c)
+  }
 
   // Sidebar workspace identity — was hardcoded to the seeded demo merchant
   // regardless of who was signed in, so every merchant's own users saw that
@@ -163,6 +193,29 @@ export function AppLayout() {
     ? MOCK_MERCHANTS.find(m => m.id === branchDetail.merchantId)?.name
     : undefined
 
+  // Contract detail route (/contracts/:id) — same 2-level treatment
+  // ("Contracts / <contract number>"). /contracts/new isn't a detail route
+  // (it's the creation wizard) so it's excluded from this lookup entirely —
+  // otherwise "new" would be looked up as if it were a contract id.
+  // Looked up through scopedContractList so a contract outside the
+  // viewer's own branch/merchant scope (blocked by the page itself)
+  // doesn't leak its number into the breadcrumb either, same reasoning as
+  // the member/branch breadcrumbs above.
+  const contractDetailId = selectedKey === 'contracts' && location.pathname.split('/')[2] !== 'new'
+    ? location.pathname.split('/')[2]
+    : undefined
+  const contractDetailName = contractDetailId
+    ? scopedContractList(user, MOCK_CONTRACTS).find(c => c.id === contractDetailId)?.contractNumber
+    : undefined
+
+  // Customer detail route (/customers/:id) — same 2-level treatment
+  // ("Customers / <name>"), looked up through scopedCustomerList for the
+  // same reason as the contract/branch/member breadcrumbs above.
+  const customerDetailId = selectedKey === 'customers' ? location.pathname.split('/')[2] : undefined
+  const customerDetailName = customerDetailId
+    ? scopedCustomerList(user, MOCK_CUSTOMERS).find(c => c.id === customerDetailId)?.fullName
+    : undefined
+
   const breadcrumbParts = productDetailName
     ? ['Products', productDetailName]
     : unitDetailImei
@@ -173,6 +226,10 @@ export function AppLayout() {
     ? ['Merchants', merchantDetailName]
     : branchDetailName
     ? [branchDetailMerchantName ?? 'Branches', branchDetailName]
+    : contractDetailName
+    ? ['Contracts', contractDetailName]
+    : customerDetailName
+    ? ['Customers', customerDetailName]
     : [pageTitle]
   const breadcrumbBackUrl = unitDetailImei
     ? '/products/unit'
@@ -182,6 +239,10 @@ export function AppLayout() {
     ? '/merchants'
     : branchDetailName
     ? (branchDetailMerchantName ? `/merchants/${branchDetail?.merchantId}` : '/branches')
+    : contractDetailName
+    ? '/contracts'
+    : customerDetailName
+    ? '/customers'
     : '/products/catalog'
 
   function handleLogout() {
@@ -189,35 +250,17 @@ export function AppLayout() {
     navigate('/sign-in', { replace: true })
   }
 
-  return (
-    <Layout style={{ height: '100%', background: 'transparent' }}>
-      <Sider width={220} collapsedWidth={220} collapsed={false} trigger={null} style={{
-        background: 'transparent',
-        border: 'none',
-        position: 'sticky',
-        top: 0,
-        height: '100%',
-        padding: '8px 0 8px 8px',
-        overflow: 'hidden',
-        flexShrink: 0,
-        // The box's own width (220) never changes — collapsed={false} is
-        // hardcoded above so antd never shrinks it. Instead: `transform`
-        // slides the whole box (padding, border, everything) off-screen —
-        // a pure visual move that never causes any child to render at an
-        // in-between width and squish (see the "IFix" title wrap bug this
-        // replaces) — while the negative `marginRight` shrinks its actual
-        // flex footprint to 0 in step, so the main panel still reflows to
-        // fill the freed space exactly as it did when the box itself used
-        // to shrink.
-        transform: collapsed ? 'translateX(-220px)' : 'translateX(0)',
-        marginRight: collapsed ? -220 : 0,
-        transition: 'transform var(--ant-motion-duration-mid), margin-right var(--ant-motion-duration-mid)',
-      }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-        }}>
+  // Used in place of a bare `navigate` for every in-sidebar destination —
+  // on mobile the sidebar lives in a Drawer, so picking a destination
+  // should also close it; on desktop mobileNavOpen never becomes true in
+  // the first place, so the extra call is a no-op.
+  function go(path: string) {
+    navigate(path)
+    setMobileNavOpen(false)
+  }
+
+  const sidebarContent = (
+    <>
           <Dropdown
             trigger={['click']}
             placement="bottomLeft"
@@ -259,8 +302,8 @@ export function AppLayout() {
                   : []),
               ],
               onClick: ({ key }) => {
-                if (key === 'settings') navigate('/settings/account')
-                if (key === 'invite') navigate('/settings/members?invite=1')
+                if (key === 'settings') go('/settings/account')
+                if (key === 'invite') go('/settings/members?invite=1')
               },
             }}
           >
@@ -295,7 +338,7 @@ export function AppLayout() {
                   objectFit: 'cover',
                 }}
               />
-              <Typography.Text strong style={{ fontSize: 15, flex: 1, minWidth: 0 }} ellipsis>{workspaceName}</Typography.Text>
+              <Typography.Text strong style={{ fontSize: 14, flex: 1, minWidth: 0 }} ellipsis>{workspaceName}</Typography.Text>
               <Button type="text" size="small" style={{ borderRadius: 6 }} icon={<ChevronsUpDown size={14} strokeWidth={2.25} />} />
             </div>
           </Dropdown>
@@ -326,7 +369,7 @@ export function AppLayout() {
                           <span />
                         </div>
                       ),
-                      onClick: () => navigate('/contracts'),
+                      onClick: () => go(homePath(user)),
                     },
                   ]}
                 />
@@ -336,15 +379,16 @@ export function AppLayout() {
                   selectedKeys={[settingsKey]}
                   style={{ border: 'none', background: 'transparent' }}
                   items={SETTINGS_ITEMS
-                    // Bank accounts are merchant business data — Super Admin
-                    // manages them per-merchant from Merchant Detail instead
-                    // (same BankAccountsTab, non-standalone), not from their
-                    // own platform-level Workspace Settings, which has no
-                    // merchant behind it for this tab to mean anything.
-                    .filter(item => item.key !== 'bank-accounts' || user.role !== 'super_admin')
+                    // Bank accounts and Contract Templates are both
+                    // merchant business data — Super Admin has no merchant
+                    // of their own for either tab to mean anything (they'd
+                    // manage a given merchant's bank accounts from that
+                    // merchant's own Detail page; there's no equivalent
+                    // per-merchant template management surface yet).
+                    .filter(item => (item.key !== 'bank-accounts' && item.key !== 'contract-templates') || user.role !== 'super_admin')
                     .map(item => ({
                       ...item,
-                      onClick: () => navigate(`/settings/${item.key}`),
+                      onClick: () => go(`/settings/${item.key}`),
                     }))}
                 />
               </div>
@@ -373,7 +417,7 @@ export function AppLayout() {
                           <span />
                         </div>
                       ),
-                      onClick: () => navigate('/contracts'),
+                      onClick: () => go(homePath(user)),
                     },
                   ]}
                 />
@@ -384,7 +428,7 @@ export function AppLayout() {
                   style={{ border: 'none', background: 'transparent' }}
                   items={ACCOUNT_ITEMS.map(item => ({
                     ...item,
-                    onClick: () => navigate(`/account/${item.key}`),
+                    onClick: () => go(`/account/${item.key}`),
                   }))}
                 />
               </div>
@@ -413,7 +457,7 @@ export function AppLayout() {
                           <span />
                         </div>
                       ),
-                      onClick: () => navigate('/contracts'),
+                      onClick: () => go(homePath(user)),
                     },
                   ]}
                 />
@@ -424,7 +468,7 @@ export function AppLayout() {
                   style={{ border: 'none', background: 'transparent' }}
                   items={PRODUCTS_ITEMS.map(item => ({
                     ...item,
-                    onClick: () => navigate(`/products/${item.key}`),
+                    onClick: () => go(`/products/${item.key}`),
                   }))}
                 />
               </div>
@@ -437,12 +481,16 @@ export function AppLayout() {
                   className="ifix-main-nav"
                   style={{ border: 'none', marginTop: 4, background: 'transparent' }}
                   items={[
-                    {
+                    // Contracts, like Products/Branches below, is merchant-
+                    // scoped business data — Super Admin (a platform-level
+                    // role with no merchant of its own) never sees it, same
+                    // exclusion as canViewContracts.
+                    ...(user.role !== 'super_admin' ? [{
                       key: 'contracts',
                       icon: navIcon(<FileText size={17} strokeWidth={2.25} />),
                       label: 'Contracts',
-                      onClick: () => navigate('/contracts'),
-                    },
+                      onClick: () => go('/contracts'),
+                    }] : []),
                     ...(user.role !== 'super_admin' ? [{
                       key: 'products',
                       icon: navIcon(<Package size={17} strokeWidth={2.25} />),
@@ -462,19 +510,21 @@ export function AppLayout() {
                           />
                         </div>
                       ),
-                      onClick: () => navigate('/products/catalog'),
+                      onClick: () => go('/products/catalog'),
                     }] : []),
-                    {
+                    // Same exclusion as Contracts above — Customers is also
+                    // merchant-scoped, per canViewCustomers.
+                    ...(user.role !== 'super_admin' ? [{
                       key: 'customers',
                       icon: navIcon(<Contact size={17} strokeWidth={2.25} />),
                       label: 'Customers',
-                      onClick: () => navigate('/customers'),
-                    },
+                      onClick: () => go('/customers'),
+                    }] : []),
                     ...(user.role === 'super_admin' ? [{
                       key: 'merchants',
                       icon: navIcon(<Building2 size={17} strokeWidth={2.25} />),
                       label: 'Merchants',
-                      onClick: () => navigate('/merchants'),
+                      onClick: () => go('/merchants'),
                     }] : []),
                     // Super Admin reaches branches through Merchant Detail's
                     // own Branches tab instead (they have no merchantId for
@@ -485,7 +535,7 @@ export function AppLayout() {
                       key: 'branches',
                       icon: navIcon(<Store size={17} strokeWidth={2.25} />),
                       label: 'Branches',
-                      onClick: () => navigate('/branches'),
+                      onClick: () => go('/branches'),
                     }] : []),
                   ]}
                 />
@@ -505,7 +555,7 @@ export function AppLayout() {
               ],
               onClick: ({ key }) => {
                 if (key === 'logout') handleLogout()
-                if (key === 'settings') navigate('/account/general')
+                if (key === 'settings') go('/account/general')
               },
             }}
           >
@@ -542,8 +592,77 @@ export function AppLayout() {
               <Button type="text" size="small" style={{ borderRadius: 6 }} icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
             </div>
           </Dropdown>
-        </div>
-      </Sider>
+    </>
+  )
+
+  return (
+    <Layout style={{ height: '100%', background: 'transparent' }}>
+      {!isMobile && (
+        <Sider width={220} collapsedWidth={220} collapsed={false} trigger={null} style={{
+          background: 'transparent',
+          border: 'none',
+          position: 'sticky',
+          top: 0,
+          height: '100%',
+          padding: '8px 0 8px 8px',
+          overflow: 'hidden',
+          flexShrink: 0,
+          // The box's own width (220) never changes — collapsed={false} is
+          // hardcoded above so antd never shrinks it. Instead: `transform`
+          // slides the whole box (padding, border, everything) off-screen —
+          // a pure visual move that never causes any child to render at an
+          // in-between width and squish (see the "IFix" title wrap bug this
+          // replaces) — while the negative `marginRight` shrinks its actual
+          // flex footprint to 0 in step, so the main panel still reflows to
+          // fill the freed space exactly as it did when the box itself used
+          // to shrink.
+          transform: collapsed ? 'translateX(-220px)' : 'translateX(0)',
+          marginRight: collapsed ? -220 : 0,
+          transition: 'transform var(--ant-motion-duration-mid), margin-right var(--ant-motion-duration-mid), width var(--ant-motion-duration-mid)',
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+          }}>
+            {sidebarContent}
+          </div>
+        </Sider>
+      )}
+
+      {/* Mobile: same sidebar content as the desktop Sider above, but as a
+          sliding Drawer instead of a persistent column — there's no room
+          for a permanent side column at this width, so it's hidden by
+          default and opened via the Header's own collapse-toggle button
+          (see toggleSidebar/sidebarVisible above), the same button desktop
+          uses to slide its Sider off/on. getContainer keeps it inside the
+          simulated device window (see AppWindowContext) instead of
+          portaling to the true document body. No per-instance inset here —
+          the global `.ant-drawer-content-wrapper` rule in index.css (the
+          same one every other Drawer in the app already gets, e.g.
+          CreateProductModal) pins it 8px off every edge; adding a margin
+          on top of that here double-counted the top/bottom inset instead
+          of matching it. */}
+      {isMobile && (
+        <Drawer
+          placement="left"
+          open={mobileNavOpen}
+          onClose={() => setMobileNavOpen(false)}
+          closable={false}
+          width={240}
+          styles={{ body: { padding: 0 } }}
+          getContainer={appWindow ?? undefined}
+        >
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            padding: '0 8px',
+          }}>
+            {sidebarContent}
+          </div>
+        </Drawer>
+      )}
 
       <Layout style={{
         background: 'transparent',
@@ -578,12 +697,12 @@ export function AppLayout() {
               type="text"
               size="small"
               style={{ borderRadius: 6 }}
-              icon={collapsed ? <PanelLeftOpen size={16} strokeWidth={2.25} /> : <PanelLeftClose size={16} strokeWidth={2.25} />}
-              onClick={() => setCollapsed(c => !c)}
+              icon={sidebarVisible ? <PanelLeftClose size={16} strokeWidth={2.25} /> : <PanelLeftOpen size={16} strokeWidth={2.25} />}
+              onClick={toggleSidebar}
             />
           </div>
           <div style={{ justifySelf: 'center', display: 'flex', alignItems: 'center', gap: 4 }}>
-            {breadcrumbParts.map((part, i) => {
+            {headerContent?.center ?? breadcrumbParts.map((part, i) => {
               const isLast = i === breadcrumbParts.length - 1
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -592,7 +711,7 @@ export function AppLayout() {
                     strong={isLast}
                     onClick={isLast ? undefined : () => navigate(breadcrumbBackUrl)}
                     style={{
-                      fontSize: 15,
+                      fontSize: 14,
                       color: isLast ? token.colorText : token.colorTextTertiary,
                       cursor: isLast ? 'default' : 'pointer',
                     }}
@@ -603,7 +722,7 @@ export function AppLayout() {
               )
             })}
           </div>
-          <div />
+          <div style={{ justifySelf: 'end' }}>{headerContent?.right}</div>
         </Header>
 
         <Content style={{ padding: 16, overflow: 'auto', background: 'var(--ifix-wrapper-bg)' }}>

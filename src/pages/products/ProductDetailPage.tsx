@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Button, Result, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
-import { canManageProducts, canViewProducts } from '../../constants/roles'
+import { canManageProducts, canViewProducts, homePath } from '../../constants/roles'
 import { EditProductModal } from './components/EditProductModal'
 import { OverviewTab } from './detail/OverviewTab'
 import { UnitsTab } from './detail/UnitsTab'
@@ -24,7 +24,7 @@ export function ProductDetailPage() {
         status="403"
         title="Not applicable"
         subTitle="Products are scoped to a merchant workspace. Super Admin operates at the platform level."
-        extra={<Button onClick={() => navigate('/contracts')}>Back home</Button>}
+        extra={<Button onClick={() => navigate(homePath(user))}>Back home</Button>}
       />
     )
   }

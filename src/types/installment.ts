@@ -1,56 +1,13 @@
 import type { UserRole } from './user'
 
-export type ContractStatus = 'normal' | 'bad_debt'
-export type PaymentStatus = 'due' | 'overdue' | 'paid' | 'future'
-export type StatusFilter = 'all' | PaymentStatus
 export type { UserRole }
 
-export interface InstallmentRecord {
-  id: string
-  invoiceNumber: string
-  contractNumber: string
-  customerName: string
-  customerId: string
-  branch: string
-  contractStatus: ContractStatus
-  totalAmount: number
-  paidAmount: number
-  dueAmount: number
-  overdueAmount: number
-  remainingBalance: number
-  startDate: string
-  endDate: string
-  paymentStatus: PaymentStatus
-}
-
-export interface ScheduleItem {
-  period: number
-  dueDate: string
-  principal: number
-  interest: number
-  totalInstallment: number
-  paidDate: string | null
-  status: 'paid' | 'due' | 'overdue' | 'future'
-}
-
-export interface PaymentRecord {
-  receiptNumber: string
-  paymentDate: string
-  amount: number
-  method: 'cash' | 'transfer' | 'card'
-  receivedBy: string
-  note: string
-}
-
-export interface CustomerInfo {
-  id: string
-  name: string
-  idCardNumber: string
-  phone: string
-  email: string
-  address: string
-  occupation: string
-}
+// The contract-specific types that used to live here (InstallmentRecord,
+// ScheduleItem, PaymentRecord, CustomerInfo, ContractStatus, PaymentStatus,
+// StatusFilter) moved to types/contract.ts as part of the Contracts module
+// rewrite — this file's remaining exports (Product, AuthUser, ScheduleResult)
+// are shared far outside that module (SmartCalculatorPage, Products pages,
+// roles.ts) and aren't part of the rename.
 
 export interface AuthUser {
   id: string
@@ -60,6 +17,10 @@ export interface AuthUser {
   merchantId?: string
 }
 
+// Legacy flat product shape used only by the standalone Smart Calculator
+// (constants/mockData.ts's MOCK_PRODUCTS) — unrelated to the real
+// Product/ProductUnit types in types/product.ts used by the Products
+// module and Contract creation's device step.
 export interface Product {
   id: string
   name: string

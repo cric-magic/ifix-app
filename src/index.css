@@ -247,6 +247,45 @@ body {
   color: var(--ant-color-icon-hover);
 }
 
+/* Danger buttons (Reject, Remove, etc.): the rule above paints every
+   button icon the same neutral secondary/hover gray regardless of the
+   button's own color, which left a danger button's icon gray next to its
+   own red text/border — half-applied functional color. Higher specificity
+   here (three classes vs. two) wins over it without needing !important. */
+.ant-btn.ant-btn-dangerous:not(.ant-btn-variant-solid) .ant-btn-icon svg {
+  color: var(--ant-color-error);
+}
+
+.ant-btn.ant-btn-dangerous:not(.ant-btn-variant-solid):hover .ant-btn-icon svg,
+.ant-btn.ant-btn-dangerous:not(.ant-btn-variant-solid):focus-visible .ant-btn-icon svg {
+  color: var(--ant-color-error-hover);
+}
+
+/* Danger Dropdown/Menu items (Remove, Archive, …): this app's own global
+   Menu.itemColor/itemHoverColor tokens (App.tsx) repaint the item <li>'s
+   own inherited color to plain gray, beating antd's built-in dangerous-
+   item red rule for that element. The label and icon are separate child
+   nodes (a .ant-dropdown-menu-title-content span, an inline svg using
+   currentColor) with no color of their own, so both silently inherited
+   that same gray instead of red — targeted directly here rather than
+   relying on inheriting a correct color from the <li>. Class repeated in
+   each selector to comfortably out-specify the itemColor rule.  */
+.ant-dropdown-menu-item-danger.ant-dropdown-menu-item-danger,
+.ant-dropdown-menu-item-danger.ant-dropdown-menu-item-danger .ant-dropdown-menu-title-content,
+.ant-dropdown-menu-item-danger.ant-dropdown-menu-item-danger svg {
+  color: var(--ant-color-error) !important;
+}
+
+.ant-dropdown-menu-item-danger.ant-dropdown-menu-item-danger:hover,
+.ant-dropdown-menu-item-danger.ant-dropdown-menu-item-danger:hover .ant-dropdown-menu-title-content,
+.ant-dropdown-menu-item-danger.ant-dropdown-menu-item-danger:hover svg {
+  color: var(--ant-color-error-hover) !important;
+}
+
+.ant-dropdown-menu-item-danger.ant-dropdown-menu-item-danger:hover {
+  background: var(--ant-color-error-bg) !important;
+}
+
 .ant-select-suffix {
   color: var(--ant-color-icon) !important;
 }
@@ -747,10 +786,28 @@ label[for="password"]::after {
   border-radius: 12px;
 }
 
+/* top/bottom apply to every Drawer regardless of placement; right/left
+   only to the one side each placement actually uses. Setting BOTH left
+   and right (as a prior version of this rule did, on the theory that the
+   unused side would be a harmless no-op) is wrong: with an explicit
+   `width` also present, a box with left, right, AND width all specified
+   is over-constrained, and per spec (in LTR) the browser drops `right`
+   and honors `left` + width instead — which silently re-docked every
+   right-placed Drawer (every Create/Edit modal in the app) to the left
+   edge instead of the right. Scoped to each placement's own class instead
+   (set on the ancestor .ant-drawer, per antd's `ant-drawer-{placement}`
+   naming) so only the relevant side is ever touched. */
 .ant-drawer-content-wrapper {
   top: 8px !important;
-  right: 8px !important;
   bottom: 8px !important;
+}
+
+.ant-drawer-right .ant-drawer-content-wrapper {
+  right: 8px !important;
+}
+
+.ant-drawer-left .ant-drawer-content-wrapper {
+  left: 8px !important;
 }
 
 .ant-drawer-section {
@@ -870,9 +927,19 @@ label[for="password"]::after {
    color with no special-casing — the old alpha-based token scheme couldn't
    do this (a transparent hover overlay over an opaque fixed-column
    background just clipped at the fixed edge), which is what all of this used
-   to work around. */
-.ant-table-cell-fix-start-shadow::after,
-.ant-table-cell-fix-end-shadow::after {
+   to work around.
+
+   antd's own class names for this moved to a `-shadow-show` suffix (the
+   plain `-shadow` classes below no longer exist in the installed version),
+   and it also paints a second copy of the same shadow at the table
+   *container* level — visible here as a solid vertical bar on the Light
+   theme's near-white background, past the last fixed-left column, since
+   that container-level `:before`/`:after` shadow wasn't covered by only
+   suppressing the per-cell one. Both need suppressing. */
+.ant-table-cell-fix-start-shadow-show::after,
+.ant-table-cell-fix-end-shadow-show::after,
+.ant-table-fix-start-shadow-show .ant-table-container::before,
+.ant-table-fix-end-shadow-show .ant-table-container::after {
   box-shadow: none !important;
 }
 
@@ -926,6 +993,31 @@ label[for="password"]::after {
 .ifix-panel-table > .ant-table-wrapper .ant-table-pagination {
   padding: 0 16px !important;
   margin-bottom: 0 !important;
+}
+
+/* Compact Descriptions: antd's own `size="small"` prop only tightens
+   padding in `bordered` mode (see genBorderedStyle in antd's Descriptions
+   style) — bordered={false} always uses itemPaddingBottom (token.padding,
+   16px) regardless of size. Detail-page attribute lists here use the
+   plain, unbordered layout, so the only way to tighten their row spacing
+   is overriding this directly. 8px = Spacing 2. */
+.ifix-compact-descriptions .ant-descriptions-row > th,
+.ifix-compact-descriptions .ant-descriptions-row > td {
+  padding-bottom: 8px !important;
+}
+
+/* In `layout="vertical"` mode (DetailDescriptions stacks below 480px —
+   see that component), each item's label and value render as two separate
+   <tr>s in the same table, both matching the row rule above — so the
+   label's own row also inherited that 8px gap, reading as too much space
+   between a label and the value directly under it. 4px = Spacing 1, tighter
+   than the 8px kept between one item's value and the next item's label.
+   The label cell is a <th class="ant-descriptions-item"> — the more
+   specific-looking `.ant-descriptions-item-label` class actually belongs
+   to a <span> nested inside it, not the cell itself, so the tag is what
+   distinguishes a label cell from a content <td> of the same class. */
+.ifix-compact-descriptions .ant-descriptions-row > th.ant-descriptions-item {
+  padding-bottom: 4px !important;
 }
 
 
@@ -1132,4 +1224,51 @@ label[for="password"]::after {
      line, that inset just shifted the whole pill off the Alert's left
      edge above it instead of lining up flush. */
   margin: 0;
+}
+
+/* Contract create/edit wizard's own header Steps (see
+   CreateContractPage/EditContractPage, rendered into AppLayout's Header via
+   HeaderContentContext): default Steps title wrapping ("Devi/ce",
+   "Custo/mer") reads as broken text rather than a deliberate two-line
+   label, and it kept happening even at generous widths since nothing was
+   ever capping each title's own width — flex's default min-width:auto let
+   it claim however much space its longest word needed, wrapping only at
+   the space, never eliding. white-space:nowrap alone (no max-width) fixes
+   that without truncating — only the active step's title ever renders
+   (see the -wait/-finish rule below), and there's normally plenty of room
+   for it once the other four are bare circles, so it should show in full
+   rather than eliding on a fixed cap that was tighter than it needed to
+   be. overflow/text-overflow stay as a fallback for a genuinely narrow
+   header, not the normal case. */
+.ifix-header-steps .ant-steps-item-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Only the active step spells out its own title — completed (-finish) and
+   upcoming (-wait) steps show just their number/check circle, so the bar
+   reads as compact progress dots except for "here's what you're on now". */
+.ifix-header-steps .ant-steps-item-wait .ant-steps-item-title,
+.ifix-header-steps .ant-steps-item-finish .ant-steps-item-title {
+  display: none;
+}
+
+/* The connecting rail between icons is `flex: 1 1 0%` by default — it
+   grows to soak up whatever free space the Steps bar's own container has,
+   which (now that most items are bare circles with their title hidden
+   above) read as a wide, loose gap between them rather than a compact
+   progress bar. Fixed at Spacing 2 (8px) instead of letting it flex. */
+.ifix-header-steps .ant-steps-item-rail {
+  flex: 0 0 8px !important;
+  min-width: 8px !important;
+}
+
+/* Payment Schedule's own overdue row — the Payment doc calls it out
+   explicitly ("Overdue (highlighted)"), the same functional error-bg
+   token used for the rejection-note callout on a contract's own Overview
+   tab. !important since antd's Table applies its own row background
+   (including on hover) at equal-or-higher specificity. */
+.ifix-row-overdue > td {
+  background: var(--ant-color-error-bg) !important;
 }

@@ -1,6 +1,7 @@
-import { App, Button, Descriptions, Typography, theme } from 'antd'
+import { App, Button, Typography } from 'antd'
 import { Pencil, Archive, ArchiveRestore } from 'lucide-react'
 import type { Branch } from '../../../types/branch'
+import { DetailDescriptions } from '../../../components/DetailDescriptions'
 import { BranchStatusTag } from '../components/BranchStatusTag'
 
 interface Props {
@@ -10,8 +11,11 @@ interface Props {
   onToggleArchive: () => void
 }
 
+// Same page-header pattern as Products' OverviewTab: title/tags on the
+// left, actions on the right, no card chrome (see that file for why —
+// antd dropped PageHeader from core in v5+, so this reproduces its layout
+// by hand). Branches have no photo, so there's no thumbnail here.
 export function OverviewTab({ branch, canEdit, onEdit, onToggleArchive }: Props) {
-  const { token } = theme.useToken()
   const { modal } = App.useApp()
   const isArchived = branch.status === 'archived'
 
@@ -34,24 +38,14 @@ export function OverviewTab({ branch, canEdit, onEdit, onToggleArchive }: Props)
   ]
 
   return (
-    <div className="ifix-table-panel" style={{ marginBottom: 16 }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: 56,
-        paddingLeft: 16,
-        paddingRight: 8,
-        boxShadow: `inset 0 -0.5px 0 0 ${token.colorBorderSecondary}`,
-      }}>
-        <Typography.Text strong style={{ fontSize: 15 }}>Branch Details</Typography.Text>
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Typography.Title level={4} style={{ margin: 0 }}>{branch.name}</Typography.Title>
+          <BranchStatusTag status={branch.status} />
+        </div>
         {canEdit && (
-          // paddingRight: 2 on top of the header row's own 8px — matches
-          // the buttons' own top/bottom centering gap (10px, the derived
-          // (56 - 36) / 2 remainder from centering a 36px-tall button in
-          // this 56px-tall row), so the button group sits equidistant from
-          // all three edges instead of closer to the right one.
-          <div style={{ display: 'flex', gap: 8, paddingRight: 2 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             <Button
               icon={isArchived ? <ArchiveRestore size={16} strokeWidth={2.25} /> : <Archive size={16} strokeWidth={2.25} />}
               onClick={handleToggleArchiveClick}
@@ -63,20 +57,7 @@ export function OverviewTab({ branch, canEdit, onEdit, onToggleArchive }: Props)
         )}
       </div>
 
-      <div style={{ padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <Typography.Text strong style={{ fontSize: 20 }}>{branch.name}</Typography.Text>
-          <BranchStatusTag status={branch.status} />
-        </div>
-        <Descriptions
-          column={2}
-          bordered={false}
-          layout="horizontal"
-          items={items}
-          labelStyle={{ fontSize: 14 }}
-          contentStyle={{ fontSize: 14 }}
-        />
-      </div>
+      <DetailDescriptions items={items} />
     </div>
   )
 }

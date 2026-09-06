@@ -4,7 +4,7 @@ import { App, Avatar, Button, Dropdown, Result, Typography, message } from 'antd
 import { Pencil, Ban, RotateCcw, KeyRound, MoreHorizontal } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_USER_ACCOUNTS, generateTempPassword } from '../../constants/mockUsers'
-import { ROLE_LABELS, canManageTargetUser, canViewUserList, scopedUserList } from '../../constants/roles'
+import { ROLE_LABELS, canManageTargetUser, canViewUserList, homePath, scopedUserList } from '../../constants/roles'
 import { getAvatarUrl } from '../../utils/avatar'
 import { SettingsCard, SettingsRow } from '../../components/SettingsCard'
 import { UserStatusTag } from './components/UserStatusTag'
@@ -37,7 +37,7 @@ export function UserDetailPage() {
         status="403"
         title="Access denied"
         subTitle="The user list is only accessible to Branch Manager and above."
-        extra={<Button onClick={() => navigate('/contracts')}>Back home</Button>}
+        extra={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
       />
     )
   }

@@ -51,14 +51,14 @@ const DevToolsContext = createContext<DevToolsContextValue | null>(null)
 // over to /design-docs, which the "Docs" link always opens in a genuinely
 // new tab/page load (see DevToolsPanel.tsx's comment on why), not an
 // SPA-internal navigation. Without this, that fresh tab's DevToolsProvider
-// re-mounts with the 'neutral' default no matter what was selected in the
+// re-mounts with the 'light' default no matter what was selected in the
 // tab it was opened from, so the docs page silently stopped reflecting
 // whatever theme the app itself was showing.
 const THEME_STORAGE_KEY = 'ifix-theme-variant'
 
 function readStoredThemeVariant(): ThemeVariant {
   const stored = localStorage.getItem(THEME_STORAGE_KEY)
-  return stored === 'neutral' || stored === 'blue' || stored === 'light' ? stored : 'neutral'
+  return stored === 'neutral' || stored === 'blue' || stored === 'light' ? stored : 'light'
 }
 
 export function DevToolsProvider({ children }: { children: React.ReactNode }) {

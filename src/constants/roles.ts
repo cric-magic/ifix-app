@@ -1,8 +1,11 @@
-import type { AuthUser, InstallmentRecord } from '../types/installment'
+import type { AuthUser } from '../types/installment'
 import type { UserAccount, UserRole } from '../types/user'
 import type { Product, ProductUnit } from '../types/product'
 import type { Merchant } from '../types/merchant'
 import type { Branch } from '../types/branch'
+import type { Contract } from '../types/contract'
+import type { Customer } from '../types/customer'
+import type { ContractTemplate } from '../types/contractTemplate'
 import { MOCK_USER_ACCOUNTS } from './mockUsers'
 
 export const ROLE_LEVEL: Record<UserRole, number> = {
@@ -56,15 +59,93 @@ export function toAuthUser(account: UserAccount): AuthUser {
 
 export const MOCK_USERS: AuthUser[] = MOCK_USER_ACCOUNTS.map(toAuthUser)
 
-// Installment permissions — merchant_admin and above act on all branches;
-// branch_manager / staff are scoped to their own assigned branch.
-export function canEditInstallment(user: AuthUser, record: InstallmentRecord): boolean {
-  if (isMerchantAdminOrAbove(user)) return true
-  return record.branch === user.branch
-}
-
 export function canViewBranchFilter(user: AuthUser): boolean {
   return isMerchantAdminOrAbove(user)
+}
+
+// Where "back home" / the index route should actually land — Contracts is
+// the merchant-workspace home for everyone except Super Admin (who can't
+// view Contracts at all, per canViewContracts below; their own workspace
+// home is the platform-level Merchants list instead). Used by the router's
+// index redirect, AppLayout's own back-to-home chevrons, and every detail
+// page's 403 "Back home" fallback — those all used to hardcode '/contracts',
+// which was a dead end for Super Admin landing back on a page blocked for
+// their own role.
+export function homePath(user: AuthUser): string {
+  return user.role === 'super_admin' ? '/merchants' : '/contracts'
+}
+
+// Contract permissions — per the Contract doc: merchant-scoped business
+// data like Products/Units, so Super Admin (a platform-level role with no
+// merchant of its own) never sees it, same explicit exclusion as
+// canViewProducts. Every other role can create and view; Staff/Branch
+// Manager are scoped to their own branch, Admin/Owner see the whole
+// merchant (and can additionally filter by branch, per canViewBranchFilter
+// above).
+export function canViewContracts(user: AuthUser): boolean {
+  return user.role !== 'super_admin'
+}
+
+export function canCreateContract(user: AuthUser): boolean {
+  return canViewContracts(user)
+}
+
+export function scopedContractList(actor: AuthUser, all: Contract[]): Contract[] {
+  if (actor.role === 'super_admin') return []
+  const inMerchant = all.filter(c => c.merchantId === actor.merchantId)
+  if (isMerchantAdminOrAbove(actor)) return inMerchant
+  return inMerchant.filter(c => c.branch === actor.branch)
+}
+
+export function canManageContract(actor: AuthUser, contract: Contract): boolean {
+  if (actor.role === 'super_admin') return false
+  if (isMerchantAdminOrAbove(actor)) return actor.merchantId === contract.merchantId
+  return contract.branch === actor.branch
+}
+
+// Field-level editing (device/customer/template/pricing, not just moving
+// the contract through its lifecycle) is narrower than canManageContract
+// above — per the doc's Contract Status Matrix, only the contract's own
+// creator can edit it, and only in the three statuses the doc marks
+// editable: Draft ("✅ Creator"), Pending Approval ("✅ Staff" — the
+// submitter, before a Branch Manager starts review), and Rejected
+// ("✅ Staff (edit and resubmit)"). Every other status is either locked
+// (Under Review) or has no documented field-editing capability at all —
+// a Branch Manager approving a Staff submission still can't rewrite its
+// device/customer/pricing, only move its status.
+export function canEditContractFields(actor: AuthUser, contract: Contract): boolean {
+  if (!canManageContract(actor, contract)) return false
+  if (contract.createdBy !== actor.id) return false
+  return contract.status === 'draft' || contract.status === 'pending_approval' || contract.status === 'rejected'
+}
+
+// Approval routing per the doc: Staff submissions go to Pending Approval
+// and need a Branch Manager (or Admin/Owner, standing in where a branch has
+// none assigned) to review; BM/Admin/Owner submissions auto-approve, so
+// there's nothing for Staff to ever approve.
+export function canApproveContract(user: AuthUser): boolean {
+  return user.role !== 'staff' && user.role !== 'super_admin'
+}
+
+// Payment doc's own Permission Matrix: recording a payment is open to
+// every role that can already manage the contract (Staff included) —
+// same branch/merchant scope as canManageContract — as long as the
+// contract actually has something to record against (Active or Overdue).
+export function canRecordPayment(actor: AuthUser, contract: Contract): boolean {
+  if (!canManageContract(actor, contract)) return false
+  return contract.status === 'active' || contract.status === 'overdue'
+}
+
+// Voiding is narrower than recording: the doc excludes Staff entirely
+// ("Void payment record" — BM/Admin/Owner only), and locks once the
+// contract is Settled, same as canRecordPayment's own status gate would
+// naturally exclude anyway (Settled isn't active/overdue) — kept explicit
+// here since a future status this contract can be in (e.g. once Defaulted
+// exists) might not be caught by that same active/overdue check.
+export function canVoidPaymentRecord(actor: AuthUser, contract: Contract): boolean {
+  if (actor.role === 'staff') return false
+  if (!canManageContract(actor, contract)) return false
+  return contract.status !== 'settled'
 }
 
 export function canConfigurePenalty(user: AuthUser): boolean {
@@ -217,4 +298,54 @@ export function canManageBranch(actor: AuthUser, branch: Branch): boolean {
 export function scopedBranchList(actor: AuthUser, all: Branch[]): Branch[] {
   if (actor.role === 'super_admin') return all
   return all.filter(b => b.merchantId === actor.merchantId)
+}
+
+// Customer permissions — per the Customer doc: merchant-scoped, same
+// Super-Admin exclusion as Products/Contracts. Unlike Contracts, there's no
+// branch scoping — the doc explicitly allows "Customer lookup between
+// branches," so every merchant-scoped role sees the full merchant list.
+// The doc's Create/Edit permission table gives every role (Staff up)
+// the same access, with only deletion withheld (and withheld from
+// everyone, not just Staff — this prototype has no delete action at all).
+export function canViewCustomers(user: AuthUser): boolean {
+  return user.role !== 'super_admin'
+}
+
+export function canManageCustomers(user: AuthUser): boolean {
+  return canViewCustomers(user)
+}
+
+// The doc's real trigger is automatic ("marked as blacklisted when his/her
+// contract is Overdue," Phase 2) — there's no manual-toggle permission
+// documented. This prototype has no automated overdue-driven trigger
+// wired up yet, so a manual override is offered instead, restricted to
+// Admin/Owner as a reasonable stand-in for what would otherwise be a
+// system action.
+export function canManageCustomerBlacklist(user: AuthUser): boolean {
+  return isMerchantAdminOrAbove(user)
+}
+
+export function scopedCustomerList(actor: AuthUser, all: Customer[]): Customer[] {
+  if (actor.role === 'super_admin') return []
+  return all.filter(c => c.merchantId === actor.merchantId)
+}
+
+// Contract Template permissions — per the Contract Template doc's
+// Permissions table: Merchant Admin/Owner (and Super Admin for a selected
+// merchant, not modeled here — see canViewMerchantList) can create/edit/
+// duplicate/activate/archive/set default; Staff/Branch Manager can only
+// view Active templates, never Draft/Archived ones or any edit action.
+export function canViewContractTemplates(user: AuthUser): boolean {
+  return user.role !== 'super_admin'
+}
+
+export function canManageContractTemplates(user: AuthUser): boolean {
+  return isMerchantAdminOrAbove(user)
+}
+
+export function scopedContractTemplateList(actor: AuthUser, all: ContractTemplate[]): ContractTemplate[] {
+  if (actor.role === 'super_admin') return []
+  const inMerchant = all.filter(t => t.merchantId === actor.merchantId)
+  if (canManageContractTemplates(actor)) return inMerchant
+  return inMerchant.filter(t => t.status === 'active')
 }

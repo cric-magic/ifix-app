@@ -2,17 +2,20 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { DesktopStageLayout } from '../layouts/DesktopStageLayout'
 import { AppLayout } from '../layouts/AppLayout'
 import { RequireAuth } from './RequireAuth'
-import { InstallmentListPage } from '../pages/installments/InstallmentListPage'
-import { InstallmentDetailPage } from '../pages/installments/InstallmentDetailPage'
+import { HeaderContentProvider } from '../contexts/HeaderContentContext'
+import { HomeRedirect } from './HomeRedirect'
 import { PenaltySettingsPage } from '../pages/penalty/PenaltySettingsPage'
 import { SmartCalculatorPage } from '../pages/calculator/SmartCalculatorPage'
 import { CreateContractPage } from '../pages/contracts/CreateContractPage'
+import { EditContractPage } from '../pages/contracts/EditContractPage'
 import { ContractsListPage } from '../pages/contracts/ContractsListPage'
+import { ContractDetailPage } from '../pages/contracts/ContractDetailPage'
 import { ProductsPage } from '../pages/products/ProductsPage'
 import { ProductDetailPage } from '../pages/products/ProductDetailPage'
 import { UnitsListPage } from '../pages/products/UnitsListPage'
 import { UnitDetailPage } from '../pages/products/UnitDetailPage'
 import { CustomersPage } from '../pages/customers/CustomersPage'
+import { CustomerDetailPage } from '../pages/customers/CustomerDetailPage'
 import { MerchantsPage } from '../pages/merchants/MerchantsPage'
 import { MerchantDetailPage } from '../pages/merchants/MerchantDetailPage'
 import { BranchesPage } from '../pages/branches/BranchesPage'
@@ -22,6 +25,7 @@ import { UserDetailPage } from '../pages/users/UserDetailPage'
 import { AccountGeneralPage } from '../pages/account/AccountGeneralPage'
 import { WorkspaceAccountPage } from '../pages/settings/WorkspaceAccountPage'
 import { WorkspaceBankAccountsPage } from '../pages/settings/WorkspaceBankAccountsPage'
+import { ContractTemplatesPage } from '../pages/settings/ContractTemplatesPage'
 import { DesignDocsPage } from '../pages/design/DesignDocsPage'
 import { SignInPage } from '../pages/auth/SignInPage'
 import { SetPasswordPage } from '../pages/auth/SetPasswordPage'
@@ -42,21 +46,22 @@ export const router = createBrowserRouter([
       { path: '/reset-password', element: <ResetPasswordPage /> },
       {
         path: '/',
-        element: <RequireAuth><AppLayout /></RequireAuth>,
+        element: <RequireAuth><HeaderContentProvider><AppLayout /></HeaderContentProvider></RequireAuth>,
         children: [
-          { index: true, element: <Navigate to="/contracts" replace /> },
-          { path: 'installments', element: <InstallmentListPage /> },
-          { path: 'installments/:id', element: <InstallmentDetailPage /> },
+          { index: true, element: <HomeRedirect /> },
           { path: 'penalty-settings', element: <PenaltySettingsPage /> },
           { path: 'calculator', element: <SmartCalculatorPage /> },
           { path: 'contracts/new', element: <CreateContractPage /> },
           { path: 'contracts', element: <ContractsListPage /> },
+          { path: 'contracts/:id', element: <ContractDetailPage /> },
+          { path: 'contracts/:id/edit', element: <EditContractPage /> },
           { path: 'products', element: <Navigate to="/products/catalog" replace /> },
           { path: 'products/catalog', element: <ProductsPage /> },
           { path: 'products/catalog/:id', element: <ProductDetailPage /> },
           { path: 'products/unit', element: <UnitsListPage /> },
           { path: 'products/unit/:id', element: <UnitDetailPage /> },
           { path: 'customers', element: <CustomersPage /> },
+          { path: 'customers/:id', element: <CustomerDetailPage /> },
           { path: 'merchants', element: <MerchantsPage /> },
           { path: 'merchants/:id', element: <MerchantDetailPage /> },
           { path: 'branches', element: <BranchesPage /> },
@@ -64,6 +69,7 @@ export const router = createBrowserRouter([
           { path: 'settings', element: <Navigate to="/settings/account" replace /> },
           { path: 'settings/account', element: <WorkspaceAccountPage /> },
           { path: 'settings/bank-accounts', element: <WorkspaceBankAccountsPage /> },
+          { path: 'settings/contract-templates', element: <ContractTemplatesPage /> },
           { path: 'settings/members', element: <UserListPage /> },
           { path: 'settings/members/:id', element: <UserDetailPage /> },
           { path: 'account', element: <Navigate to="/account/general" replace /> },

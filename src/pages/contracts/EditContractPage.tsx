@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
   Steps, Card, Form, Input, InputNumber, Button, Space, Row, Col,
-  Typography, Divider, Alert, DatePicker, message,
+  Typography, Divider, Alert, Result, DatePicker, message,
 } from 'antd'
 import dayjs from 'dayjs'
 import { Check, X } from 'lucide-react'
@@ -15,15 +15,14 @@ import { DetailDescriptions } from '../../components/DetailDescriptions'
 import { BRANCHES } from '../../constants/mockData'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
-import { MOCK_MERCHANTS } from '../../constants/mockMerchants'
-import { activeTemplatesFor } from '../../constants/mockContractTemplates'
+import { activeTemplatesFor, MOCK_CONTRACT_TEMPLATES } from '../../constants/mockContractTemplates'
 import { MOCK_CUSTOMERS, findCustomerByNationalId, generateCustomerId } from '../../constants/mockCustomers'
-import { MOCK_CONTRACTS, generateContractId } from '../../constants/mockContracts'
+import { MOCK_CONTRACTS } from '../../constants/mockContracts'
 import { calcFixRate } from '../../utils/calculator'
-import { generateContractNumber, submitContractForApproval } from '../../utils/contract'
-import { canCreateContract, isMerchantAdminOrAbove } from '../../constants/roles'
-import type { Contract } from '../../types/contract'
+import { submitContractForApproval } from '../../utils/contract'
+import { canEditContractFields, isMerchantAdminOrAbove, scopedContractList } from '../../constants/roles'
 import type { Customer } from '../../types/customer'
+import type { Contract } from '../../types/contract'
 
 // Per the Contract doc's Free Rate terms ("pick a term: 3/6/10/12/18/24
 // months") — a different set from Fixed Rate's own per-template terms.
@@ -52,11 +51,56 @@ interface CustomerValues {
   idCardWithOwnerPhoto?: string[]
 }
 
-export function CreateContractPage() {
+// Same 5-step wizard as CreateContractPage, prefilled from an existing
+// Draft/Pending Approval/Rejected contract instead of starting blank —
+// per the doc's Contract Status Matrix, those are the only statuses ever
+// editable, and only by the contract's own creator (canEditContractFields).
+// Saving mutates the existing contract in place (same id/contractNumber)
+// rather than creating a new one, then applies the same submit-for-
+// approval transition Draft/Rejected already used at creation — this is
+// the doc's "Staff edits the contract and resubmits" step, which previously
+// had no actual editing UI at all (LifecycleActions' old "Resubmit" button
+// just flipped status with nothing to fix first).
+export function EditContractPage() {
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const actor = useCurrentUser()
-  const merchant = MOCK_MERCHANTS.find(m => m.id === actor.merchantId)
   const canUseFreeRate = isMerchantAdminOrAbove(actor)
+
+  // scopedContractList (not a raw merchantId filter) — same reasoning as
+  // ContractDetailPage: Staff/Branch Manager shouldn't be able to reach
+  // another branch's contract by guessing/typing its id.
+  const maybeContract = scopedContractList(actor, MOCK_CONTRACTS).find(c => c.id === id)
+
+  if (!maybeContract) {
+    return (
+      <Result
+        status="404"
+        title="Contract not found"
+        extra={<Button onClick={() => navigate('/contracts')}>Back to list</Button>}
+      />
+    )
+  }
+
+  if (!canEditContractFields(actor, maybeContract)) {
+    return (
+      <Result
+        status="403"
+        title="You can't edit this contract"
+        subTitle="Only the contract's own creator can edit it, and only while it's Draft, Pending Approval, or Rejected."
+        extra={<Button onClick={() => navigate(`/contracts/${maybeContract.id}`)}>Back to contract</Button>}
+      />
+    )
+  }
+
+  // Rebound to a non-optional type — TS's narrowing above doesn't persist
+  // into handleSubmit, a nested function declared later in this component,
+  // since it can't prove the closure only ever runs after these guards.
+  const contract: Contract = maybeContract
+
+  const originalUnitId = contract.device.unitId
+  const originalStatus = contract.status
+  const originalCustomer = contract.customerId ? MOCK_CUSTOMERS.find(c => c.id === contract.customerId) ?? null : null
 
   const [step, setStep] = useState(0)
   const [deviceForm] = Form.useForm<DeviceValues>()
@@ -66,76 +110,65 @@ export function CreateContractPage() {
 
   // Ant Design Form instances lose their values on unmount between wizard
   // steps — captured into React state on each "Next" click instead of read
-  // back off the (by-then-unmounted) Form.
-  const [device, setDevice] = useState<DeviceValues | null>(null)
-  const [templateValues, setTemplateValues] = useState<TemplateValues | null>(null)
-  const [deviceInfo, setDeviceInfo] = useState<DeviceInfoValues | null>(null)
-  const [customerValues, setCustomerValues] = useState<CustomerValues | null>(null)
-  const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null)
+  // back off the (by-then-unmounted) Form. Seeded from the existing
+  // contract so "Next" past a step the user never touched still carries
+  // its original values forward.
+  const [device, setDevice] = useState<DeviceValues | null>({
+    branch: contract.branch,
+    productId: contract.device.productId,
+    unitId: contract.device.unitId,
+  })
+  const [templateValues, setTemplateValues] = useState<TemplateValues | null>({
+    templateId: contract.template.templateId,
+    termMonths: contract.financing.paymentTermMonths,
+    ratePercent: contract.financing.ratePercent,
+    downPaymentPercent: contract.financing.downPaymentPercent,
+  })
+  const [deviceInfo, setDeviceInfo] = useState<DeviceInfoValues | null>({
+    imei: contract.device.imei,
+    serialNumber: contract.device.serialNumber,
+    frontPhoto: contract.devicePhotos.front ? [contract.devicePhotos.front] : [],
+    backPhoto: contract.devicePhotos.back ? [contract.devicePhotos.back] : [],
+    imeiLabelPhoto: contract.devicePhotos.imeiLabel ? [contract.devicePhotos.imeiLabel] : [],
+    sealWrapPhoto: contract.devicePhotos.sealWrap ? [contract.devicePhotos.sealWrap] : [],
+  })
+  const [customerValues, setCustomerValues] = useState<CustomerValues | null>({
+    nationalId: contract.customer.nationalId,
+    fullName: contract.customer.fullName,
+    phone: contract.customer.phone,
+    dateOfBirth: contract.customer.dateOfBirth,
+    email: contract.customer.email,
+    idCardAddress: contract.customer.idCardAddress,
+    currentAddress: contract.customer.currentAddress,
+    workplaceAddress: contract.customer.workplaceAddress,
+    idCardPhoto: contract.idCardPhotos.idCard ? [contract.idCardPhotos.idCard] : [],
+    idCardWithOwnerPhoto: contract.idCardPhotos.idCardWithOwner ? [contract.idCardPhotos.idCardWithOwner] : [],
+  })
+  const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(originalCustomer)
 
-  const templates = actor.merchantId ? activeTemplatesFor(actor.merchantId) : []
-  // Falls back to the snapshotted state once its own step's Form unmounts
-  // (per the comment above — a watched field resets to undefined once its
-  // Form is gone) — without it, `selectedTemplate` silently went undefined
-  // again the moment the user left the Template & Terms step, and
-  // handleSubmit's `selectedTemplate!.id` etc. at the Preview step threw
-  // with zero visible feedback (no toast, no error boundary) since it's a
-  // plain event-handler exception. Matches EditContractPage's own already-
-  // correct version of these three.
-  const selectedBranch = Form.useWatch('branch', deviceForm) ?? device?.branch ?? actor.branch
+  // Active templates for the merchant, plus the contract's own template
+  // even if it's since been archived — otherwise an edit would silently
+  // drop the originally selected template out of the picker entirely.
+  const activeTemplates = actor.merchantId ? activeTemplatesFor(actor.merchantId) : []
+  const currentTemplate = MOCK_CONTRACT_TEMPLATES.find(t => t.id === contract.template.templateId)
+  const templates = currentTemplate && !activeTemplates.some(t => t.id === currentTemplate.id)
+    ? [...activeTemplates, currentTemplate]
+    : activeTemplates
+
+  const selectedBranch = Form.useWatch('branch', deviceForm) ?? device?.branch
   const selectedProductId = Form.useWatch('productId', deviceForm) ?? device?.productId
   const selectedTemplateId = Form.useWatch('templateId', templateForm) ?? templateValues?.templateId
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId)
 
-  const steps = [
-    { title: 'Device', description: 'Pick the branch, product, and available unit for this contract.' },
-    { title: 'Template & Terms', description: 'Choose a contract template and set the down payment and term.' },
-    { title: 'Device Info & Photos', description: "Confirm the unit's IMEI and serial number, then upload box photos." },
-    { title: 'Customer', description: 'Look up an existing customer by ID, or fill in a new one.' },
-    { title: 'Preview', description: 'Review the full contract summary before submitting.' },
-  ]
-
-  // Replaces AppLayout's own breadcrumb/right-slot with this wizard's own
-  // progress (a Steps bar, in place of the plain "Contracts" title) and its
-  // Cancel — an X icon here rather than a labeled button, matching a
-  // Drawer's own close affordance despite this being a full page. Same
-  // plain, no-confirmation Cancel every other Create flow in the app
-  // already has (e.g. CreateProductModal's own footer Cancel) — this
-  // wizard previously had no way to back out of it at all short of the
-  // sidebar's own nav, at any of its 5 steps. Registered unconditionally
-  // (before the canCreateContract guard below) since hooks can't follow an
-  // early return; it updates live as `step` advances since this re-runs on
-  // every render, not just once.
-  useSetHeaderContent({
-    // title-only here — `steps` also carries each step's own `description`
-    // now (used below the heading in the main content, not the compact
-    // header bar), which antd's Steps would otherwise render as its own
-    // sub-label under every item.
-    center: <Steps current={step} items={steps.map(s => ({ title: s.title }))} size="small" className="ifix-header-steps" style={{ fontSize: 14 }} />,
-    right: (
-      <Button
-        type="text"
-        size="small"
-        style={{ borderRadius: 6 }}
-        icon={<X size={16} strokeWidth={2.25} />}
-        onClick={() => navigate('/contracts')}
-      />
-    ),
-  }, [step])
-
-  if (!canCreateContract(actor)) {
-    return (
-      <Alert
-        type="info"
-        message="Not applicable"
-        description="Contracts are scoped to a merchant workspace. Super Admin operates at the platform level."
-        showIcon
-      />
-    )
-  }
-
+  // The contract's own currently-assigned unit is "reserved" (by this same
+  // contract), so it wouldn't show up in the plain "available" pool below —
+  // included explicitly so re-selecting the same unit (the common case,
+  // when the user is only fixing something else) still works.
   const availableUnits = selectedProductId
-    ? MOCK_PRODUCT_UNITS.filter(u => u.productId === selectedProductId && u.branch === selectedBranch && u.availability === 'available')
+    ? MOCK_PRODUCT_UNITS.filter(u =>
+        u.productId === selectedProductId && u.branch === selectedBranch &&
+        (u.availability === 'available' || u.id === originalUnitId)
+      )
     : []
 
   function handleProductChange() {
@@ -213,12 +246,11 @@ export function CreateContractPage() {
   }
 
   function handleSubmit() {
-    // A bare `return` here previously failed completely silently — no
-    // toast, no error, the button just did nothing — for the same reason
-    // selectedTemplate above did: a step's own snapshot going missing
-    // reads as "nothing happened" from the user's side with no indication
-    // anything is even wrong, let alone what to fix.
-    if (!merchant || !device || !templateValues || !deviceInfo || !customerValues || !selectedTemplate) {
+    // Same defensive user-facing feedback as CreateContractPage's own
+    // handleSubmit — a bare silent `return` here left a broken step
+    // reading as "the button does nothing," with no indication what (or
+    // whether anything) was wrong.
+    if (!device || !templateValues || !deviceInfo || !customerValues || !selectedTemplate) {
       message.error('Something went wrong — please go back and check every step.')
       return
     }
@@ -257,105 +289,119 @@ export function CreateContractPage() {
       })
     }
 
-    const now = new Date().toISOString()
-    const isStaff = actor.role === 'staff'
-    const contract: Contract = {
-      id: generateContractId(),
-      contractNumber: generateContractNumber(merchant, MOCK_CONTRACTS),
-      // Starts 'draft' and immediately transitions below via
-      // submitContractForApproval — the same helper EditContractPage uses
-      // to resubmit — rather than duplicating the status/submittedBy/
-      // approvedBy logic inline here too.
-      status: 'draft',
-      merchantId: actor.merchantId!,
-      branch: device.branch,
-      device: {
-        productId: product.id,
-        unitId: unit.id,
-        productName: product.name,
-        brand: product.brand,
-        model: product.model,
-        storage: product.storage,
-        color: product.color,
-        condition: unit.grade ?? 'New',
-        imei: deviceInfo.imei,
-        serialNumber: deviceInfo.serialNumber,
-      },
-      devicePhotos: {
-        front: deviceInfo.frontPhoto?.[0],
-        back: deviceInfo.backPhoto?.[0],
-        imeiLabel: deviceInfo.imeiLabelPhoto?.[0],
-        sealWrap: deviceInfo.sealWrapPhoto?.[0],
-      },
-      idCardPhotos: {
-        idCard: customerValues.idCardPhoto?.[0],
-        idCardWithOwner: customerValues.idCardWithOwnerPhoto?.[0],
-      },
-      customerId,
-      customer: {
-        fullName: customerValues.fullName,
-        nationalId: customerValues.nationalId,
-        phone: customerValues.phone,
-        dateOfBirth: customerValues.dateOfBirth,
-        email: customerValues.email,
-        idCardAddress: customerValues.idCardAddress,
-        currentAddress: customerValues.currentAddress,
-        workplaceAddress: customerValues.workplaceAddress,
-      },
-      template: {
-        templateId: selectedTemplate!.id,
-        templateName: selectedTemplate!.name,
-        type: selectedTemplate!.type,
-        title: selectedTemplate!.title,
-        bindingStatement: selectedTemplate!.bindingStatement,
-        legalDeclarations: selectedTemplate!.legalDeclarations,
-      },
-      financing,
-      schedule: [],
-      payments: [],
-      rejectionNote: null,
-      signedContractUploaded: false,
-      createdBy: actor.id,
-      createdAt: now,
-      submittedBy: null,
-      submittedAt: null,
-      approvedBy: null,
-      approvedAt: null,
-      rejectedBy: null,
-      rejectedAt: null,
-      activatedAt: null,
-      settledAt: null,
+    // Release the previously-reserved unit if the selection changed, then
+    // reserve whichever unit the edit ends on — mirrors the reservation
+    // CreateContractPage sets up at creation, just re-pointed if needed.
+    if (unit.id !== originalUnitId) {
+      const oldUnit = MOCK_PRODUCT_UNITS.find(u => u.id === originalUnitId)
+      if (oldUnit) oldUnit.availability = 'available'
     }
-
-    submitContractForApproval(contract, actor.id, actor.role)
-
-    // Reserve the unit so it drops out of the "available" pool for the next
-    // contract — mirrors what the Products module does when a unit sells.
     unit.availability = 'reserved'
 
-    MOCK_CONTRACTS.push(contract)
-    message.success(isStaff ? 'Contract submitted for approval' : 'Contract created and approved')
+    contract.branch = device.branch
+    contract.device = {
+      productId: product.id,
+      unitId: unit.id,
+      productName: product.name,
+      brand: product.brand,
+      model: product.model,
+      storage: product.storage,
+      color: product.color,
+      condition: unit.grade ?? 'New',
+      imei: deviceInfo.imei,
+      serialNumber: deviceInfo.serialNumber,
+    }
+    contract.devicePhotos = {
+      front: deviceInfo.frontPhoto?.[0],
+      back: deviceInfo.backPhoto?.[0],
+      imeiLabel: deviceInfo.imeiLabelPhoto?.[0],
+      sealWrap: deviceInfo.sealWrapPhoto?.[0],
+    }
+    contract.idCardPhotos = {
+      idCard: customerValues.idCardPhoto?.[0],
+      idCardWithOwner: customerValues.idCardWithOwnerPhoto?.[0],
+    }
+    contract.customerId = customerId
+    contract.customer = {
+      fullName: customerValues.fullName,
+      nationalId: customerValues.nationalId,
+      phone: customerValues.phone,
+      dateOfBirth: customerValues.dateOfBirth,
+      email: customerValues.email,
+      idCardAddress: customerValues.idCardAddress,
+      currentAddress: customerValues.currentAddress,
+      workplaceAddress: customerValues.workplaceAddress,
+    }
+    contract.template = {
+      templateId: selectedTemplate!.id,
+      templateName: selectedTemplate!.name,
+      type: selectedTemplate!.type,
+      title: selectedTemplate!.title,
+      bindingStatement: selectedTemplate!.bindingStatement,
+      legalDeclarations: selectedTemplate!.legalDeclarations,
+    }
+    contract.financing = financing
+
+    // Draft/Rejected are the two statuses this edit actually resubmits from
+    // — Pending Approval means Staff is fixing something before a Branch
+    // Manager has even started review, so there's no re-submission to do,
+    // just a save. Rejected also clears the old rejection note/reviewer —
+    // it's a fresh submission, not a continuation of the old review.
+    if (originalStatus === 'draft' || originalStatus === 'rejected') {
+      contract.rejectionNote = null
+      contract.rejectedBy = null
+      contract.rejectedAt = null
+      submitContractForApproval(contract, actor.id, actor.role)
+      message.success(actor.role === 'staff' ? 'Changes saved and submitted for approval' : 'Changes saved and approved')
+    } else {
+      message.success('Changes saved')
+    }
+
     navigate(`/contracts/${contract.id}`)
   }
+
+  const steps = [
+    { title: 'Device', description: 'Pick the branch, product, and available unit for this contract.' },
+    { title: 'Template & Terms', description: 'Choose a contract template and set the down payment and term.' },
+    { title: 'Device Info & Photos', description: "Confirm the unit's IMEI and serial number, then upload box photos." },
+    { title: 'Customer', description: 'Look up an existing customer by ID, or fill in a new one.' },
+    { title: 'Preview', description: 'Review the full contract summary before saving.' },
+  ]
+
+  const submitLabel = originalStatus === 'rejected'
+    ? 'Save & Resubmit'
+    : originalStatus === 'draft'
+    ? (actor.role === 'staff' ? 'Save & Submit for Approval' : 'Save Contract')
+    : 'Save Changes'
+
+  // Same header takeover as CreateContractPage — see its own comment for
+  // why (a Steps bar replacing the breadcrumb, an X-icon Cancel replacing
+  // the empty right slot). Cancel goes back to the contract itself here
+  // (not the list), since that's where the "Edit" button that opened this
+  // was clicked from.
+  useSetHeaderContent({
+    // title-only here — see CreateContractPage's own comment for why.
+    center: <Steps current={step} items={steps.map(s => ({ title: s.title }))} size="small" className="ifix-header-steps" style={{ fontSize: 14 }} />,
+    right: (
+      <Button
+        type="text"
+        size="small"
+        style={{ borderRadius: 6 }}
+        icon={<X size={16} strokeWidth={2.25} />}
+        onClick={() => navigate(`/contracts/${contract.id}`)}
+      />
+    ),
+  }, [step])
 
   return (
     <div>
       <Card style={{ marginBottom: 24 }}>
-        {/* Now that the header's own Steps bar only spells out the active
-            step's title (see index.css) and abbreviates/hides the rest,
-            the step you're on needs a clear marker somewhere in the
-            content itself too — reusing `steps[step].title` (the same
-            string the header shows) keeps the two in sync automatically
-            rather than duplicating the label per step. A one-line
-            description underneath says what the step is actually for,
-            not just its name. marginTop: 0 — antd's own Title default
-            (~27px here) assumes it's sitting under other content; as the
-            very first thing in the Card it just read as a stray gap. */}
+        {/* Same as CreateContractPage — see its own comment for why. */}
         <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 4 }}>{steps[step].title}</Typography.Title>
         <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>{steps[step].description}</Typography.Text>
 
         {step === 0 && (
-          <Form form={deviceForm} layout="vertical" initialValues={{ branch: actor.branch }}>
+          <Form form={deviceForm} layout="vertical" initialValues={device ?? { branch: actor.branch }}>
             {!actor.branch && (
               <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Required' }]}>
                 <Select placeholder="Select branch" options={BRANCHES.map(b => ({ value: b, label: b }))} />
@@ -383,7 +429,7 @@ export function CreateContractPage() {
                     disabled={!selectedProductId}
                     options={availableUnits.map(u => ({
                       value: u.id,
-                      label: `IMEI ${u.imei}${u.grade ? ` · Grade ${u.grade}` : ''}`,
+                      label: `IMEI ${u.imei}${u.grade ? ` · Grade ${u.grade}` : ''}${u.id === originalUnitId ? ' (current)' : ''}`,
                     }))}
                   />
                 </Form.Item>
@@ -397,13 +443,13 @@ export function CreateContractPage() {
         )}
 
         {step === 1 && (
-          <Form form={templateForm} layout="vertical">
+          <Form form={templateForm} layout="vertical" initialValues={templateValues ?? undefined}>
             <Form.Item label="Contract Template" name="templateId" rules={[{ required: true, message: 'Required' }]}>
               <Select
                 placeholder="Select template"
                 options={templates
                   .filter(t => t.type === 'fixed_rate' || canUseFreeRate)
-                  .map(t => ({ value: t.id, label: `${t.name}${t.isDefault ? ' (Default)' : ''}` }))}
+                  .map(t => ({ value: t.id, label: `${t.name}${t.isDefault ? ' (Default)' : ''}${t.id === currentTemplate?.id && t.status !== 'active' ? ' (Archived)' : ''}` }))}
               />
             </Form.Item>
 
@@ -468,7 +514,7 @@ export function CreateContractPage() {
         )}
 
         {step === 2 && (
-          <Form form={deviceInfoForm} layout="vertical">
+          <Form form={deviceInfoForm} layout="vertical" initialValues={deviceInfo ?? undefined}>
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item label="IMEI" name="imei" rules={[{ required: true, message: 'Required' }]}>
@@ -511,7 +557,7 @@ export function CreateContractPage() {
         )}
 
         {step === 3 && (
-          <Form form={customerForm} layout="vertical">
+          <Form form={customerForm} layout="vertical" initialValues={customerValues ?? undefined}>
             <Row gutter={16}>
               <Col span={16}>
                 <Form.Item label="National ID / Passport" name="nationalId" rules={[{ required: true, message: 'Required' }]}>
@@ -634,7 +680,7 @@ export function CreateContractPage() {
               <Space>
                 <Button onClick={() => setStep(3)}>Back</Button>
                 <Button type="primary" icon={<Check size={16} strokeWidth={2.25} />} onClick={handleSubmit}>
-                  {actor.role === 'staff' ? 'Submit for Approval' : 'Create Contract'}
+                  {submitLabel}
                 </Button>
               </Space>
             </div>

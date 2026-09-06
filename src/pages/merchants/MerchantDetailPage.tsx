@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Button, Result, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_MERCHANTS } from '../../constants/mockMerchants'
-import { canViewMerchantList, canEditMerchant, canManageBankAccounts } from '../../constants/roles'
+import { canViewMerchantList, canEditMerchant, canManageBankAccounts, homePath } from '../../constants/roles'
 import { OverviewTab } from './detail/OverviewTab'
 import { BankAccountsTab } from './detail/BankAccountsTab'
 import { BranchesTab } from './detail/BranchesTab'
@@ -23,7 +23,7 @@ export function MerchantDetailPage() {
         status="403"
         title="Access denied"
         subTitle="Merchants is only accessible to Super Admin."
-        extra={<Button onClick={() => navigate('/contracts')}>Back home</Button>}
+        extra={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
       />
     )
   }

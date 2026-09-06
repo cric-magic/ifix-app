@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Descriptions, Image, Result, Typography, message, theme } from 'antd'
+import { Button, Image, Result, Typography, message, theme } from 'antd'
 import { ImageOff, Pencil } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
 import { MOCK_USER_ACCOUNTS } from '../../constants/mockUsers'
-import { canManageUnits, canViewProducts } from '../../constants/roles'
+import { canManageUnits, canViewProducts, homePath } from '../../constants/roles'
 import { GRADE_LABELS, TAX_LABELS } from '../../constants/products'
 import { useIconColors } from '../../constants/iconColors'
 import { IMAGE_PREVIEW_CLOSE_ICON } from '../../constants/imagePreviewIcons'
+import { DetailDescriptions } from '../../components/DetailDescriptions'
 import { UnitAvailabilityTag } from './components/UnitAvailabilityTag'
 import { EditUnitModal } from './components/EditUnitModal'
 
@@ -24,6 +25,7 @@ export function UnitDetailPage() {
   const iconColors = useIconColors()
   const [editOpen, setEditOpen] = useState(false)
   const [version, setVersion] = useState(0)
+  const [thumbnailHovered, setThumbnailHovered] = useState(false)
 
   const unit = MOCK_PRODUCT_UNITS.find(u => u.id === id)
   void version
@@ -34,7 +36,7 @@ export function UnitDetailPage() {
         status="403"
         title="Not applicable"
         subTitle="Units are scoped to a merchant workspace. Super Admin operates at the platform level."
-        extra={<Button onClick={() => navigate('/contracts')}>Back home</Button>}
+        extra={<Button onClick={() => navigate(homePath(user))}>Back home</Button>}
       />
     )
   }
@@ -98,101 +100,88 @@ export function UnitDetailPage() {
 
   return (
     <div>
-      <div className="ifix-table-panel" style={{ marginBottom: 16 }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: 56,
-          paddingLeft: 16,
-          paddingRight: 8,
-          boxShadow: `inset 0 -0.5px 0 0 ${token.colorBorderSecondary}`,
-        }}>
-          <Typography.Text strong style={{ fontSize: 15 }}>Unit Details</Typography.Text>
-          {canEdit && (
-            // paddingRight: 2 on top of the header row's own 8px — matches
-            // the button's own top/bottom centering gap (10px, the derived
-            // (56 - 36) / 2 remainder from centering a 36px-tall button in
-            // this 56px-tall row), so the button sits equidistant from all
-            // three edges instead of closer to the right one.
-            <div style={{ paddingRight: 2 }}>
-              <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+      {/* Same page-header pattern as Products' catalog OverviewTab:
+          title/tags on the left, actions on the right, no card chrome (see
+          that file for why — antd dropped PageHeader from core in v5+, so
+          this reproduces its layout by hand). The photo gallery shrinks to
+          the same 40px thumbnail beside the title, with a hover "+N"
+          overlay standing in for the full grid this panel used to show. */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{ position: 'relative', width: 40, height: 40, flexShrink: 0 }}
+              onMouseEnter={() => setThumbnailHovered(true)}
+              onMouseLeave={() => setThumbnailHovered(false)}
+            >
+              {allPhotos.length > 0 ? (
+                <Image.PreviewGroup
+                  preview={{
+                    countRender: (current, total) => (
+                      <span>{allPhotos[current - 1]?.label} · {current} / {total}</span>
+                    ),
+                    closeIcon: IMAGE_PREVIEW_CLOSE_ICON,
+                  }}
+                >
+                  <Image
+                    src={allPhotos[0].src}
+                    alt={allPhotos[0].label}
+                    width={40}
+                    height={40}
+                    style={{ objectFit: 'cover', borderRadius: token.borderRadiusSM, border: `0.5px solid ${token.colorBorderSecondary}` }}
+                  />
+                  {/* Rest of the photos join the same preview group (so the
+                      thumbnail's click-to-preview cycles through all of them)
+                      without rendering a second visible thumbnail. */}
+                  {allPhotos.slice(1).map((photo, i) => (
+                    <Image key={i} src={photo.src} alt="" style={{ display: 'none' }} />
+                  ))}
+                </Image.PreviewGroup>
+              ) : (
+                <div style={{
+                  width: 40,
+                  height: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: token.borderRadiusSM,
+                  border: `0.5px solid ${token.colorBorderSecondary}`,
+                  background: token.colorFillQuaternary,
+                  color: iconColors.secondary,
+                }}>
+                  <ImageOff size={16} strokeWidth={2.25} />
+                </div>
+              )}
+              {allPhotos.length > 0 && thumbnailHovered && (
+                // Same colorBgMask/colorTextLightSolid pairing antd's own
+                // Image component uses for its hover-to-preview mask.
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: token.borderRadiusSM,
+                  background: token.colorBgMask,
+                  color: token.colorTextLightSolid,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  pointerEvents: 'none',
+                }}>
+                  +{allPhotos.length}
+                </div>
+              )}
             </div>
+
+            <Typography.Title level={4} style={{ margin: 0 }}>{unit.imei}</Typography.Title>
+            <UnitAvailabilityTag availability={unit.availability} />
+          </div>
+          {canEdit && (
+            <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: 24, padding: 16 }}>
-          <div style={{ width: 220, flexShrink: 0 }}>
-            {allPhotos.length > 0 ? (
-              <Image.PreviewGroup
-                preview={{
-                  countRender: (current, total) => (
-                    <span>{allPhotos[current - 1]?.label} · {current} / {total}</span>
-                  ),
-                  closeIcon: IMAGE_PREVIEW_CLOSE_ICON,
-                }}
-              >
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 100px)',
-                  gap: 8,
-                  maxHeight: 220,
-                  overflowY: 'auto',
-                  paddingRight: allPhotos.length > 4 ? 10 : 0,
-                }}>
-                  {allPhotos.map((photo, i) => (
-                    <Image
-                      key={i}
-                      src={photo.src}
-                      alt={photo.label}
-                      width={100}
-                      height={100}
-                      style={{
-                        objectFit: 'cover',
-                        borderRadius: 8,
-                        border: `0.5px solid ${token.colorBorderSecondary}`,
-                        boxShadow: 'var(--ant-box-shadow)',
-                      }}
-                    />
-                  ))}
-                </div>
-              </Image.PreviewGroup>
-            ) : (
-              <div style={{
-                width: 220,
-                height: 220,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                borderRadius: 8,
-                border: `0.5px solid ${token.colorBorderSecondary}`,
-                boxShadow: 'var(--ant-box-shadow)',
-                background: token.colorFillQuaternary,
-                color: iconColors.secondary,
-              }}>
-                <ImageOff size={20} strokeWidth={2.25} />
-                <Typography.Text type="secondary" style={{ fontSize: 13 }}>No photos</Typography.Text>
-              </div>
-            )}
-          </div>
-
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <Typography.Text strong style={{ fontSize: 20 }}>{unit.imei}</Typography.Text>
-              <UnitAvailabilityTag availability={unit.availability} />
-            </div>
-            <Descriptions
-              column={2}
-              bordered={false}
-              layout="horizontal"
-              items={detailItems}
-              labelStyle={{ fontSize: 14 }}
-              contentStyle={{ fontSize: 14 }}
-            />
-          </div>
-        </div>
+        <DetailDescriptions items={detailItems} />
       </div>
 
       <div className="ifix-table-panel" style={{ marginBottom: 16 }}>
@@ -206,14 +195,7 @@ export function UnitDetailPage() {
           <Typography.Text strong style={{ fontSize: 15 }}>Sale Info</Typography.Text>
         </div>
         <div style={{ padding: 16 }}>
-          <Descriptions
-            column={2}
-            bordered={false}
-            layout="horizontal"
-            items={saleItems}
-            labelStyle={{ fontSize: 14 }}
-            contentStyle={{ fontSize: 14 }}
-          />
+          <DetailDescriptions items={saleItems} />
         </div>
       </div>
 

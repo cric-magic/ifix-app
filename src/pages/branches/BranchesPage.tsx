@@ -59,7 +59,7 @@ export function BranchesPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <Input
           placeholder="Search by name or branch code"
           prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
