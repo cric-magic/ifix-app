@@ -23,7 +23,7 @@ export function SettingsRow({ label, children }: { label: string; children: Reac
       borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
       padding: '8px 0',
     }}>
-      <span style={{ fontSize: 13, color: token.colorTextSecondary }}>{label}</span>
+      <span style={{ fontSize: 14, color: token.colorTextSecondary }}>{label}</span>
       <span style={{ fontSize: 14, color: token.colorText, display: 'flex', alignItems: 'center', gap: 8 }}>
         {children}
       </span>
