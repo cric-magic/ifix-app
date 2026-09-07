@@ -85,6 +85,7 @@ export function OverviewTab({ merchant, canEdit, onEdit, onToggleSuspend }: Prop
         <div style={{ display: 'flex', gap: 8 }}>
           {onToggleSuspend && (
             <Button
+              danger={!isSuspended}
               icon={isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />}
               onClick={handleToggleSuspendClick}
             >
