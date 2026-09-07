@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Avatar, Button, Drawer, Dropdown, Layout, Menu, Typography, theme } from 'antd'
 import {
   User, Package, FileText, Contact, Building2, Store,
-  MoreHorizontal, LogOut, IdCard, ChevronsUpDown, UserPlus,
+  MoreHorizontal, LogOut, ChevronsUpDown, UserPlus,
   Settings, ChevronLeft, PanelLeftClose, PanelLeftOpen, ChevronRight,
 } from 'lucide-react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
@@ -549,7 +549,7 @@ export function AppLayout() {
             dropdownRender={menu => <div style={{ margin: '0 4px 4px' }}>{menu}</div>}
             menu={{
               items: [
-                { key: 'settings', icon: <IdCard size={17} strokeWidth={2.25} />, label: 'Account Settings' },
+                { key: 'settings', icon: <User size={17} strokeWidth={2.25} />, label: 'Account Settings' },
                 { type: 'divider' },
                 { key: 'logout', icon: <LogOut size={17} strokeWidth={2.25} />, label: 'Log out' },
               ],

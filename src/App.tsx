@@ -242,6 +242,13 @@ function buildTheme(variant: ThemeVariant) {
     lineWidth: 0.5,
     colorBgElevated: '#000000', // placeholder, replaced below once colorFillQuaternary is known
     controlHeight: 36,
+    // Pinned explicitly rather than left to antd's own computed default
+    // (~27px off this app's controlHeight/fontSize) — same "round the ugly
+    // computed value to a clean number" principle as Dropdown.paddingBlock
+    // below. This is every `size="small"` control app-wide: the sidebar's
+    // icon buttons (workspace/account triggers, nav back-chevrons), any
+    // other small Button, and small Select/Input/Tag instances.
+    controlHeightSM: 28,
     // boxShadow/boxShadowSecondary come from variantSeed above now, not a
     // shared literal here — see the comment on VARIANT_SEEDS' type.
   }

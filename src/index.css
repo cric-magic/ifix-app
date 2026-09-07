@@ -1285,3 +1285,16 @@ label[for="password"]::after {
 .ifix-row-overdue > td {
   background: var(--ant-color-error-bg) !important;
 }
+
+/* Avatar's own default border is this app's shared 0.5px lineWidth seed at
+   fully transparent color — invisible, but still real for layout purposes:
+   with box-sizing: border-box, that 0.5px-per-side border eats into the
+   box the inner <img>/icon fills at width:100%, so the actual visible
+   photo renders 1px smaller (27px) than the Avatar's own declared size
+   (28px) — a real, measurable gap between the size prop and what's on
+   screen, not just a rounding artifact. Since the border is invisible
+   anyway, removing it lets the inner content genuinely fill the declared
+   size instead of being a hair smaller than it. */
+.ant-avatar {
+  border: none !important;
+}
