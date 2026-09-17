@@ -77,7 +77,7 @@ export const MOCK_PRODUCTS: Product[] = [
     costPrice: 34000,
     salesPrice: 41900,
     type: 'new',
-    status: 'unavailable',
+    status: 'available',
     merchantId: MERCHANT_ID,
     createdBy: 'admin-1',
     createdAt: '2024-02-15T09:00:00.000Z',

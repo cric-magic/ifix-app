@@ -6,6 +6,7 @@ import type { AuthUser } from '../../../types/installment'
 import type { Contract, ContractPaymentRecord } from '../../../types/contract'
 import { canApproveContract } from '../../../constants/roles'
 import { getOutstandingBalance, buildActivationSchedule } from '../../../utils/contract'
+import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 
 interface Props {
   contract: Contract
@@ -43,6 +44,11 @@ export function LifecycleActions({ contract, actor, onChanged }: Props) {
     contract.rejectedBy = actor.id
     contract.rejectedAt = new Date().toISOString()
     contract.rejectionNote = values.note
+    // Release the unit reserved at contract creation (CreateContractPage) —
+    // otherwise a rejected contract leaves it stuck out of the available
+    // pool forever, with no contract left to ever un-reserve it.
+    const unit = MOCK_PRODUCT_UNITS.find(u => u.id === contract.device.unitId)
+    if (unit) unit.availability = 'available'
     setRejectOpen(false)
     rejectForm.resetFields()
     message.success('Contract rejected')
@@ -73,6 +79,16 @@ export function LifecycleActions({ contract, actor, onChanged }: Props) {
     contract.payments = payments
     contract.status = 'active'
     contract.activatedAt = new Date().toISOString()
+    // The device actually leaves the merchant's hands right here, not at
+    // Settled (which only means the debt's paid off) — so this is the
+    // real-world "sale" moment, mirroring what the Products module does
+    // for a walk-in sale.
+    const unit = MOCK_PRODUCT_UNITS.find(u => u.id === contract.device.unitId)
+    if (unit) {
+      unit.availability = 'sold'
+      unit.soldAt = contract.activatedAt
+      unit.soldBy = actor.id
+    }
     setPaymentOpen(false)
     paymentForm.resetFields()
     message.success('Down payment recorded — contract is now Active')

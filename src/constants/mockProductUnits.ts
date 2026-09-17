@@ -8,9 +8,12 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     serialNumber: 'SN-IP14P-0001',
     branch: 'Bangkok HQ',
     tax: 'vat',
-    availability: 'available',
-    soldAt: null,
-    soldBy: null,
+    // Sold via contract-009 (Overdue) in mockContracts.ts — the furthest-
+    // progressed of the three contracts that reference this unit (the
+    // other two, contract-002/contract-006, are earlier superseded attempts).
+    availability: 'sold',
+    soldAt: '2024-06-11T09:00:00.000Z',
+    soldBy: 'admin-1',
     createdAt: '2024-01-11T09:00:00.000Z',
     unitPhotos: {
       front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+1+Front',
@@ -59,7 +62,8 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     serialNumber: 'SN-GS23-0001',
     branch: 'Phuket',
     tax: 'vat',
-    availability: 'available',
+    // Reserved by contract-005 (Approved) in mockContracts.ts.
+    availability: 'reserved',
     soldAt: null,
     soldBy: null,
     createdAt: '2024-01-13T09:00:00.000Z',
@@ -97,9 +101,10 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     serialNumber: 'SN-IP14P-0004',
     branch: 'Chiang Mai',
     tax: 'vat',
-    availability: 'available',
-    soldAt: null,
-    soldBy: null,
+    // Sold via contract-008 (Active, SGR-20260601-000002) in mockContracts.ts.
+    availability: 'sold',
+    soldAt: '2024-07-08T09:00:00.000Z',
+    soldBy: 'branch-1',
     createdAt: '2024-04-10T09:00:00.000Z',
     unitPhotos: {
       front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+6+Front',
@@ -154,7 +159,8 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     ],
     tax: 'non_vat',
     customPrice: 19900,
-    availability: 'available',
+    // Reserved by contract-007 (Pending Payment) in mockContracts.ts.
+    availability: 'reserved',
     soldAt: null,
     soldBy: null,
     createdAt: '2024-04-18T09:00:00.000Z',
@@ -219,9 +225,14 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     serialNumber: 'SN-MBAM2-0001',
     branch: 'Phuket',
     tax: 'vat',
-    availability: 'available',
-    soldAt: null,
-    soldBy: null,
+    // Sold via contract-010 (Settled) in mockContracts.ts — this is the
+    // MacBook Air M2's only tracked unit, so the product itself is
+    // currently out of stock even though its own `status` stays
+    // 'available' (that field means "we still sell this SKU," independent
+    // of whether any unit happens to be in stock right now).
+    availability: 'sold',
+    soldAt: '2024-02-01T09:00:00.000Z',
+    soldBy: 'branch-2',
     createdAt: '2024-03-01T09:00:00.000Z',
     unitPhotos: {
       front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+13+Front',

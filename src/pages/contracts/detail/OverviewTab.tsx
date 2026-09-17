@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Typography, theme } from 'antd'
+import { useNavigate } from 'react-router-dom'
 import type { Contract } from '../../../types/contract'
 import { CurrencyDisplay } from '../../../components/CurrencyDisplay'
 import { DetailDescriptions } from '../../../components/DetailDescriptions'
@@ -16,6 +17,7 @@ interface Props {
 // by hand). The contract number stands in for a "name" here.
 export function OverviewTab({ contract, actions }: Props) {
   const { token } = theme.useToken()
+  const navigate = useNavigate()
   const { device, financing, template } = contract
 
   return (
@@ -34,7 +36,15 @@ export function OverviewTab({ contract, actions }: Props) {
           { key: 'template', label: 'Template', children: template.templateName },
           { key: 'device', label: 'Device', children: `${device.brand} ${device.model}${device.storage ? ` · ${device.storage}` : ''} · ${device.color}` },
           { key: 'condition', label: 'Condition', children: device.condition },
-          { key: 'imei', label: 'IMEI', children: device.imei },
+          {
+            key: 'imei',
+            label: 'IMEI',
+            children: (
+              <a onClick={() => navigate(`/products/unit/${device.unitId}`)} style={{ color: token.colorText }}>
+                {device.imei}
+              </a>
+            ),
+          },
           { key: 'serial', label: 'Serial Number', children: device.serialNumber },
           { key: 'devicePrice', label: 'Device Price', children: <CurrencyDisplay amount={financing.devicePrice} /> },
           { key: 'downPayment', label: 'Down Payment', children: <>{financing.downPaymentPercent}% · <CurrencyDisplay amount={financing.downPaymentAmount} /></> },
