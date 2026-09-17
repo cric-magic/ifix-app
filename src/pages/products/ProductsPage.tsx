@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Alert, Button, message } from 'antd'
-import { Plus } from 'lucide-react'
+import { Alert, Button, Input, message } from 'antd'
+import { Plus, Search } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
+import { useIconColors } from '../../constants/iconColors'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
 import { canManageProducts, canViewProducts, scopedProductList } from '../../constants/roles'
@@ -14,11 +15,13 @@ import { CreateUnitModal } from './components/CreateUnitModal'
 
 export function ProductsPage() {
   const user = useCurrentUser()
+  const iconColors = useIconColors()
   const [version, setVersion] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [addUnitProduct, setAddUnitProduct] = useState<Product | null>(null)
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
+  const [search, setSearch] = useState('')
 
   if (!canViewProducts(user)) {
     return (
@@ -32,7 +35,16 @@ export function ProductsPage() {
   }
 
   const products = scopedProductList(user, MOCK_PRODUCTS)
-  const filteredProducts = typeFilter === 'all' ? products : products.filter(p => p.type === typeFilter)
+  const typeFiltered = typeFilter === 'all' ? products : products.filter(p => p.type === typeFilter)
+  const query = search.trim().toLowerCase()
+  const filteredProducts = query
+    ? typeFiltered.filter(p =>
+        p.name.toLowerCase().includes(query) ||
+        p.brand.toLowerCase().includes(query) ||
+        p.model.toLowerCase().includes(query) ||
+        p.sku.toLowerCase().includes(query),
+      )
+    : typeFiltered
   void version // trigger re-render on mutation
 
   function refresh() {
@@ -48,7 +60,17 @@ export function ProductsPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Input
+            placeholder="Search by name, brand, or SKU"
+            prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+            allowClear
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ maxWidth: 320 }}
+          />
+          <ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />
+        </div>
         {canManageProducts(user) && (
           <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
             Create Product
@@ -59,6 +81,7 @@ export function ProductsPage() {
       <ProductTable
         actor={user}
         products={filteredProducts}
+        isSearching={!!query}
         onEdit={setEditingProduct}
         onRemove={handleRemove}
         onAddUnit={setAddUnitProduct}

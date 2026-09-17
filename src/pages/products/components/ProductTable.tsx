@@ -1,6 +1,6 @@
 import { App, ConfigProvider, Table, Button, Dropdown, Avatar, theme } from 'antd'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Trash2, Boxes, ChevronLeft, ChevronRight, ChevronDown, MoreHorizontal, ImageOff } from 'lucide-react'
+import { Pencil, Trash2, Boxes, ChevronLeft, ChevronRight, ChevronDown, MoreHorizontal, ImageOff, Package } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import type { AuthUser } from '../../../types/installment'
 import type { Product } from '../../../types/product'
@@ -8,6 +8,7 @@ import { canManageProducts, canManageUnits, canViewCostPrice, scopedUnitList } f
 import { CATEGORY_LABELS, TYPE_LABELS } from '../../../constants/products'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 import { useIconColors } from '../../../constants/iconColors'
+import { TableEmptyState } from '../../../components/TableEmptyState'
 import { ProductStatusTag } from './ProductStatusTag'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
@@ -15,12 +16,13 @@ const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 
 interface Props {
   actor: AuthUser
   products: Product[]
+  isSearching: boolean
   onEdit: (product: Product) => void
   onRemove: (product: Product) => void
   onAddUnit: (product: Product) => void
 }
 
-export function ProductTable({ actor, products, onEdit, onRemove, onAddUnit }: Props) {
+export function ProductTable({ actor, products, isSearching, onEdit, onRemove, onAddUnit }: Props) {
   const { token } = theme.useToken()
   const iconColors = useIconColors()
   const { modal } = App.useApp()
@@ -146,6 +148,13 @@ export function ProductTable({ actor, products, onEdit, onRemove, onAddUnit }: P
                 onClick: () => navigate(`/products/catalog/${record.id}`),
                 style: { cursor: 'pointer' },
               })}
+              locale={{
+                emptyText: isSearching ? (
+                  <TableEmptyState icon={<Package size={22} strokeWidth={2.25} />} title="No products found" description="Try a different name, brand, or SKU." />
+                ) : (
+                  <TableEmptyState icon={<Package size={22} strokeWidth={2.25} />} title="No products yet" description="Products you add will show up here." />
+                ),
+              }}
               pagination={{
                 pageSize: 10,
                 size: 'small',

@@ -7,15 +7,25 @@ import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
 import { canManageUnits, scopedAllUnits, scopedProductList } from '../../constants/roles'
-import { GRADE_LABELS, TAX_LABELS } from '../../constants/products'
+import { AVAILABILITY_LABELS, GRADE_LABELS, TAX_LABELS } from '../../constants/products'
 import { useIconColors } from '../../constants/iconColors'
-import type { ProductUnit } from '../../types/product'
+import { Select } from '../../components/AppSelect'
+import type { ProductUnit, UnitAvailability } from '../../types/product'
 import { UnitAvailabilityTag } from './components/UnitAvailabilityTag'
 import { EditUnitModal } from './components/EditUnitModal'
 import { CreateUnitModal } from './components/CreateUnitModal'
 import { TableEmptyState } from '../../components/TableEmptyState'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
+
+type AvailabilityFilter = 'all' | UnitAvailability
+
+const AVAILABILITY_OPTIONS: { value: AvailabilityFilter; label: string }[] = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'available', label: AVAILABILITY_LABELS.available },
+  { value: 'reserved', label: AVAILABILITY_LABELS.reserved },
+  { value: 'sold', label: AVAILABILITY_LABELS.sold },
+]
 
 export function UnitsListPage() {
   const user = useCurrentUser()
@@ -27,6 +37,7 @@ export function UnitsListPage() {
   const [editingUnit, setEditingUnit] = useState<ProductUnit | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [availability, setAvailability] = useState<AvailabilityFilter>('all')
 
   if (!canManageUnits(user)) {
     return (
@@ -42,9 +53,12 @@ export function UnitsListPage() {
   void version
   const allUnits = scopedAllUnits(user, MOCK_PRODUCT_UNITS, MOCK_PRODUCTS)
   const query = search.trim().toLowerCase()
-  const units = query
-    ? allUnits.filter(u => u.imei.toLowerCase().includes(query) || u.serialNumber.toLowerCase().includes(query))
-    : allUnits
+  const hasActiveFilter = !!query || availability !== 'all'
+  const units = allUnits.filter(u => {
+    const matchesSearch = !query || u.imei.toLowerCase().includes(query) || u.serialNumber.toLowerCase().includes(query)
+    const matchesAvailability = availability === 'all' || u.availability === availability
+    return matchesSearch && matchesAvailability
+  })
   const productById = new Map(MOCK_PRODUCTS.map(p => [p.id, p]))
   const products = scopedProductList(user, MOCK_PRODUCTS)
 
@@ -150,14 +164,22 @@ export function UnitsListPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <Input
-          placeholder="Search by IMEI or serial number"
-          prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
-          allowClear
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ maxWidth: 320 }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Input
+            placeholder="Search by IMEI or serial number"
+            prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+            allowClear
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ maxWidth: 320 }}
+          />
+          <Select
+            value={availability}
+            onChange={setAvailability}
+            options={AVAILABILITY_OPTIONS}
+            style={{ width: 160 }}
+          />
+        </div>
         <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
           Add Unit
         </Button>
@@ -179,8 +201,8 @@ export function UnitsListPage() {
             dataSource={units}
             scroll={{ x: 'max-content' }}
             locale={{
-              emptyText: query ? (
-                <TableEmptyState icon={<Smartphone size={22} strokeWidth={2.25} />} title="No units found" description="Try a different IMEI or serial number." />
+              emptyText: hasActiveFilter ? (
+                <TableEmptyState icon={<Smartphone size={22} strokeWidth={2.25} />} title="No units found" description="Try a different IMEI, serial number, or status." />
               ) : (
                 <TableEmptyState icon={<Smartphone size={22} strokeWidth={2.25} />} title="No units yet" description="Units you add will show up here." />
               ),
