@@ -1,0 +1,237 @@
+import { useState } from 'react'
+import { Navigate, useParams } from 'react-router-dom'
+import { App, Alert, Button, ConfigProvider, Dropdown, Form, Input, Modal, Result, Table, theme } from 'antd'
+import { Plus, MoreHorizontal, Ban, RotateCcw, Palette, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { ColumnsType } from 'antd/es/table'
+import { useCurrentUser } from '../../contexts/AuthContext'
+import { canManageProductAttributes } from '../../constants/roles'
+import { attributeType, attributeValues, type AttributeValueRow } from '../../constants/products'
+import { MOCK_PRODUCT_ATTRIBUTES } from '../../constants/mockProductAttributes'
+import { MOCK_PRODUCTS } from '../../constants/mockProducts'
+import { countProductsUsingAttribute } from '../../utils/product'
+import { useIconColors } from '../../constants/iconColors'
+import { DotTag } from '../../components/DotTag'
+import { TableEmptyState } from '../../components/TableEmptyState'
+
+// One attribute type's values. Searchable and paginated so a long list
+// (colours, realistically) stays usable — which is exactly what the old
+// stacked-panels layout couldn't do.
+export function AttributeDetailPage() {
+  const { type } = useParams<{ type: string }>()
+  const actor = useCurrentUser()
+  const { token } = theme.useToken()
+  const iconColors = useIconColors()
+  const { modal, message } = App.useApp()
+  const [version, setVersion] = useState(0)
+  const [search, setSearch] = useState('')
+  const [addOpen, setAddOpen] = useState(false)
+  const [form] = Form.useForm<{ value: string }>()
+  void version // re-render after mutating the mock records in place
+
+  if (!canManageProductAttributes(actor)) {
+    return <Navigate to="/products/catalog" replace />
+  }
+
+  const meta = type ? attributeType(type) : undefined
+  if (!meta) {
+    return (
+      <Result
+        status="404"
+        title="Attribute not found"
+        extra={<Button onClick={() => window.history.back()}>Back to attributes</Button>}
+      />
+    )
+  }
+
+  function refresh() {
+    setVersion(v => v + 1)
+  }
+
+  function handleAdd(values: { value: string }) {
+    MOCK_PRODUCT_ATTRIBUTES.push({
+      id: `attr-${meta!.key}-${Date.now()}`,
+      type: meta!.key as 'color' | 'storage',
+      value: values.value.trim(),
+      enabled: true,
+      createdAt: new Date().toISOString(),
+    })
+    form.resetFields()
+    setAddOpen(false)
+    refresh()
+    message.success(`${values.value.trim()} added`)
+  }
+
+  function handleToggle(row: AttributeValueRow) {
+    const record = MOCK_PRODUCT_ATTRIBUTES.find(a => a.id === row.id)
+    if (!record) return
+    const inUse = countProductsUsingAttribute(meta!.field, row.value, MOCK_PRODUCTS)
+    if (record.enabled) {
+      modal.confirm({
+        title: `Disable ${row.value}?`,
+        content: inUse > 0
+          ? `It won't be offered for new products. The ${inUse} product${inUse === 1 ? '' : 's'} already using it keep${inUse === 1 ? 's' : ''} the value unchanged.`
+          : "It won't be offered when creating or editing a product.",
+        okText: 'Disable',
+        okButtonProps: { danger: true },
+        onOk: () => {
+          record.enabled = false
+          refresh()
+          message.success(`${row.value} disabled`)
+        },
+      })
+      return
+    }
+    record.enabled = true
+    refresh()
+    message.success(`${row.value} enabled`)
+  }
+
+  const query = search.trim().toLowerCase()
+  const rows = attributeValues(meta).filter(r => !query || r.value.toLowerCase().includes(query))
+
+  const columns: ColumnsType<AttributeValueRow> = [
+    {
+      title: <span style={{ color: token.colorText }}>Value</span>,
+      dataIndex: 'value',
+      key: 'value',
+      render: (value: string) => <span style={{ color: token.colorText }}>{value}</span>,
+    },
+    {
+      title: 'In use',
+      key: 'inUse',
+      align: 'right',
+      render: (_, r) => {
+        const count = countProductsUsingAttribute(meta.field, r.value, MOCK_PRODUCTS)
+        return count > 0 ? count : <span style={{ color: token.colorTextDisabled }}>—</span>
+      },
+    },
+    // Status and row actions only mean something for a managed type — a
+    // fixed list has nothing to enable, disable or add to.
+    ...(meta.managed ? [
+      {
+        title: 'Status',
+        key: 'status',
+        render: (_: unknown, r: AttributeValueRow) => (
+          <DotTag dotColor={r.enabled ? token.colorSuccess : token.colorTextTertiary}>
+            {r.enabled ? 'Enabled' : 'Disabled'}
+          </DotTag>
+        ),
+      },
+      {
+        title: '',
+        key: 'actions',
+        width: 56,
+        align: 'right' as const,
+        render: (_: unknown, r: AttributeValueRow) => (
+          <Dropdown
+            trigger={['click']}
+            placement="bottomRight"
+            menu={{
+              items: [{
+                key: 'toggle',
+                danger: r.enabled,
+                icon: r.enabled
+                  ? <Ban size={15} strokeWidth={2.25} />
+                  : <RotateCcw size={15} strokeWidth={2.25} />,
+                label: r.enabled ? 'Disable' : 'Enable',
+              }],
+              onClick: () => handleToggle(r),
+            }}
+          >
+            <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+          </Dropdown>
+        ),
+      },
+    ] : []),
+  ]
+
+  return (
+    <div>
+      {!meta.managed && (
+        <Alert
+          type="info"
+          showIcon
+          message={`${meta.label} values are fixed`}
+          description="These are defined in the product spec rather than managed here, so they can't be added to or disabled. Only Color and Storage are editable."
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8 }}>
+        <Input
+          placeholder={`Search ${meta.noun} values`}
+          prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+          allowClear
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ maxWidth: 320 }}
+        />
+        {meta.managed && (
+          <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => setAddOpen(true)}>
+            Add {meta.noun}
+          </Button>
+        )}
+      </div>
+
+      <div className="ifix-table-panel">
+        <ConfigProvider theme={{ components: { Table: { colorText: token.colorTextTertiary, headerColor: token.colorTextTertiary } } }}>
+          <div style={{ padding: 16 }}>
+            <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
+              <Table
+                rowKey={r => r.id ?? r.value}
+                columns={columns}
+                dataSource={rows}
+                locale={{
+                  emptyText: query ? (
+                    <TableEmptyState icon={<Palette size={22} strokeWidth={2.25} />} title="No values found" description={`Try a different ${meta.noun} value.`} />
+                  ) : (
+                    <TableEmptyState icon={<Palette size={22} strokeWidth={2.25} />} title={`No ${meta.noun} values yet`} description="Values you add will show up here." />
+                  ),
+                }}
+                pagination={{
+                  pageSize: 10,
+                  size: 'small',
+                  showSizeChanger: false,
+                  prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
+                  nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
+                  showTotal: (total, range) => (
+                    <span style={{ color: token.colorTextTertiary }}>{range[0]}–{range[1]} of {total}</span>
+                  ),
+                }}
+              />
+            </div>
+          </div>
+        </ConfigProvider>
+      </div>
+
+      <Modal
+        title={`Add ${meta.noun}`}
+        open={addOpen}
+        onCancel={() => { setAddOpen(false); form.resetFields() }}
+        okText="Add"
+        onOk={() => form.validateFields().then(handleAdd)}
+      >
+        <Form form={form} layout="vertical" requiredMark={false}>
+          <Form.Item
+            label="Value"
+            name="value"
+            rules={[
+              { required: true, message: 'Required' },
+              {
+                validator: (_, value) => {
+                  const exists = value && MOCK_PRODUCT_ATTRIBUTES.some(a =>
+                    a.type === meta.key && a.value.trim().toLowerCase() === value.trim().toLowerCase())
+                  return exists
+                    ? Promise.reject(new Error(`That ${meta.noun} already exists`))
+                    : Promise.resolve()
+                },
+              },
+            ]}
+          >
+            <Input placeholder={meta.key === 'color' ? 'e.g. Desert Titanium' : 'e.g. 1TB'} />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  )
+}

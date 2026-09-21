@@ -48,12 +48,57 @@ export function enabledAttributeValues(type: ProductAttributeType): string[] {
 }
 
 // RAM and Connection differ from Storage/Color: the doc fixes them as
-// predefined values with free text explicitly disallowed, and they are not
-// SuperAdmin-managed — so they stay hard-coded rather than becoming master
-// data later.
+// predefined values with free text explicitly disallowed, and only Storage
+// and Color are named as SuperAdmin-managed — so these stay hard-coded for
+// now. They're still listed on the Attributes screen, read-only, so that
+// screen answers "what attributes exist" rather than only "what's editable".
 export const RAM_OPTIONS = ['2GB', '3GB', '4GB', '6GB', '8GB', '12GB', '16GB', '18GB', '24GB', '32GB', '48GB', '64GB']
 
 export const CONNECTION_OPTIONS = ['Wi-Fi', 'Wi-Fi + Cellular', '4G LTE', '5G']
+
+export type AttributeTypeKey = ProductAttributeType | 'ram' | 'connection'
+
+export interface AttributeTypeMeta {
+  key: AttributeTypeKey
+  label: string
+  // Singular, for button and dialog copy ("Add color").
+  noun: string
+  // Managed types are SuperAdmin master data and can be added to or
+  // disabled; fixed ones are hard-coded lists shown for reference only.
+  managed: boolean
+  // Which Product field carries this attribute, for usage counts.
+  field: 'color' | 'storage' | 'ram' | 'connection'
+}
+
+export const ATTRIBUTE_TYPES: AttributeTypeMeta[] = [
+  { key: 'color', label: 'Color', noun: 'color', managed: true, field: 'color' },
+  { key: 'storage', label: 'Storage', noun: 'storage', managed: true, field: 'storage' },
+  { key: 'ram', label: 'RAM', noun: 'RAM', managed: false, field: 'ram' },
+  { key: 'connection', label: 'Connection', noun: 'connection', managed: false, field: 'connection' },
+]
+
+export function attributeType(key: string): AttributeTypeMeta | undefined {
+  return ATTRIBUTE_TYPES.find(t => t.key === key)
+}
+
+// One shape for both kinds of attribute so the screens don't branch on every
+// row: managed values carry their real id and enabled flag, fixed ones are
+// synthesised as always-enabled entries with no id to act on.
+export interface AttributeValueRow {
+  id: string | null
+  value: string
+  enabled: boolean
+}
+
+export function attributeValues(meta: AttributeTypeMeta): AttributeValueRow[] {
+  if (meta.managed) {
+    return MOCK_PRODUCT_ATTRIBUTES
+      .filter(a => a.type === meta.key)
+      .map(a => ({ id: a.id, value: a.value, enabled: a.enabled }))
+  }
+  const fixed = meta.key === 'ram' ? RAM_OPTIONS : CONNECTION_OPTIONS
+  return fixed.map(value => ({ id: null, value, enabled: true }))
+}
 
 // A disabled/removed master-data option must keep rendering on SKUs that
 // already use it, so a SKU's stored value is merged into the option list

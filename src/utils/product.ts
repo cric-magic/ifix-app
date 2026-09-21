@@ -47,3 +47,15 @@ export function isImeiTaken(
 export function countAvailableUnits(units: ProductUnit[]): number {
   return units.filter(u => u.availability === 'available').length
 }
+
+// How many live SKUs carry a given attribute value, across every merchant —
+// this is platform-level master data, so the count that matters is global.
+// Drives the "In use" column and the disable confirmation, which promises
+// those SKUs keep the value.
+export function countProductsUsingAttribute(
+  field: 'color' | 'storage' | 'ram' | 'connection',
+  value: string,
+  products: Product[],
+): number {
+  return products.filter(p => !p.deletedAt && p[field] === value).length
+}
