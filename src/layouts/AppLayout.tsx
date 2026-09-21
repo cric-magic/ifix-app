@@ -14,7 +14,6 @@ import { canManageUsers, homePath, scopedUserList, scopedBranchList, scopedContr
 import { useIconColors } from '../constants/iconColors'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
 import { MOCK_PRODUCTS } from '../constants/mockProducts'
-import { attributeType } from '../constants/products'
 import { MOCK_PRODUCT_UNITS } from '../constants/mockProductUnits'
 import { MOCK_MERCHANTS } from '../constants/mockMerchants'
 import { MOCK_BRANCHES } from '../constants/mockBranches'
@@ -156,11 +155,6 @@ export function AppLayout() {
   const productDetailId = inProducts && productsKey === 'catalog' ? location.pathname.split('/')[3] : undefined
   const productDetailName = productDetailId ? MOCK_PRODUCTS.find(p => p.id === productDetailId)?.name : undefined
 
-  // Attribute detail route (/products/attributes/:type) — same 2-level
-  // treatment ("Attributes / Color") as the product/unit breadcrumbs below.
-  const attributeDetailKey = inProducts && productsKey === 'attributes' ? location.pathname.split('/')[3] : undefined
-  const attributeDetailName = attributeDetailKey ? attributeType(attributeDetailKey)?.label : undefined
-
   // Unit detail route (/products/unit/:id) — same 2-level treatment
   // ("Units / <Serial Number>"), parallel to the product detail breadcrumb
   // above. Keyed on Serial Number rather than IMEI, which is now optional.
@@ -232,9 +226,7 @@ export function AppLayout() {
     ? scopedCustomerList(user, MOCK_CUSTOMERS).find(c => c.id === customerDetailId)?.fullName
     : undefined
 
-  const breadcrumbParts = attributeDetailName
-    ? ['Attributes', attributeDetailName]
-    : productDetailName
+  const breadcrumbParts = productDetailName
     ? ['Products', productDetailName]
     : unitDetailSerial
     ? ['Units', unitDetailSerial]
@@ -249,9 +241,7 @@ export function AppLayout() {
     : customerDetailName
     ? ['Customers', customerDetailName]
     : [pageTitle]
-  const breadcrumbBackUrl = attributeDetailName
-    ? '/products/attributes'
-    : unitDetailSerial
+  const breadcrumbBackUrl = unitDetailSerial
     ? '/products/unit'
     : memberDetailName
     ? '/settings/members'

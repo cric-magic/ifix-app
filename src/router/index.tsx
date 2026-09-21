@@ -25,7 +25,6 @@ import { AccountGeneralPage } from '../pages/account/AccountGeneralPage'
 import { WorkspaceAccountPage } from '../pages/settings/WorkspaceAccountPage'
 import { WorkspaceBankAccountsPage } from '../pages/settings/WorkspaceBankAccountsPage'
 import { AttributesPage } from '../pages/products/AttributesPage'
-import { AttributeDetailPage } from '../pages/products/AttributeDetailPage'
 import { ContractTemplatesPage } from '../pages/settings/ContractTemplatesPage'
 import { DesignDocsPage } from '../pages/design/DesignDocsPage'
 import { SignInPage } from '../pages/auth/SignInPage'
@@ -61,7 +60,7 @@ export const router = createBrowserRouter([
           { path: 'products/unit', element: <UnitsListPage /> },
           { path: 'products/unit/:id', element: <UnitDetailPage /> },
           { path: 'products/attributes', element: <AttributesPage /> },
-          { path: 'products/attributes/:type', element: <AttributeDetailPage /> },
+          { path: 'products/attributes/:type', element: <AttributesPage /> },
           { path: 'customers', element: <CustomersPage /> },
           { path: 'customers/:id', element: <CustomerDetailPage /> },
           { path: 'merchants', element: <MerchantsPage /> },

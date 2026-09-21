@@ -1,24 +1,23 @@
 import { useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
-import { App, Alert, Button, ConfigProvider, Dropdown, Form, Input, Modal, Result, Table, theme } from 'antd'
+import { App, Button, ConfigProvider, Dropdown, Form, Input, Modal, Table, theme } from 'antd'
 import { Plus, MoreHorizontal, Ban, RotateCcw, Palette, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
-import { useCurrentUser } from '../../contexts/AuthContext'
-import { canManageProductAttributes } from '../../constants/roles'
-import { attributeType, attributeValues, type AttributeValueRow } from '../../constants/products'
-import { MOCK_PRODUCT_ATTRIBUTES } from '../../constants/mockProductAttributes'
-import { MOCK_PRODUCTS } from '../../constants/mockProducts'
-import { countProductsUsingAttribute } from '../../utils/product'
-import { useIconColors } from '../../constants/iconColors'
-import { DotTag } from '../../components/DotTag'
-import { TableEmptyState } from '../../components/TableEmptyState'
+import { attributeValues, type AttributeTypeMeta, type AttributeValueRow } from '../../../constants/products'
+import { MOCK_PRODUCT_ATTRIBUTES } from '../../../constants/mockProductAttributes'
+import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
+import { countProductsUsingAttribute } from '../../../utils/product'
+import { useIconColors } from '../../../constants/iconColors'
+import { DotTag } from '../../../components/DotTag'
+import { TableEmptyState } from '../../../components/TableEmptyState'
 
-// One attribute type's values. Searchable and paginated so a long list
-// (colours, realistically) stays usable — which is exactly what the old
-// stacked-panels layout couldn't do.
-export function AttributeDetailPage() {
-  const { type } = useParams<{ type: string }>()
-  const actor = useCurrentUser()
+interface Props {
+  meta: AttributeTypeMeta
+}
+
+// One attribute type's values, rendered inside its tab. Searchable and
+// paginated, which is what lets the tabs above stay simple: however long a
+// single list grows, it's this table's problem rather than the navigation's.
+export function AttributeValuesTab({ meta }: Props) {
   const { token } = theme.useToken()
   const iconColors = useIconColors()
   const { modal, message } = App.useApp()
@@ -28,29 +27,14 @@ export function AttributeDetailPage() {
   const [form] = Form.useForm<{ value: string }>()
   void version // re-render after mutating the mock records in place
 
-  if (!canManageProductAttributes(actor)) {
-    return <Navigate to="/products/catalog" replace />
-  }
-
-  const meta = type ? attributeType(type) : undefined
-  if (!meta) {
-    return (
-      <Result
-        status="404"
-        title="Attribute not found"
-        extra={<Button onClick={() => window.history.back()}>Back to attributes</Button>}
-      />
-    )
-  }
-
   function refresh() {
     setVersion(v => v + 1)
   }
 
   function handleAdd(values: { value: string }) {
     MOCK_PRODUCT_ATTRIBUTES.push({
-      id: `attr-${meta!.key}-${Date.now()}`,
-      type: meta!.key as 'color' | 'storage',
+      id: `attr-${meta.key}-${Date.now()}`,
+      type: meta.key as 'color' | 'storage',
       value: values.value.trim(),
       enabled: true,
       createdAt: new Date().toISOString(),
@@ -64,7 +48,7 @@ export function AttributeDetailPage() {
   function handleToggle(row: AttributeValueRow) {
     const record = MOCK_PRODUCT_ATTRIBUTES.find(a => a.id === row.id)
     if (!record) return
-    const inUse = countProductsUsingAttribute(meta!.field, row.value, MOCK_PRODUCTS)
+    const inUse = countProductsUsingAttribute(meta.field, row.value, MOCK_PRODUCTS)
     if (record.enabled) {
       modal.confirm({
         title: `Disable ${row.value}?`,
@@ -147,16 +131,6 @@ export function AttributeDetailPage() {
 
   return (
     <div>
-      {!meta.managed && (
-        <Alert
-          type="info"
-          showIcon
-          message={`${meta.label} values are fixed`}
-          description="These are defined in the product spec rather than managed here, so they can't be added to or disabled. Only Color and Storage are editable."
-          style={{ marginBottom: 16 }}
-        />
-      )}
-
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8 }}>
         <Input
           placeholder={`Search ${meta.noun} values`}
