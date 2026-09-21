@@ -47,6 +47,14 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
     { key: 'color', label: 'Color', children: product.color },
     ...(product.connection ? [{ key: 'connection', label: 'Connection', children: product.connection }] : []),
     { key: 'sku', label: 'SKU Code', children: product.sku },
+    // Where this SKU came from. Adopted entries are copies, so this is
+    // history rather than a live link — the catalog entry may since have
+    // changed or been removed without affecting this record.
+    {
+      key: 'source',
+      label: 'Source',
+      children: product.sourceCatalogId ? 'Standard catalog' : 'Created by you',
+    },
     ...(showCostPrice
       ? [
         { key: 'costPrice', label: 'Cost Price', children: formatter.format(product.costPrice) },
