@@ -42,6 +42,7 @@ export function ProductsPage() {
         p.name.toLowerCase().includes(query) ||
         p.brand.toLowerCase().includes(query) ||
         p.model.toLowerCase().includes(query) ||
+        p.modelNumber.toLowerCase().includes(query) ||
         p.sku.toLowerCase().includes(query),
       )
     : typeFiltered

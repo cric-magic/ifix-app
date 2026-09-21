@@ -55,13 +55,7 @@ export function UnitDetailPage() {
   const canEdit = canManageUnits(user)
   const soldByUser = unit.soldAt ? MOCK_USER_ACCOUNTS.find(a => a.id === unit.soldBy) : undefined
 
-  const allPhotos = [
-    unit.unitPhotos?.front && { src: unit.unitPhotos.front, label: 'Front' },
-    unit.unitPhotos?.back && { src: unit.unitPhotos.back, label: 'Back' },
-    unit.unitPhotos?.imeiLabel && { src: unit.unitPhotos.imeiLabel, label: 'IMEI Label' },
-    unit.unitPhotos?.sealWrap && { src: unit.unitPhotos.sealWrap, label: 'Seal / Wrap' },
-    ...(unit.defectPhotos ?? []).map((src, i) => ({ src, label: `Defect ${i + 1}` })),
-  ].filter((p): p is { src: string; label: string } => !!p)
+  const allPhotos = (unit.conditionPhotos ?? []).map((src, i) => ({ src, label: `Condition ${i + 1}` }))
 
   const detailItems = [
     {
@@ -74,8 +68,17 @@ export function UnitDetailPage() {
       ) : '—',
     },
     { key: 'serialNumber', label: 'Serial Number', children: unit.serialNumber },
+    { key: 'imei1', label: 'IMEI 1', children: unit.imei1 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
+    { key: 'imei2', label: 'IMEI 2', children: unit.imei2 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
     { key: 'branch', label: 'Branch', children: unit.branch },
     { key: 'grade', label: 'Grade', children: unit.grade ? GRADE_LABELS[unit.grade] : <span style={{ color: token.colorTextDisabled }}>—</span> },
+    {
+      key: 'battery',
+      label: 'Battery',
+      children: unit.batteryPercentage != null
+        ? `${unit.batteryPercentage}%`
+        : <span style={{ color: token.colorTextDisabled }}>—</span>,
+    },
     { key: 'tax', label: 'Tax', children: TAX_LABELS[unit.tax] },
     {
       key: 'customPrice',
@@ -173,10 +176,12 @@ export function UnitDetailPage() {
               )}
             </div>
 
-            <Typography.Title level={4} style={{ margin: 0 }}>{unit.imei}</Typography.Title>
+            {/* Serial Number, not IMEI — it's the required primary identifier
+                now that IMEI is optional and absent on laptops/accessories. */}
+            <Typography.Title level={4} style={{ margin: 0 }}>{unit.serialNumber}</Typography.Title>
             <UnitAvailabilityTag availability={unit.availability} />
           </div>
-          {canEdit && (
+          {canEdit && unit.availability !== 'sold' && (
             <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
           )}
         </div>

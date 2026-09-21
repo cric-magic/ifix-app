@@ -78,8 +78,9 @@ export function ContractPreviewTab({ contract }: Props) {
             <Typography.Text type="secondary">Model: {device.model}</Typography.Text>
             <Typography.Text type="secondary">Condition: {device.condition}</Typography.Text>
             <Typography.Text type="secondary">Color: {device.color}</Typography.Text>
-            <Typography.Text type="secondary">IMEI: {device.imei}</Typography.Text>
             <Typography.Text type="secondary">Serial: {device.serialNumber}</Typography.Text>
+            {device.imei1 && <Typography.Text type="secondary">IMEI 1: {device.imei1}</Typography.Text>}
+            {device.imei2 && <Typography.Text type="secondary">IMEI 2: {device.imei2}</Typography.Text>}
           </div>
 
           <Typography.Title level={5}>Contract Financial Summary</Typography.Title>

@@ -4,7 +4,10 @@ import { Select } from '../../../components/AppSelect'
 import { PhotoUpload } from '../../../components/PhotoUpload'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { Product, ProductCategory, ProductType, ProductStatus } from '../../../types/product'
-import { CATEGORY_LABELS, TYPE_LABELS, STATUS_LABELS } from '../../../constants/products'
+import {
+  CATEGORY_LABELS, TYPE_LABELS, STATUS_LABELS,
+  STORAGE_OPTIONS, COLOR_OPTIONS, RAM_OPTIONS, CONNECTION_OPTIONS, optionsWithCurrent,
+} from '../../../constants/products'
 
 interface Props {
   open: boolean
@@ -18,8 +21,11 @@ interface FormValues {
   brand: string
   category: ProductCategory
   model: string
+  modelNumber: string
   storage?: string
+  ram?: string
   color: string
+  connection?: string
   sku: string
   costPrice: number
   salesPrice: number
@@ -45,8 +51,11 @@ export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
         brand: product.brand,
         category: product.category,
         model: product.model,
+        modelNumber: product.modelNumber,
         storage: product.storage,
+        ram: product.ram,
         color: product.color,
+        connection: product.connection,
         sku: product.sku,
         costPrice: product.costPrice,
         salesPrice: product.salesPrice,
@@ -91,13 +100,25 @@ export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
         <Form.Item label="Model" name="model" rules={[{ required: true, message: 'Required' }]}>
           <Input />
         </Form.Item>
-        <Form.Item label="Storage" name="storage">
+        <Form.Item label="Model Number" name="modelNumber" rules={[{ required: true, message: 'Required' }]}>
           <Input />
+        </Form.Item>
+        {/* Selects, not free text — Storage/Color come from SuperAdmin master
+            data, RAM/Connection from fixed lists. optionsWithCurrent keeps a
+            value that has since been disabled upstream from silently blanking. */}
+        <Form.Item label="Storage" name="storage">
+          <Select placeholder="Select storage" allowClear options={optionsWithCurrent(STORAGE_OPTIONS, product?.storage)} />
+        </Form.Item>
+        <Form.Item label="RAM" name="ram">
+          <Select placeholder="Select RAM" allowClear options={optionsWithCurrent(RAM_OPTIONS, product?.ram)} />
         </Form.Item>
         <Form.Item label="Color" name="color" rules={[{ required: true, message: 'Required' }]}>
-          <Input />
+          <Select placeholder="Select color" options={optionsWithCurrent(COLOR_OPTIONS, product?.color)} />
         </Form.Item>
-        <Form.Item label="SKU" name="sku" rules={[{ required: true, message: 'Required' }]}>
+        <Form.Item label="Connection" name="connection">
+          <Select placeholder="Select connection" allowClear options={optionsWithCurrent(CONNECTION_OPTIONS, product?.connection)} />
+        </Form.Item>
+        <Form.Item label="SKU Code" name="sku" rules={[{ required: true, message: 'Required' }]}>
           <Input />
         </Form.Item>
         <Form.Item label="Cost Price" name="costPrice" rules={[{ required: true, message: 'Required' }]}>
@@ -119,7 +140,7 @@ export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
             rules={[{ required: true, message: 'Required for new products' }]}
             help="Sealed box photo"
           >
-            <PhotoUpload />
+            <PhotoUpload maxCount={10} />
           </Form.Item>
         )}
       </Form>

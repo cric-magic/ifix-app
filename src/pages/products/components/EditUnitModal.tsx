@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Drawer, Button, Space, Form, Input, InputNumber } from 'antd'
+import { Alert, Drawer, Button, Space, Form, Input, InputNumber } from 'antd'
 import { Select } from '../../../components/AppSelect'
 import { PhotoUpload } from '../../../components/PhotoUpload'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
@@ -20,12 +20,9 @@ interface Props {
 interface FormValues {
   branch: string
   grade?: UnitGrade
+  batteryPercentage?: number
   notes?: string
-  frontPhoto?: string[]
-  backPhoto?: string[]
-  imeiLabelPhoto?: string[]
-  sealWrapPhoto?: string[]
-  defectPhotos?: string[]
+  conditionPhotos?: string[]
   tax: UnitTax
   customPrice?: number
 }
@@ -39,17 +36,24 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
   const lockedBranch = actor.role === 'branch_manager' ? actor.branch : undefined
   const appWindow = useAppWindowContainer()
 
+  // Per the doc, a Reserved unit is already committed to a contract, so the
+  // fields that contract depends on — where it physically is, how it's
+  // priced and taxed, and the condition grading it was sold against — are
+  // frozen. Notes and Condition Photos stay open, since those document the
+  // device rather than define the deal. Sold units are fully locked; callers
+  // hide the Edit action entirely, and the guard below is the backstop.
+  const isReserved = unit?.availability === 'reserved'
+  const isSold = unit?.availability === 'sold'
+  const lockDealFields = isReserved || isSold
+
   useEffect(() => {
     if (unit) {
       form.setFieldsValue({
         branch: unit.branch,
         grade: unit.grade,
+        batteryPercentage: unit.batteryPercentage,
         notes: unit.notes,
-        frontPhoto: unit.unitPhotos?.front ? [unit.unitPhotos.front] : undefined,
-        backPhoto: unit.unitPhotos?.back ? [unit.unitPhotos.back] : undefined,
-        imeiLabelPhoto: unit.unitPhotos?.imeiLabel ? [unit.unitPhotos.imeiLabel] : undefined,
-        sealWrapPhoto: unit.unitPhotos?.sealWrap ? [unit.unitPhotos.sealWrap] : undefined,
-        defectPhotos: unit.defectPhotos,
+        conditionPhotos: unit.conditionPhotos,
         tax: unit.tax,
         customPrice: unit.customPrice,
       })
@@ -57,19 +61,16 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
   }, [unit, form])
 
   function handleSubmit(values: FormValues) {
-    if (!unit) return
-    unit.branch = lockedBranch ?? values.branch
-    unit.grade = isUsed ? values.grade : undefined
-    unit.notes = values.notes
-    unit.unitPhotos = {
-      front: values.frontPhoto?.[0],
-      back: values.backPhoto?.[0],
-      imeiLabel: values.imeiLabelPhoto?.[0],
-      sealWrap: values.sealWrapPhoto?.[0],
+    if (!unit || isSold) return
+    if (!lockDealFields) {
+      unit.branch = lockedBranch ?? values.branch
+      unit.grade = isUsed ? values.grade : undefined
+      unit.batteryPercentage = isUsed ? values.batteryPercentage : undefined
+      unit.tax = values.tax
+      unit.customPrice = values.customPrice
     }
-    unit.defectPhotos = isUsed ? values.defectPhotos : undefined
-    unit.tax = values.tax
-    unit.customPrice = values.customPrice
+    unit.notes = values.notes
+    unit.conditionPhotos = values.conditionPhotos
     onUpdated()
   }
 
@@ -84,59 +85,74 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
       footer={
         <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="primary" onClick={() => form.submit()}>Save</Button>
+          <Button type="primary" onClick={() => form.submit()} disabled={isSold}>Save</Button>
         </Space>
       }
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false}>
+        {isSold && (
+          <Alert
+            type="info"
+            showIcon
+            message="This unit is sold"
+            description="Sold units are kept as historical records and can no longer be edited."
+            style={{ marginBottom: 16 }}
+          />
+        )}
+        {isReserved && (
+          <Alert
+            type="info"
+            showIcon
+            message="This unit is reserved"
+            description="It's committed to a contract, so branch, condition, tax and price are locked. Notes and condition photos can still be updated."
+            style={{ marginBottom: 16 }}
+          />
+        )}
         {unit && (
           <>
-            <Form.Item label="IMEI">
-              <Input value={unit.imei} disabled />
-            </Form.Item>
             <Form.Item label="Serial Number">
               <Input value={unit.serialNumber} disabled />
+            </Form.Item>
+            <Form.Item label="IMEI 1">
+              <Input value={unit.imei1 ?? '—'} disabled />
+            </Form.Item>
+            <Form.Item label="IMEI 2">
+              <Input value={unit.imei2 ?? '—'} disabled />
             </Form.Item>
           </>
         )}
         <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Required' }]}>
-          <Select placeholder="Select branch" disabled={!!lockedBranch} options={BRANCHES.map(b => ({ value: b, label: b }))} />
+          <Select
+            placeholder="Select branch"
+            disabled={!!lockedBranch || lockDealFields}
+            options={BRANCHES.map(b => ({ value: b, label: b }))}
+          />
         </Form.Item>
         {isUsed && (
-          <Form.Item label="Grade" name="grade" rules={[{ required: true, message: 'Required for used products' }]}>
-            <Select placeholder="Select grade" options={GRADE_OPTIONS} />
-          </Form.Item>
+          <>
+            <Form.Item label="Grade" name="grade" rules={[{ required: true, message: 'Required for used products' }]}>
+              <Select placeholder="Select grade" options={GRADE_OPTIONS} disabled={lockDealFields} />
+            </Form.Item>
+            <Form.Item
+              label="Battery Percentage"
+              name="batteryPercentage"
+              rules={[{ required: true, message: 'Required for used products' }]}
+            >
+              <InputNumber min={0} max={100} style={{ width: '100%' }} addonAfter="%" disabled={lockDealFields} />
+            </Form.Item>
+          </>
         )}
-        <Form.Item label="Front" name="frontPhoto" rules={[{ required: true, message: 'Required' }]}>
-          <PhotoUpload maxCount={1} />
+        <Form.Item label="Condition Photos" name="conditionPhotos" help="Optional">
+          <PhotoUpload maxCount={10} disabled={isSold} />
         </Form.Item>
-        <Form.Item label="Back" name="backPhoto">
-          <PhotoUpload maxCount={1} />
-        </Form.Item>
-        <Form.Item label="IMEI Label" name="imeiLabelPhoto" rules={[{ required: true, message: 'Required' }]}>
-          <PhotoUpload maxCount={1} />
-        </Form.Item>
-        <Form.Item label="Seal / Wrap" name="sealWrapPhoto">
-          <PhotoUpload maxCount={1} />
-        </Form.Item>
-        {isUsed && (
-          <Form.Item
-            label="Condition Photos"
-            name="defectPhotos"
-            help="Photos of any defect on the device"
-            rules={[{ required: true, message: 'Required for used products' }]}
-          >
-            <PhotoUpload />
-          </Form.Item>
-        )}
         <Form.Item label="Tax" name="tax" rules={[{ required: true, message: 'Required' }]}>
-          <Select options={TAX_OPTIONS} />
+          <Select options={TAX_OPTIONS} disabled={lockDealFields} />
         </Form.Item>
         <Form.Item label="Custom Price" name="customPrice" help="Defaults to the product's sales price if not set">
-          <InputNumber min={0} style={{ width: '100%' }} addonBefore="฿" />
+          <InputNumber min={0} style={{ width: '100%' }} addonBefore="฿" disabled={lockDealFields} />
         </Form.Item>
         <Form.Item label="Notes" name="notes">
-          <Input.TextArea rows={3} placeholder="Optional" />
+          <Input.TextArea rows={3} placeholder="Optional" disabled={isSold} />
         </Form.Item>
       </Form>
     </Drawer>

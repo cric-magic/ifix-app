@@ -97,7 +97,7 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
               })}
               locale={{
                 emptyText: search ? (
-                  <TableEmptyState icon={<FileText size={22} strokeWidth={2.25} />} title="No contracts found" description="Try a different contract number, customer name, or IMEI." />
+                  <TableEmptyState icon={<FileText size={22} strokeWidth={2.25} />} title="No contracts found" description="Try a different contract number, customer name, or serial number." />
                 ) : (
                   <TableEmptyState icon={<FileText size={22} strokeWidth={2.25} />} title="No contracts yet" description="Contracts you create will show up here." />
                 ),

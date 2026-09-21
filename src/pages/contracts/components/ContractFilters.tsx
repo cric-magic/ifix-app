@@ -37,7 +37,7 @@ export function ContractFilters({ search, onSearchChange, status, onStatusChange
   return (
     <div style={{ display: 'flex', gap: 8 }}>
       <Input
-        placeholder="Search by contract number, customer, or IMEI"
+        placeholder="Search by contract number, customer, or serial"
         prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
         allowClear
         value={search}

@@ -42,7 +42,9 @@ export function ContractsListPage() {
       c.contractNumber.toLowerCase().includes(query) ||
       c.customer.fullName.toLowerCase().includes(query) ||
       c.customer.phone.toLowerCase().includes(query) ||
-      c.device.imei.toLowerCase().includes(query)
+      c.device.serialNumber.toLowerCase().includes(query) ||
+      !!c.device.imei1?.toLowerCase().includes(query) ||
+      !!c.device.imei2?.toLowerCase().includes(query)
     const matchesStatus = status === 'all' || c.status === status
     const matchesBranch = !branch || c.branch === branch
     return matchesSearch && matchesStatus && matchesBranch

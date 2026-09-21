@@ -20,8 +20,9 @@ function deviceSnapshotFor(unitId: string): DeviceSnapshot {
     storage: product.storage,
     color: product.color,
     condition: unit.grade ?? 'New',
-    imei: unit.imei,
     serialNumber: unit.serialNumber,
+    imei1: unit.imei1,
+    imei2: unit.imei2,
   }
 }
 

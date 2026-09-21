@@ -35,3 +35,40 @@ export const AVAILABILITY_LABELS: Record<UnitAvailability, string> = {
   reserved: 'Reserved',
   sold: 'Sold',
 }
+
+// Storage and Color are master data: SuperAdmin owns the lists and merchants
+// pick from them without being able to add their own values. These seeds are
+// the starting catalogue — the SuperAdmin management screen that edits them
+// is a later phase, so for now they're the fixed source both the SKU form
+// and that future screen read from.
+export const STORAGE_OPTIONS = ['64GB', '128GB', '256GB', '512GB', '1TB', '2TB']
+
+export const COLOR_OPTIONS = [
+  'Space Black',
+  'Midnight',
+  'Starlight',
+  'Silver',
+  'Graphite',
+  'Phantom Black',
+  'Cream',
+  'Blue',
+  'Purple',
+  'Green',
+  'White',
+]
+
+// RAM and Connection differ from Storage/Color: the doc fixes them as
+// predefined values with free text explicitly disallowed, and they are not
+// SuperAdmin-managed — so they stay hard-coded rather than becoming master
+// data later.
+export const RAM_OPTIONS = ['2GB', '3GB', '4GB', '6GB', '8GB', '12GB', '16GB', '18GB', '24GB', '32GB', '48GB', '64GB']
+
+export const CONNECTION_OPTIONS = ['Wi-Fi', 'Wi-Fi + Cellular', '4G LTE', '5G']
+
+// A disabled/removed master-data option must keep rendering on SKUs that
+// already use it, so a SKU's stored value is merged into the option list
+// rather than being dropped (which would blank the field in the form).
+export function optionsWithCurrent(options: string[], current?: string) {
+  const all = current && !options.includes(current) ? [...options, current] : options
+  return all.map(value => ({ value, label: value }))
+}

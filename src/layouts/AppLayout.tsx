@@ -147,9 +147,10 @@ export function AppLayout() {
   const productDetailName = productDetailId ? MOCK_PRODUCTS.find(p => p.id === productDetailId)?.name : undefined
 
   // Unit detail route (/products/unit/:id) — same 2-level treatment
-  // ("Units / <IMEI>"), parallel to the product detail breadcrumb above.
+  // ("Units / <Serial Number>"), parallel to the product detail breadcrumb
+  // above. Keyed on Serial Number rather than IMEI, which is now optional.
   const unitDetailId = inProducts && productsKey === 'unit' ? location.pathname.split('/')[3] : undefined
-  const unitDetailImei = unitDetailId ? MOCK_PRODUCT_UNITS.find(u => u.id === unitDetailId)?.imei : undefined
+  const unitDetailSerial = unitDetailId ? MOCK_PRODUCT_UNITS.find(u => u.id === unitDetailId)?.serialNumber : undefined
 
   // Member detail route (/settings/members/:id) — same 2-level treatment
   // ("Members / <name>"), parallel to the product/unit breadcrumbs above.
@@ -218,8 +219,8 @@ export function AppLayout() {
 
   const breadcrumbParts = productDetailName
     ? ['Products', productDetailName]
-    : unitDetailImei
-    ? ['Units', unitDetailImei]
+    : unitDetailSerial
+    ? ['Units', unitDetailSerial]
     : memberDetailName
     ? ['Members', memberDetailName]
     : merchantDetailName
@@ -231,7 +232,7 @@ export function AppLayout() {
     : customerDetailName
     ? ['Customers', customerDetailName]
     : [pageTitle]
-  const breadcrumbBackUrl = unitDetailImei
+  const breadcrumbBackUrl = unitDetailSerial
     ? '/products/unit'
     : memberDetailName
     ? '/settings/members'

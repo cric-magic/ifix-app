@@ -37,15 +37,19 @@ export function OverviewTab({ contract, actions }: Props) {
           { key: 'device', label: 'Device', children: `${device.brand} ${device.model}${device.storage ? ` · ${device.storage}` : ''} · ${device.color}` },
           { key: 'condition', label: 'Condition', children: device.condition },
           {
-            key: 'imei',
-            label: 'IMEI',
+            // The link to the unit hangs off Serial Number rather than IMEI:
+            // it's the required primary identifier, and IMEI is blank for
+            // devices that don't have one (laptops, accessories).
+            key: 'serial',
+            label: 'Serial Number',
             children: (
               <a onClick={() => navigate(`/products/unit/${device.unitId}`)} style={{ color: token.colorText }}>
-                {device.imei}
+                {device.serialNumber}
               </a>
             ),
           },
-          { key: 'serial', label: 'Serial Number', children: device.serialNumber },
+          { key: 'imei1', label: 'IMEI 1', children: device.imei1 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
+          { key: 'imei2', label: 'IMEI 2', children: device.imei2 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
           { key: 'devicePrice', label: 'Device Price', children: <CurrencyDisplay amount={financing.devicePrice} /> },
           { key: 'downPayment', label: 'Down Payment', children: <>{financing.downPaymentPercent}% · <CurrencyDisplay amount={financing.downPaymentAmount} /></> },
           { key: 'rate', label: 'Rate', children: `${financing.ratePercent}% / month` },

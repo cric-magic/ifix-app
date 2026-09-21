@@ -52,8 +52,12 @@ export interface DeviceSnapshot {
   color: string
   // "New" for new-inventory units, or the used unit's grade (A/B/C/D).
   condition: string
-  imei: string
+  // Serial Number is the device's primary identifier and always present.
+  // The IMEIs are optional: laptops and accessories have none, and a
+  // single-SIM phone only fills the first.
   serialNumber: string
+  imei1?: string
+  imei2?: string
 }
 
 // The selected template's content, copied onto the contract at creation —

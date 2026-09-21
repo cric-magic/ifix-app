@@ -4,7 +4,10 @@ import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import { PhotoUpload } from '../../../components/PhotoUpload'
 import type { AuthUser } from '../../../types/installment'
 import type { Product, ProductCategory, ProductType, ProductStatus } from '../../../types/product'
-import { CATEGORY_LABELS, TYPE_LABELS, STATUS_LABELS } from '../../../constants/products'
+import {
+  CATEGORY_LABELS, TYPE_LABELS, STATUS_LABELS,
+  STORAGE_OPTIONS, COLOR_OPTIONS, RAM_OPTIONS, CONNECTION_OPTIONS, optionsWithCurrent,
+} from '../../../constants/products'
 
 interface Props {
   open: boolean
@@ -18,8 +21,11 @@ interface FormValues {
   brand: string
   category: ProductCategory
   model: string
+  modelNumber: string
   storage?: string
+  ram?: string
   color: string
+  connection?: string
   sku: string
   costPrice: number
   salesPrice: number
@@ -79,13 +85,24 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
         <Form.Item label="Model" name="model" rules={[{ required: true, message: 'Required' }]}>
           <Input placeholder="e.g. iPhone 14 Pro" />
         </Form.Item>
+        <Form.Item label="Model Number" name="modelNumber" rules={[{ required: true, message: 'Required' }]}>
+          <Input placeholder="e.g. A2890" />
+        </Form.Item>
+        {/* Storage/Color are SuperAdmin master data and RAM/Connection are
+            fixed lists — all four are selects, never free text. */}
         <Form.Item label="Storage" name="storage">
-          <Input placeholder="e.g. 128GB" />
+          <Select placeholder="Select storage" allowClear options={optionsWithCurrent(STORAGE_OPTIONS)} />
+        </Form.Item>
+        <Form.Item label="RAM" name="ram">
+          <Select placeholder="Select RAM" allowClear options={optionsWithCurrent(RAM_OPTIONS)} />
         </Form.Item>
         <Form.Item label="Color" name="color" rules={[{ required: true, message: 'Required' }]}>
-          <Input placeholder="e.g. Space Black" />
+          <Select placeholder="Select color" options={optionsWithCurrent(COLOR_OPTIONS)} />
         </Form.Item>
-        <Form.Item label="SKU" name="sku" rules={[{ required: true, message: 'Required' }]}>
+        <Form.Item label="Connection" name="connection">
+          <Select placeholder="Select connection" allowClear options={optionsWithCurrent(CONNECTION_OPTIONS)} />
+        </Form.Item>
+        <Form.Item label="SKU Code" name="sku" rules={[{ required: true, message: 'Required' }]}>
           <Input placeholder="e.g. IP14P-128-BLK" />
         </Form.Item>
         <Form.Item label="Cost Price" name="costPrice" rules={[{ required: true, message: 'Required' }]}>
@@ -105,9 +122,9 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
             label="Product Photo(s)"
             name="photos"
             rules={[{ required: true, message: 'Required for new products' }]}
-            help="Sealed box photo"
+            help="Sealed box photo — up to 10"
           >
-            <PhotoUpload />
+            <PhotoUpload maxCount={10} />
           </Form.Item>
         )}
       </Form>

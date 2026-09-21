@@ -55,7 +55,10 @@ export function UnitsListPage() {
   const query = search.trim().toLowerCase()
   const hasActiveFilter = !!query || availability !== 'all'
   const units = allUnits.filter(u => {
-    const matchesSearch = !query || u.imei.toLowerCase().includes(query) || u.serialNumber.toLowerCase().includes(query)
+    const matchesSearch = !query
+      || u.serialNumber.toLowerCase().includes(query)
+      || !!u.imei1?.toLowerCase().includes(query)
+      || !!u.imei2?.toLowerCase().includes(query)
     const matchesAvailability = availability === 'all' || u.availability === availability
     return matchesSearch && matchesAvailability
   })
@@ -82,13 +85,13 @@ export function UnitsListPage() {
 
   const columns: ColumnsType<ProductUnit> = [
     {
-      title: <span style={{ color: token.colorText }}>IMEI</span>,
-      dataIndex: 'imei',
-      key: 'imei',
+      title: <span style={{ color: token.colorText }}>Serial Number</span>,
+      dataIndex: 'serialNumber',
+      key: 'serialNumber',
       fixed: 'left',
-      render: (imei: string, u) => {
+      render: (serialNumber: string, u) => {
         const product = productById.get(u.productId)
-        const photo = u.unitPhotos?.front ?? product?.photos?.[0]
+        const photo = u.conditionPhotos?.[0] ?? product?.photos?.[0]
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Avatar
@@ -99,7 +102,7 @@ export function UnitsListPage() {
               style={{ backgroundColor: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}
             />
             <a onClick={() => navigate(`/products/unit/${u.id}`)} style={{ color: token.colorText }}>
-              {imei}
+              {serialNumber}
             </a>
           </div>
         )
@@ -117,9 +120,11 @@ export function UnitsListPage() {
         )
       },
     },
-    { title: 'Serial Number', dataIndex: 'serialNumber', key: 'serialNumber' },
+    { title: 'IMEI 1', key: 'imei1', render: (_, u) => u.imei1 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
+    { title: 'IMEI 2', key: 'imei2', render: (_, u) => u.imei2 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
     { title: 'Branch', dataIndex: 'branch', key: 'branch' },
     { title: 'Grade', key: 'grade', render: (_, u) => u.grade ? GRADE_LABELS[u.grade] : <span style={{ color: token.colorTextDisabled }}>—</span> },
+    { title: 'Battery', key: 'battery', align: 'right', render: (_, u) => u.batteryPercentage != null ? `${u.batteryPercentage}%` : <span style={{ color: token.colorTextDisabled }}>—</span> },
     { title: 'Tax', key: 'tax', render: (_, u) => TAX_LABELS[u.tax] },
     { title: 'Price', key: 'customPrice', align: 'right', render: (_, u) => u.customPrice ? formatter.format(u.customPrice) : <span style={{ color: token.colorTextDisabled }}>—</span> },
     { title: 'Availability', key: 'availability', fixed: 'right', render: (_, u) => <UnitAvailabilityTag availability={u.availability} /> },
@@ -166,7 +171,7 @@ export function UnitsListPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Input
-            placeholder="Search by IMEI or serial number"
+            placeholder="Search by serial number or IMEI"
             prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
             allowClear
             value={search}
@@ -202,7 +207,7 @@ export function UnitsListPage() {
             scroll={{ x: 'max-content' }}
             locale={{
               emptyText: hasActiveFilter ? (
-                <TableEmptyState icon={<Smartphone size={22} strokeWidth={2.25} />} title="No units found" description="Try a different IMEI, serial number, or status." />
+                <TableEmptyState icon={<Smartphone size={22} strokeWidth={2.25} />} title="No units found" description="Try a different serial number, IMEI, or status." />
               ) : (
                 <TableEmptyState icon={<Smartphone size={22} strokeWidth={2.25} />} title="No units yet" description="Units you add will show up here." />
               ),

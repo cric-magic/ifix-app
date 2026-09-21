@@ -7,6 +7,8 @@ import type { Product, ProductUnit, UnitGrade, UnitTax } from '../../../types/pr
 import { GRADE_LABELS, TAX_LABELS } from '../../../constants/products'
 import { BRANCHES } from '../../../constants/mockData'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
+import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
+import { isImeiTaken, isSerialNumberTaken } from '../../../utils/product'
 
 interface Props {
   open: boolean
@@ -19,16 +21,14 @@ interface Props {
 
 interface FormValues {
   productId?: string
-  imei: string
   serialNumber: string
+  imei1?: string
+  imei2?: string
   branch: string
   grade?: UnitGrade
+  batteryPercentage?: number
   notes?: string
-  frontPhoto?: string[]
-  backPhoto?: string[]
-  imeiLabelPhoto?: string[]
-  sealWrapPhoto?: string[]
-  defectPhotos?: string[]
+  conditionPhotos?: string[]
   tax: UnitTax
   customPrice?: number
 }
@@ -50,18 +50,14 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
     const unit: ProductUnit = {
       id: `unit-${Date.now()}`,
       productId: activeProduct.id,
-      imei: values.imei,
       serialNumber: values.serialNumber,
+      imei1: values.imei1 || undefined,
+      imei2: values.imei2 || undefined,
       branch: lockedBranch ?? values.branch,
       grade: isUsed ? values.grade : undefined,
+      batteryPercentage: isUsed ? values.batteryPercentage : undefined,
       notes: values.notes,
-      unitPhotos: {
-        front: values.frontPhoto?.[0],
-        back: values.backPhoto?.[0],
-        imeiLabel: values.imeiLabelPhoto?.[0],
-        sealWrap: values.sealWrapPhoto?.[0],
-      },
-      defectPhotos: isUsed ? values.defectPhotos : undefined,
+      conditionPhotos: values.conditionPhotos,
       tax: values.tax,
       customPrice: values.customPrice,
       availability: 'available',
@@ -99,55 +95,76 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
             />
           </Form.Item>
         )}
+        {/* Serial Number leads: it's the unit's required primary identifier.
+            Both IMEIs are optional (a laptop or accessory has none) but must
+            be unique across the merchant whenever a value is given. */}
         <Form.Item
-          label="IMEI"
-          name="imei"
+          label="Serial Number"
+          name="serialNumber"
           rules={[
             { required: true, message: 'Required' },
             {
-              validator: (_, value) => {
-                if (!value) return Promise.resolve()
-                const exists = MOCK_PRODUCT_UNITS.some(u => u.imei === value)
-                return exists ? Promise.reject(new Error('IMEI must be unique across the merchant')) : Promise.resolve()
-              },
+              validator: (_, value) =>
+                value && isSerialNumberTaken(value, MOCK_PRODUCT_UNITS, MOCK_PRODUCTS, actor.merchantId)
+                  ? Promise.reject(new Error('Serial Number must be unique across the merchant'))
+                  : Promise.resolve(),
             },
           ]}
         >
-          <Input placeholder="e.g. 353241001234561" />
-        </Form.Item>
-        <Form.Item label="Serial Number" name="serialNumber" rules={[{ required: true, message: 'Required' }]}>
           <Input placeholder="e.g. SN-IP14P-0001" />
+        </Form.Item>
+        <Form.Item
+          label="IMEI 1"
+          name="imei1"
+          rules={[{
+            validator: (_, value) =>
+              value && isImeiTaken(value, MOCK_PRODUCT_UNITS, MOCK_PRODUCTS, actor.merchantId)
+                ? Promise.reject(new Error('IMEI must be unique across the merchant'))
+                : Promise.resolve(),
+          }]}
+        >
+          <Input placeholder="Optional — e.g. 353241001234561" />
+        </Form.Item>
+        <Form.Item
+          label="IMEI 2"
+          name="imei2"
+          dependencies={['imei1']}
+          rules={[{
+            validator: (_, value) => {
+              if (!value) return Promise.resolve()
+              if (value === form.getFieldValue('imei1')) {
+                return Promise.reject(new Error('IMEI 2 must differ from IMEI 1'))
+              }
+              return isImeiTaken(value, MOCK_PRODUCT_UNITS, MOCK_PRODUCTS, actor.merchantId)
+                ? Promise.reject(new Error('IMEI must be unique across the merchant'))
+                : Promise.resolve()
+            },
+          }]}
+        >
+          <Input placeholder="Optional — dual-SIM devices" />
         </Form.Item>
         <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Required' }]}>
           <Select placeholder="Select branch" disabled={!!lockedBranch} options={BRANCHES.map(b => ({ value: b, label: b }))} />
         </Form.Item>
+        {/* Grade and Battery Percentage are Used-only and required there. */}
         {isUsed && (
-          <Form.Item label="Grade" name="grade" rules={[{ required: true, message: 'Required for used products' }]}>
-            <Select placeholder="Select grade" options={GRADE_OPTIONS} />
-          </Form.Item>
+          <>
+            <Form.Item label="Grade" name="grade" rules={[{ required: true, message: 'Required for used products' }]}>
+              <Select placeholder="Select grade" options={GRADE_OPTIONS} />
+            </Form.Item>
+            <Form.Item
+              label="Battery Percentage"
+              name="batteryPercentage"
+              rules={[{ required: true, message: 'Required for used products' }]}
+            >
+              <InputNumber min={0} max={100} style={{ width: '100%' }} addonAfter="%" />
+            </Form.Item>
+          </>
         )}
-        <Form.Item label="Front" name="frontPhoto" rules={[{ required: true, message: 'Required' }]}>
-          <PhotoUpload maxCount={1} />
+        {/* One optional set for New and Used alike. */}
+        <Form.Item label="Condition Photos" name="conditionPhotos" help="Optional">
+          <PhotoUpload maxCount={10} />
         </Form.Item>
-        <Form.Item label="Back" name="backPhoto">
-          <PhotoUpload maxCount={1} />
-        </Form.Item>
-        <Form.Item label="IMEI Label" name="imeiLabelPhoto" rules={[{ required: true, message: 'Required' }]}>
-          <PhotoUpload maxCount={1} />
-        </Form.Item>
-        <Form.Item label="Seal / Wrap" name="sealWrapPhoto">
-          <PhotoUpload maxCount={1} />
-        </Form.Item>
-        {isUsed && (
-          <Form.Item
-            label="Condition Photos"
-            name="defectPhotos"
-            help="Photos of any defect on the device"
-            rules={[{ required: true, message: 'Required for used products' }]}
-          >
-            <PhotoUpload />
-          </Form.Item>
-        )}
         <Form.Item label="Tax" name="tax" rules={[{ required: true, message: 'Required' }]}>
           <Select options={TAX_OPTIONS} />
         </Form.Item>

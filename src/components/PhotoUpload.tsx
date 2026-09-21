@@ -7,6 +7,9 @@ interface Props {
   value?: string[]
   onChange?: (urls: string[]) => void
   maxCount?: number
+  // Read-only mode — existing photos stay visible, but the add tile and the
+  // per-photo remove action are both withdrawn.
+  disabled?: boolean
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -20,7 +23,7 @@ function fileToDataUrl(file: File): Promise<string> {
 
 // No real backend — files are read as data URLs and kept in-memory on the
 // record itself, same convention as the rest of this prototype's mock data.
-export function PhotoUpload({ value = [], onChange, maxCount = 4 }: Props) {
+export function PhotoUpload({ value = [], onChange, maxCount = 4, disabled = false }: Props) {
   const { token } = theme.useToken()
   const iconColors = useIconColors()
 
@@ -37,6 +40,8 @@ export function PhotoUpload({ value = [], onChange, maxCount = 4 }: Props) {
         listType="picture-card"
         fileList={fileList}
         maxCount={maxCount}
+        disabled={disabled}
+        showUploadList={{ showRemoveIcon: !disabled }}
         beforeUpload={async file => {
           const dataUrl = await fileToDataUrl(file as unknown as File)
           onChange?.([...value, dataUrl].slice(0, maxCount))
@@ -47,7 +52,7 @@ export function PhotoUpload({ value = [], onChange, maxCount = 4 }: Props) {
           onChange?.(value.filter((_, i) => i !== idx))
         }}
       >
-        {value.length >= maxCount ? null : (
+        {disabled || value.length >= maxCount ? null : (
           <div>
             <div style={{ color: iconColors.secondary }}>
               <Plus size={16} strokeWidth={2.25} />

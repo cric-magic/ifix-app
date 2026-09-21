@@ -44,9 +44,9 @@ export function UnitsTab({ actor, product }: Props) {
 
   const columns: ColumnsType<ProductUnit> = [
     {
-      title: <span style={{ color: token.colorText }}>IMEI</span>,
-      dataIndex: 'imei',
-      key: 'imei',
+      title: <span style={{ color: token.colorText }}>Serial Number</span>,
+      dataIndex: 'serialNumber',
+      key: 'serialNumber',
       fixed: 'left',
       render: (v: string, u) => (
         <a onClick={() => navigate(`/products/unit/${u.id}`)} style={{ color: token.colorText }}>
@@ -54,9 +54,11 @@ export function UnitsTab({ actor, product }: Props) {
         </a>
       ),
     },
-    { title: 'Serial Number', dataIndex: 'serialNumber', key: 'serialNumber' },
+    { title: 'IMEI 1', key: 'imei1', render: (_, u) => u.imei1 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
+    { title: 'IMEI 2', key: 'imei2', render: (_, u) => u.imei2 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
     { title: 'Branch', dataIndex: 'branch', key: 'branch' },
     { title: 'Grade', key: 'grade', render: (_, u) => u.grade ? GRADE_LABELS[u.grade] : <span style={{ color: token.colorTextDisabled }}>—</span> },
+    { title: 'Battery', key: 'battery', align: 'right', render: (_, u) => u.batteryPercentage != null ? `${u.batteryPercentage}%` : <span style={{ color: token.colorTextDisabled }}>—</span> },
     { title: 'Tax', key: 'tax', render: (_, u) => TAX_LABELS[u.tax] },
     { title: 'Price', key: 'customPrice', align: 'right', render: (_, u) => u.customPrice ? formatter.format(u.customPrice) : <span style={{ color: token.colorTextDisabled }}>—</span> },
     { title: 'Availability', key: 'availability', fixed: 'right', render: (_, u) => <UnitAvailabilityTag availability={u.availability} /> },

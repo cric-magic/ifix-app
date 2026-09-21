@@ -31,7 +31,8 @@ const FREE_RATE_TERMS = [3, 6, 10, 12, 18, 24]
 interface DeviceValues { branch: string; productId: string; unitId: string }
 interface TemplateValues { templateId: string; termMonths: number; ratePercent: number; downPaymentPercent: number }
 interface DeviceInfoValues {
-  imei: string
+  imei1?: string
+  imei2?: string
   serialNumber: string
   frontPhoto?: string[]
   backPhoto?: string[]
@@ -125,7 +126,8 @@ export function EditContractPage() {
     downPaymentPercent: contract.financing.downPaymentPercent,
   })
   const [deviceInfo, setDeviceInfo] = useState<DeviceInfoValues | null>({
-    imei: contract.device.imei,
+    imei1: contract.device.imei1,
+    imei2: contract.device.imei2,
     serialNumber: contract.device.serialNumber,
     frontPhoto: contract.devicePhotos.front ? [contract.devicePhotos.front] : [],
     backPhoto: contract.devicePhotos.back ? [contract.devicePhotos.back] : [],
@@ -186,7 +188,7 @@ export function EditContractPage() {
     templateForm.validateFields().then(values => {
       setTemplateValues(values)
       const unit = MOCK_PRODUCT_UNITS.find(u => u.id === device!.unitId)!
-      deviceInfoForm.setFieldsValue({ imei: unit.imei, serialNumber: unit.serialNumber })
+      deviceInfoForm.setFieldsValue({ serialNumber: unit.serialNumber, imei1: unit.imei1, imei2: unit.imei2 })
       setStep(2)
     })
   }
@@ -308,7 +310,8 @@ export function EditContractPage() {
       storage: product.storage,
       color: product.color,
       condition: unit.grade ?? 'New',
-      imei: deviceInfo.imei,
+      imei1: deviceInfo.imei1 || undefined,
+      imei2: deviceInfo.imei2 || undefined,
       serialNumber: deviceInfo.serialNumber,
     }
     contract.devicePhotos = {
@@ -430,7 +433,7 @@ export function EditContractPage() {
                     disabled={!selectedProductId}
                     options={availableUnits.map(u => ({
                       value: u.id,
-                      label: `IMEI ${u.imei}${u.grade ? ` · Grade ${u.grade}` : ''}${u.id === originalUnitId ? ' (current)' : ''}`,
+                      label: `${u.serialNumber}${u.imei1 ? ` · IMEI ${u.imei1}` : ''}${u.grade ? ` · Grade ${u.grade}` : ''}${u.id === originalUnitId ? ' (current)' : ''}`,
                     }))}
                   />
                 </Form.Item>
@@ -518,13 +521,20 @@ export function EditContractPage() {
           <Form form={deviceInfoForm} layout="vertical" initialValues={deviceInfo ?? undefined}>
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item label="IMEI" name="imei" rules={[{ required: true, message: 'Required' }]}>
-                  <Input maxLength={15} />
+                <Form.Item label="Serial Number" name="serialNumber" rules={[{ required: true, message: 'Required' }]}>
+                  <Input />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item label="Serial Number" name="serialNumber" rules={[{ required: true, message: 'Required' }]}>
-                  <Input />
+                {/* Optional: carried from the unit, and blank for devices
+                    that have no IMEI at all (laptops, accessories). */}
+                <Form.Item label="IMEI 1" name="imei1">
+                  <Input maxLength={15} placeholder="Optional" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item label="IMEI 2" name="imei2">
+                  <Input maxLength={15} placeholder="Optional" />
                 </Form.Item>
               </Col>
             </Row>
@@ -648,7 +658,8 @@ export function EditContractPage() {
                   { label: 'Product', children: `${product.brand} ${product.name}` },
                   { label: 'Color', children: product.color },
                   { label: 'Storage', children: product.storage ?? '—' },
-                  { label: 'IMEI', children: deviceInfo.imei },
+                  { label: 'IMEI 1', children: deviceInfo.imei1 || '—' },
+                  { label: 'IMEI 2', children: deviceInfo.imei2 || '—' },
                   { label: 'Serial', children: deviceInfo.serialNumber },
                   { label: 'Branch', children: device.branch },
                 ]}

@@ -4,7 +4,7 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
   {
     id: 'unit-1',
     productId: 'prod-1',
-    imei: '353241001234561',
+    imei1: '353241001234561',
     serialNumber: 'SN-IP14P-0001',
     branch: 'Bangkok HQ',
     tax: 'vat',
@@ -15,15 +15,15 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: '2024-06-11T09:00:00.000Z',
     soldBy: 'admin-1',
     createdAt: '2024-01-11T09:00:00.000Z',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+1+Front',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+1+IMEI',
-    },
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+1+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+1+IMEI',
+    ],
   },
   {
     id: 'unit-2',
     productId: 'prod-1',
-    imei: '353241001234562',
+    imei1: '353241001234562',
     serialNumber: 'SN-IP14P-0002',
     branch: 'Bangkok HQ',
     tax: 'vat',
@@ -31,16 +31,16 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: null,
     soldBy: null,
     createdAt: '2024-01-11T09:00:00.000Z',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+Front',
-      back: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+Back',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+IMEI',
-    },
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+Back',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+IMEI',
+    ],
   },
   {
     id: 'unit-3',
     productId: 'prod-1',
-    imei: '353241001234563',
+    imei1: '353241001234563',
     serialNumber: 'SN-IP14P-0003',
     branch: 'Chiang Mai',
     tax: 'vat',
@@ -48,17 +48,17 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: '2024-04-02T10:30:00.000Z',
     soldBy: 'branch-1',
     createdAt: '2024-01-11T09:00:00.000Z',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Front',
-      back: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Back',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+IMEI',
-      sealWrap: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Seal',
-    },
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Back',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+IMEI',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Seal',
+    ],
   },
   {
     id: 'unit-4',
     productId: 'prod-2',
-    imei: '353241009876541',
+    imei1: '353241009876541',
     serialNumber: 'SN-GS23-0001',
     branch: 'Phuket',
     tax: 'vat',
@@ -67,24 +67,23 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: null,
     soldBy: null,
     createdAt: '2024-01-13T09:00:00.000Z',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+4+Front',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+4+IMEI',
-    },
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+4+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+4+IMEI',
+    ],
   },
   {
     id: 'unit-5',
     productId: 'prod-5',
-    imei: '353241005551211',
+    imei1: '353241005551211',
     serialNumber: 'SN-IP13-0001',
     branch: 'Khon Kaen',
     grade: 'B',
+    batteryPercentage: 87,
     notes: 'Minor scuff on back panel',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+5+Front',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+5+IMEI',
-    },
-    defectPhotos: [
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+5+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+5+IMEI',
       'https://placehold.co/400x400/1a1a1a/999999?text=Unit+5+Scuff',
     ],
     tax: 'non_vat',
@@ -97,7 +96,7 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
   {
     id: 'unit-6',
     productId: 'prod-1',
-    imei: '353241001234564',
+    imei1: '353241001234564',
     serialNumber: 'SN-IP14P-0004',
     branch: 'Chiang Mai',
     tax: 'vat',
@@ -106,15 +105,15 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: '2024-07-08T09:00:00.000Z',
     soldBy: 'branch-1',
     createdAt: '2024-04-10T09:00:00.000Z',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+6+Front',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+6+IMEI',
-    },
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+6+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+6+IMEI',
+    ],
   },
   {
     id: 'unit-7',
     productId: 'prod-1',
-    imei: '353241001234565',
+    imei1: '353241001234565',
     serialNumber: 'SN-IP14P-0005',
     branch: 'Chiang Mai',
     tax: 'vat',
@@ -122,15 +121,15 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: '2024-05-15T14:20:00.000Z',
     soldBy: 'branch-1',
     createdAt: '2024-02-20T09:00:00.000Z',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+7+Front',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+7+IMEI',
-    },
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+7+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+7+IMEI',
+    ],
   },
   {
     id: 'unit-8',
     productId: 'prod-2',
-    imei: '353241009876542',
+    imei1: '353241009876542',
     serialNumber: 'SN-GS23-0002',
     branch: 'Chiang Mai',
     tax: 'vat',
@@ -138,23 +137,22 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: null,
     soldBy: null,
     createdAt: '2024-05-01T09:00:00.000Z',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+8+Front',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+8+IMEI',
-    },
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+8+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+8+IMEI',
+    ],
   },
   {
     id: 'unit-9',
     productId: 'prod-5',
-    imei: '353241005551212',
+    imei1: '353241005551212',
     serialNumber: 'SN-IP13-0002',
     branch: 'Chiang Mai',
     grade: 'C',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+9+Front',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+9+IMEI',
-    },
-    defectPhotos: [
+    batteryPercentage: 78,
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+9+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+9+IMEI',
       'https://placehold.co/400x400/1a1a1a/999999?text=Unit+9+Defect',
     ],
     tax: 'non_vat',
@@ -168,15 +166,14 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
   {
     id: 'unit-10',
     productId: 'prod-5',
-    imei: '353241005551213',
+    imei1: '353241005551213',
     serialNumber: 'SN-IP13-0003',
     branch: 'Chiang Mai',
     grade: 'A',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+10+Front',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+10+IMEI',
-    },
-    defectPhotos: [
+    batteryPercentage: 92,
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+10+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+10+IMEI',
       'https://placehold.co/400x400/1a1a1a/999999?text=Unit+10+Defect',
     ],
     tax: 'non_vat',
@@ -189,7 +186,7 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
   {
     id: 'unit-11',
     productId: 'prod-6',
-    imei: '353241006661101',
+    imei1: '353241006661101',
     serialNumber: 'SN-APP2-0001',
     branch: 'Chiang Mai',
     tax: 'vat',
@@ -197,15 +194,15 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: null,
     soldBy: null,
     createdAt: '2024-05-05T09:00:00.000Z',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+11+Front',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+11+IMEI',
-    },
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+11+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+11+IMEI',
+    ],
   },
   {
     id: 'unit-12',
     productId: 'prod-3',
-    imei: '353241003331101',
+    imei1: '353241003331101',
     serialNumber: 'SN-IPADAIR-0001',
     branch: 'Bangkok HQ',
     tax: 'vat',
@@ -213,15 +210,15 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: '2024-03-01T16:45:00.000Z',
     soldBy: 'admin-1',
     createdAt: '2024-02-10T09:00:00.000Z',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+12+Front',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+12+IMEI',
-    },
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+12+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+12+IMEI',
+    ],
   },
   {
     id: 'unit-13',
     productId: 'prod-4',
-    imei: '353241004441101',
+    imei1: '353241004441101',
     serialNumber: 'SN-MBAM2-0001',
     branch: 'Phuket',
     tax: 'vat',
@@ -234,9 +231,9 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
     soldAt: '2024-02-01T09:00:00.000Z',
     soldBy: 'branch-2',
     createdAt: '2024-03-01T09:00:00.000Z',
-    unitPhotos: {
-      front: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+13+Front',
-      imeiLabel: 'https://placehold.co/400x400/1a1a1a/999999?text=Unit+13+IMEI',
-    },
+    conditionPhotos: [
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+13+Front',
+      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+13+IMEI',
+    ],
   },
 ]

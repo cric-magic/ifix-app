@@ -8,8 +8,17 @@ export interface Product {
   brand: string
   category: ProductCategory
   model: string
+  modelNumber: string
+  // Storage/RAM/Connection are spec fields, but they're category-dependent
+  // in practice — an Accessory SKU (AirPods) has none of the three, and a
+  // Laptop has RAM but no Connection. Optional rather than required so those
+  // SKUs don't have to carry placeholder values. Storage/Color come from the
+  // SuperAdmin-managed option lists; RAM/Connection from fixed lists that
+  // merchants can't extend (see constants/products.ts).
   storage?: string
+  ram?: string
   color: string
+  connection?: string
   sku: string
   costPrice: number
   salesPrice: number
@@ -26,28 +35,24 @@ export type UnitGrade = 'A' | 'B' | 'C' | 'D'
 export type UnitTax = 'vat' | 'non_vat'
 export type UnitAvailability = 'available' | 'reserved' | 'sold'
 
-// Captured once, when the unit is registered into a branch — reused by
-// contract creation afterward instead of being re-captured. Front and IMEI
-// label are required; Back and Seal/Wrap are optional.
-export interface UnitPhotos {
-  front?: string
-  back?: string
-  imeiLabel?: string
-  sealWrap?: string
-}
-
 export interface ProductUnit {
   id: string
   productId: string
-  imei: string
+  // Serial Number is the unit's primary identifier — required and unique
+  // across the merchant. The IMEIs are supporting identifiers: optional
+  // (a laptop or accessory has none, a single-SIM phone has one), but any
+  // value that IS given must also be unique across the merchant.
   serialNumber: string
+  imei1?: string
+  imei2?: string
   branch: string
   grade?: UnitGrade
+  // Required when the SKU's type is Used; 0-100.
+  batteryPercentage?: number
   notes?: string
-  unitPhotos?: UnitPhotos
-  // Used units only — photos of any defect, separate from the base unit
-  // photos captured at registration.
-  defectPhotos?: string[]
+  // One optional set for New and Used alike — replaces the old split of
+  // required front/IMEI-label shots plus Used-only defect photos.
+  conditionPhotos?: string[]
   tax: UnitTax
   customPrice?: number
   availability: UnitAvailability

@@ -9,6 +9,7 @@ import { CATEGORY_LABELS, TYPE_LABELS } from '../../../constants/products'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 import { useIconColors } from '../../../constants/iconColors'
 import { TableEmptyState } from '../../../components/TableEmptyState'
+import { countAvailableUnits } from '../../../utils/product'
 import { ProductStatusTag } from './ProductStatusTag'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
@@ -24,6 +25,7 @@ interface Props {
 
 export function ProductTable({ actor, products, isSearching, onEdit, onRemove, onAddUnit }: Props) {
   const { token } = theme.useToken()
+  const dash = <span style={{ color: token.colorTextDisabled }}>—</span>
   const iconColors = useIconColors()
   const { modal } = App.useApp()
   const navigate = useNavigate()
@@ -63,15 +65,23 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
         </div>
       ),
     },
+    { title: 'SKU Code', dataIndex: 'sku', key: 'sku' },
     { title: 'Brand', dataIndex: 'brand', key: 'brand' },
     { title: 'Category', key: 'category', render: (_, p) => CATEGORY_LABELS[p.category] },
     { title: 'Model', dataIndex: 'model', key: 'model' },
-    { title: 'SKU', dataIndex: 'sku', key: 'sku' },
+    { title: 'Model Number', dataIndex: 'modelNumber', key: 'modelNumber' },
+    { title: 'Storage', key: 'storage', render: (_, p) => p.storage ?? dash },
+    { title: 'RAM', key: 'ram', render: (_, p) => p.ram ?? dash },
+    { title: 'Color', dataIndex: 'color', key: 'color' },
+    { title: 'Connection', key: 'connection', render: (_, p) => p.connection ?? dash },
     {
-      title: 'Units',
-      key: 'units',
+      // Available Units, not total — counted from the caller's already
+      // branch-scoped unit list, so a Branch Manager sees their own branch's
+      // sellable stock rather than the merchant-wide figure.
+      title: 'Available Units',
+      key: 'availableUnits',
       align: 'right',
-      render: (_, p) => scopedUnitList(actor, p.id, MOCK_PRODUCT_UNITS).length,
+      render: (_, p) => countAvailableUnits(scopedUnitList(actor, p.id, MOCK_PRODUCT_UNITS)),
     },
     ...(showCostPrice ? [{
       title: 'Cost Price',

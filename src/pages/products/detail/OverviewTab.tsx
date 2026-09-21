@@ -34,13 +34,19 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
   const photoCount = product.photos?.length ?? 0
   const [thumbnailHovered, setThumbnailHovered] = useState(false)
 
+  // Storage/RAM/Connection only apply to some categories (an Accessory has
+  // none of the three), so each is dropped entirely rather than shown as an
+  // empty row.
   const items = [
     { key: 'brand', label: 'Brand', children: product.brand },
     { key: 'category', label: 'Category', children: CATEGORY_LABELS[product.category] },
-    { key: 'model', label: 'Model', children: product.model, span: product.storage ? 1 : 2 },
+    { key: 'model', label: 'Model', children: product.model },
+    { key: 'modelNumber', label: 'Model Number', children: product.modelNumber },
     ...(product.storage ? [{ key: 'storage', label: 'Storage', children: product.storage }] : []),
+    ...(product.ram ? [{ key: 'ram', label: 'RAM', children: product.ram }] : []),
     { key: 'color', label: 'Color', children: product.color },
-    { key: 'sku', label: 'SKU', children: product.sku },
+    ...(product.connection ? [{ key: 'connection', label: 'Connection', children: product.connection }] : []),
+    { key: 'sku', label: 'SKU Code', children: product.sku },
     ...(showCostPrice
       ? [
         { key: 'costPrice', label: 'Cost Price', children: formatter.format(product.costPrice) },
