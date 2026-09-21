@@ -7,6 +7,7 @@ import type { Contract } from '../types/contract'
 import type { Customer } from '../types/customer'
 import type { ContractTemplate } from '../types/contractTemplate'
 import { MOCK_USER_ACCOUNTS } from './mockUsers'
+import { MOCK_PRODUCT_UNITS } from './mockProductUnits'
 
 export const ROLE_LEVEL: Record<UserRole, number> = {
   staff: 1,
@@ -243,13 +244,30 @@ export function permittedCategoriesFor(actor: AuthUser): ProductCategory[] | nul
   return categories && categories.length > 0 ? categories : null
 }
 
-export function scopedProductList(actor: AuthUser, all: Product[]): Product[] {
+// "View Product List — Staff/Branch Manager ✅ (Own branch)" in the doc's
+// matrix: they see their assigned branch's catalog, not the merchant's.
+// A SKU has no branch of its own, so its branch is wherever its units are —
+// a SKU stocked only in Chiang Mai isn't part of a Khon Kaen employee's
+// catalog at all, not merely a row with a zero count.
+//
+// A SKU with no units anywhere is the exception and stays visible: it isn't
+// another branch's stock, it's nobody's, and hiding it would break the
+// Branch Manager's own "Add Product" flow — a SKU they just created has no
+// units yet, so it would vanish the moment they created it, before they
+// could stock it.
+function inBranchCatalog(actor: AuthUser, product: Product, units: ProductUnit[]): boolean {
+  const forProduct = units.filter(u => u.productId === product.id)
+  return forProduct.length === 0 || forProduct.some(u => u.branch === actor.branch)
+}
+
+export function scopedProductList(actor: AuthUser, all: Product[], units: ProductUnit[] = MOCK_PRODUCT_UNITS): Product[] {
   if (actor.role === 'super_admin') return []
   const permitted = permittedCategoriesFor(actor)
   return all.filter(p =>
     p.merchantId === actor.merchantId
     && !p.deletedAt
-    && (!permitted || permitted.includes(p.category)),
+    && (!permitted || permitted.includes(p.category))
+    && (isMerchantAdminOrAbove(actor) || inBranchCatalog(actor, p, units)),
   )
 }
 
