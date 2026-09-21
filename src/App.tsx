@@ -565,6 +565,13 @@ function AppThemed() {
         },
         Button: {
           paddingInline: baseToken.paddingSM,
+          // antd derives the small button's own padding as `8 - lineWidth`,
+          // so this theme's 1px button border (below) left it computing to
+          // 7px — off the Spacing scale. Pinned to 8 (Spacing 2) for
+          // the same reason Dropdown.paddingBlock is pinned further down:
+          // every padding in the app traces back to the scale, and antd's
+          // border-inclusive arithmetic isn't a value the scale contains.
+          paddingInlineSM: 8,
           // 1px to match Input/Select/InputNumber/DatePicker's own border
           // weight (App.tsx) instead of the global seed's 0.5px — a default
           // button sits right next to those fields often enough that the

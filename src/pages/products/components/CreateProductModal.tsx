@@ -166,7 +166,10 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            // A plain stacked list rather than separate cards: no box, no
+            // divider, no side padding — rows are separated by their own
+            // vertical padding alone.
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {catalog.map(entry => {
                 const alreadyAdded = adoptedIds.has(entry.id)
                 const spec = [entry.storage, entry.ram, entry.color].filter(Boolean).join(' · ')
@@ -178,9 +181,7 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       gap: 8,
-                      padding: 12,
-                      border: `1px solid ${token.colorBorderSecondary}`,
-                      borderRadius: 8,
+                      padding: '8px 0',
                     }}
                   >
                     <div style={{ minWidth: 0 }}>
