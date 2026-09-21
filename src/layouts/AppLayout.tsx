@@ -10,7 +10,7 @@ import { useAuth, useCurrentUser } from '../contexts/AuthContext'
 import { useDevTools } from '../contexts/DevToolsContext'
 import { useAppWindowContainer } from '../contexts/AppWindowContext'
 import { useHeaderContent } from '../contexts/HeaderContentContext'
-import { canManageUsers, homePath, scopedUserList, scopedBranchList, scopedContractList, scopedCustomerList } from '../constants/roles'
+import { canManageUsers, homePath, productsHomePath, scopedUserList, scopedBranchList, scopedContractList, scopedCustomerList } from '../constants/roles'
 import { useIconColors } from '../constants/iconColors'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
 import { MOCK_PRODUCTS } from '../constants/mockProducts'
@@ -39,9 +39,6 @@ const SETTINGS_ITEMS = [
   { key: 'account', label: 'Account' },
   { key: 'bank-accounts', label: 'Bank Accounts' },
   { key: 'contract-templates', label: 'Contract Templates' },
-  // Global Color/Storage master data — the inverse of the two tabs above:
-  // Super Admin only, since merchants read those lists but can't edit them.
-  { key: 'product-options', label: 'Product Options', superAdminOnly: true },
   { key: 'members', label: 'Members' },
 ]
 
@@ -49,9 +46,17 @@ const ACCOUNT_ITEMS = [
   { key: 'general', label: 'Account' },
 ]
 
+// Merchants manage their own catalog and its physical units. Super Admin
+// has neither — they own the platform-level Attributes every merchant picks
+// from (and, later, the global SKU catalog), so the same Products section
+// shows them a different pair of tabs.
 const PRODUCTS_ITEMS = [
   { key: 'catalog', label: 'Catalog' },
   { key: 'unit', label: 'Unit' },
+]
+
+const SUPER_ADMIN_PRODUCTS_ITEMS = [
+  { key: 'attributes', label: 'Attributes' },
 ]
 
 export function AppLayout() {
@@ -141,7 +146,7 @@ export function AppLayout() {
   const pageTitle = inSettings
     ? (settingsKey === 'account' ? 'Workspace Settings' : SETTINGS_ITEMS.find(i => i.key === settingsKey)?.label ?? 'Workspace Settings')
     : inProducts
-    ? (productsKey === 'unit' ? 'Units' : 'Products')
+    ? (productsKey === 'unit' ? 'Units' : productsKey === 'attributes' ? 'Attributes' : 'Products')
     : PAGE_TITLES[selectedKey] ?? 'IFix'
 
   // Product detail route (/products/catalog/:id) — show a 2-level breadcrumb
@@ -390,7 +395,6 @@ export function AppLayout() {
                     // merchant's own Detail page; there's no equivalent
                     // per-merchant template management surface yet).
                     .filter(item => (item.key !== 'bank-accounts' && item.key !== 'contract-templates') || user.role !== 'super_admin')
-                    .filter(item => !item.superAdminOnly || user.role === 'super_admin')
                     .map(item => ({
                       ...item,
                       onClick: () => go(`/settings/${item.key}`),
@@ -471,7 +475,7 @@ export function AppLayout() {
                   inlineIndent={16}
                   selectedKeys={[productsKey]}
                   style={{ border: 'none', background: 'transparent' }}
-                  items={PRODUCTS_ITEMS.map(item => ({
+                  items={(user.role === 'super_admin' ? SUPER_ADMIN_PRODUCTS_ITEMS : PRODUCTS_ITEMS).map(item => ({
                     ...item,
                     onClick: () => go(`/products/${item.key}`),
                   }))}
@@ -496,7 +500,12 @@ export function AppLayout() {
                       label: 'Contracts',
                       onClick: () => go('/contracts'),
                     }] : []),
-                    ...(user.role !== 'super_admin' ? [{
+                    // Products is the one section both sides share, but for
+                    // different content: a merchant's own catalog/units vs
+                    // Super Admin's platform-level Attributes (see
+                    // PRODUCTS_ITEMS / SUPER_ADMIN_PRODUCTS_ITEMS above).
+                    // productsHomePath picks the right landing tab.
+                    {
                       key: 'products',
                       icon: navIcon(<Package size={17} strokeWidth={2.25} />),
                       // Right padding matches the sidebar's shared 4px (Spacing 1) item
@@ -515,8 +524,8 @@ export function AppLayout() {
                           />
                         </div>
                       ),
-                      onClick: () => go('/products/catalog'),
-                    }] : []),
+                      onClick: () => go(productsHomePath(user)),
+                    },
                     // Same exclusion as Contracts above — Customers is also
                     // merchant-scoped, per canViewCustomers.
                     ...(user.role !== 'super_admin' ? [{

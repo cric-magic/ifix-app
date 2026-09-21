@@ -1,6 +1,6 @@
 import type { ProductCategory, ProductType, ProductStatus, UnitGrade, UnitTax, UnitAvailability } from '../types/product'
-import type { ProductOptionType } from '../types/productOption'
-import { MOCK_PRODUCT_OPTIONS } from './mockProductOptions'
+import type { ProductAttributeType } from '../types/productAttribute'
+import { MOCK_PRODUCT_ATTRIBUTES } from './mockProductAttributes'
 
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   smartphone: 'Smartphone',
@@ -39,12 +39,12 @@ export const AVAILABILITY_LABELS: Record<UnitAvailability, string> = {
 }
 
 // Storage and Color are master data owned by Super Admin (see
-// mockProductOptions.ts and Settings > Product Options) rather than fixed
+// mockProductAttributes.ts and Products > Attributes) rather than fixed
 // lists — these readers return the values a merchant may currently pick.
 // Disabled options are filtered out here; a SKU already holding a disabled
 // value keeps it via optionsWithCurrent below.
-export function enabledOptionValues(type: ProductOptionType): string[] {
-  return MOCK_PRODUCT_OPTIONS.filter(o => o.type === type && o.enabled).map(o => o.value)
+export function enabledAttributeValues(type: ProductAttributeType): string[] {
+  return MOCK_PRODUCT_ATTRIBUTES.filter(o => o.type === type && o.enabled).map(o => o.value)
 }
 
 // RAM and Connection differ from Storage/Color: the doc fixes them as

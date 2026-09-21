@@ -76,6 +76,13 @@ export function homePath(user: AuthUser): string {
   return user.role === 'super_admin' ? '/merchants' : '/contracts'
 }
 
+// Products sub-nav landing page. Merchants start on their own catalog;
+// Super Admin has no merchant catalog to show, so they start on the
+// platform-level Attributes they do manage. Mirrors homePath above.
+export function productsHomePath(user: AuthUser): string {
+  return user.role === 'super_admin' ? '/products/attributes' : '/products/catalog'
+}
+
 // Contract permissions — per the Contract doc: merchant-scoped business
 // data like Products/Units, so Super Admin (a platform-level role with no
 // merchant of its own) never sees it, same explicit exclusion as
@@ -395,7 +402,7 @@ export function canManageContractTemplates(user: AuthUser): boolean {
 // and "Merchant Admin/Owner can select these options but cannot create new
 // Color or Storage options" — so Super Admin is the only role that reaches
 // this screen at all.
-export function canManageProductOptions(user: AuthUser): boolean {
+export function canManageProductAttributes(user: AuthUser): boolean {
   return user.role === 'super_admin'
 }
 

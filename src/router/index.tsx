@@ -4,6 +4,7 @@ import { AppLayout } from '../layouts/AppLayout'
 import { RequireAuth } from './RequireAuth'
 import { HeaderContentProvider } from '../contexts/HeaderContentContext'
 import { HomeRedirect } from './HomeRedirect'
+import { ProductsIndexRedirect } from './ProductsIndexRedirect'
 import { SmartCalculatorPage } from '../pages/calculator/SmartCalculatorPage'
 import { CreateContractPage } from '../pages/contracts/CreateContractPage'
 import { EditContractPage } from '../pages/contracts/EditContractPage'
@@ -24,7 +25,7 @@ import { UserDetailPage } from '../pages/users/UserDetailPage'
 import { AccountGeneralPage } from '../pages/account/AccountGeneralPage'
 import { WorkspaceAccountPage } from '../pages/settings/WorkspaceAccountPage'
 import { WorkspaceBankAccountsPage } from '../pages/settings/WorkspaceBankAccountsPage'
-import { ProductOptionsPage } from '../pages/settings/ProductOptionsPage'
+import { AttributesPage } from '../pages/products/AttributesPage'
 import { ContractTemplatesPage } from '../pages/settings/ContractTemplatesPage'
 import { DesignDocsPage } from '../pages/design/DesignDocsPage'
 import { SignInPage } from '../pages/auth/SignInPage'
@@ -54,11 +55,12 @@ export const router = createBrowserRouter([
           { path: 'contracts', element: <ContractsListPage /> },
           { path: 'contracts/:id', element: <ContractDetailPage /> },
           { path: 'contracts/:id/edit', element: <EditContractPage /> },
-          { path: 'products', element: <Navigate to="/products/catalog" replace /> },
+          { path: 'products', element: <ProductsIndexRedirect /> },
           { path: 'products/catalog', element: <ProductsPage /> },
           { path: 'products/catalog/:id', element: <ProductDetailPage /> },
           { path: 'products/unit', element: <UnitsListPage /> },
           { path: 'products/unit/:id', element: <UnitDetailPage /> },
+          { path: 'products/attributes', element: <AttributesPage /> },
           { path: 'customers', element: <CustomersPage /> },
           { path: 'customers/:id', element: <CustomerDetailPage /> },
           { path: 'merchants', element: <MerchantsPage /> },
@@ -69,7 +71,6 @@ export const router = createBrowserRouter([
           { path: 'settings/account', element: <WorkspaceAccountPage /> },
           { path: 'settings/bank-accounts', element: <WorkspaceBankAccountsPage /> },
           { path: 'settings/contract-templates', element: <ContractTemplatesPage /> },
-          { path: 'settings/product-options', element: <ProductOptionsPage /> },
           { path: 'settings/members', element: <UserListPage /> },
           { path: 'settings/members/:id', element: <UserDetailPage /> },
           { path: 'account', element: <Navigate to="/account/general" replace /> },

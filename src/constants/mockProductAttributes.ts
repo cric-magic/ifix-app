@@ -1,9 +1,9 @@
-import type { ProductOption } from '../types/productOption'
+import type { ProductAttribute } from '../types/productAttribute'
 
 // Seeded from the values the existing mock SKUs already use, plus the common
 // capacities/finishes a merchant would expect to find. Super Admin edits this
-// list from Settings > Product Options; merchants only ever read it.
-export const MOCK_PRODUCT_OPTIONS: ProductOption[] = [
+// list from Products > Attributes; merchants only ever read it.
+export const MOCK_PRODUCT_ATTRIBUTES: ProductAttribute[] = [
   { id: 'opt-storage-1', type: 'storage', value: '64GB', enabled: true, createdAt: '2024-01-01T09:00:00.000Z' },
   { id: 'opt-storage-2', type: 'storage', value: '128GB', enabled: true, createdAt: '2024-01-01T09:00:00.000Z' },
   { id: 'opt-storage-3', type: 'storage', value: '256GB', enabled: true, createdAt: '2024-01-01T09:00:00.000Z' },

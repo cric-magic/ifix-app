@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { App, Button, ConfigProvider, Dropdown, Form, Input, Modal, Table, Typography, theme } from 'antd'
 import { Plus, MoreHorizontal, Ban, RotateCcw, Palette } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
-import type { ProductOption, ProductOptionType } from '../../../types/productOption'
-import { MOCK_PRODUCT_OPTIONS } from '../../../constants/mockProductOptions'
+import type { ProductAttribute, ProductAttributeType } from '../../../types/productAttribute'
+import { MOCK_PRODUCT_ATTRIBUTES } from '../../../constants/mockProductAttributes'
 import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
 import { DotTag } from '../../../components/DotTag'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 
 interface Props {
-  type: ProductOptionType
+  type: ProductAttributeType
   title: string
   // Singular noun for the copy in buttons/dialogs ("Add color").
   noun: string
@@ -20,20 +20,20 @@ interface Props {
 // and the disable confirmation: an option that's in use can still be
 // disabled, it just stops being offered for new SKUs — the doc is explicit
 // that disabling "must not remove or alter its value on existing SKUs".
-function usageCount(type: ProductOptionType, value: string): number {
+function usageCount(type: ProductAttributeType, value: string): number {
   return MOCK_PRODUCTS.filter(p => !p.deletedAt && (type === 'color' ? p.color : p.storage) === value).length
 }
 
-export function ProductOptionPanel({ type, title, noun, onChanged }: Props) {
+export function AttributePanel({ type, title, noun, onChanged }: Props) {
   const { token } = theme.useToken()
   const { modal, message } = App.useApp()
   const [addOpen, setAddOpen] = useState(false)
   const [form] = Form.useForm<{ value: string }>()
 
-  const options = MOCK_PRODUCT_OPTIONS.filter(o => o.type === type)
+  const options = MOCK_PRODUCT_ATTRIBUTES.filter(o => o.type === type)
 
   function handleAdd(values: { value: string }) {
-    MOCK_PRODUCT_OPTIONS.push({
+    MOCK_PRODUCT_ATTRIBUTES.push({
       id: `opt-${type}-${Date.now()}`,
       type,
       value: values.value.trim(),
@@ -46,7 +46,7 @@ export function ProductOptionPanel({ type, title, noun, onChanged }: Props) {
     message.success(`${values.value.trim()} added`)
   }
 
-  function handleToggle(option: ProductOption) {
+  function handleToggle(option: ProductAttribute) {
     const inUse = usageCount(type, option.value)
     if (option.enabled) {
       modal.confirm({
@@ -69,7 +69,7 @@ export function ProductOptionPanel({ type, title, noun, onChanged }: Props) {
     message.success(`${option.value} enabled`)
   }
 
-  const columns: ColumnsType<ProductOption> = [
+  const columns: ColumnsType<ProductAttribute> = [
     {
       title: <span style={{ color: token.colorText }}>Value</span>,
       dataIndex: 'value',
@@ -179,7 +179,7 @@ export function ProductOptionPanel({ type, title, noun, onChanged }: Props) {
               { required: true, message: 'Required' },
               {
                 validator: (_, value) => {
-                  const exists = value && MOCK_PRODUCT_OPTIONS.some(o =>
+                  const exists = value && MOCK_PRODUCT_ATTRIBUTES.some(o =>
                     o.type === type && o.value.trim().toLowerCase() === value.trim().toLowerCase())
                   return exists
                     ? Promise.reject(new Error(`That ${noun} already exists`))
