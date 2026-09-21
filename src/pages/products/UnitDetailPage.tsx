@@ -1,18 +1,19 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button, Image, Result, Typography, message, theme } from 'antd'
-import { ImageOff, Pencil } from 'lucide-react'
+import { ImageOff, Pencil, Printer } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
 import { MOCK_USER_ACCOUNTS } from '../../constants/mockUsers'
-import { canManageUnits, canViewProducts, homePath } from '../../constants/roles'
+import { canManageUnits, canPrintUnitCodes, canViewProducts, homePath } from '../../constants/roles'
 import { GRADE_LABELS, TAX_LABELS } from '../../constants/products'
 import { useIconColors } from '../../constants/iconColors'
 import { IMAGE_PREVIEW_CLOSE_ICON } from '../../constants/imagePreviewIcons'
 import { DetailDescriptions } from '../../components/DetailDescriptions'
 import { UnitAvailabilityTag } from './components/UnitAvailabilityTag'
 import { EditUnitModal } from './components/EditUnitModal'
+import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
@@ -24,6 +25,7 @@ export function UnitDetailPage() {
   const { token } = theme.useToken()
   const iconColors = useIconColors()
   const [editOpen, setEditOpen] = useState(false)
+  const [printOpen, setPrintOpen] = useState(false)
   const [version, setVersion] = useState(0)
   const [thumbnailHovered, setThumbnailHovered] = useState(false)
 
@@ -53,6 +55,7 @@ export function UnitDetailPage() {
 
   const product = MOCK_PRODUCTS.find(p => p.id === unit.productId)
   const canEdit = canManageUnits(user)
+  const canPrint = canPrintUnitCodes(user)
   const soldByUser = unit.soldAt ? MOCK_USER_ACCOUNTS.find(a => a.id === unit.soldBy) : undefined
 
   const allPhotos = (unit.conditionPhotos ?? []).map((src, i) => ({ src, label: `Condition ${i + 1}` }))
@@ -181,9 +184,14 @@ export function UnitDetailPage() {
             <Typography.Title level={4} style={{ margin: 0 }}>{unit.serialNumber}</Typography.Title>
             <UnitAvailabilityTag availability={unit.availability} />
           </div>
-          {canEdit && unit.availability !== 'sold' && (
-            <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {canPrint && (
+              <Button icon={<Printer size={16} strokeWidth={2.25} />} onClick={() => setPrintOpen(true)}>Print label</Button>
+            )}
+            {canEdit && unit.availability !== 'sold' && (
+              <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+            )}
+          </div>
         </div>
 
         <DetailDescriptions items={detailItems} />
@@ -230,6 +238,14 @@ export function UnitDetailPage() {
           setVersion(v => v + 1)
           message.success('Unit updated')
         }}
+      />
+
+      <PrintUnitLabelModal
+        open={printOpen}
+        unit={unit}
+        product={product ?? null}
+        merchantId={user.merchantId}
+        onClose={() => setPrintOpen(false)}
       />
     </div>
   )

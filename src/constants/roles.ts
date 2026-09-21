@@ -406,6 +406,21 @@ export function canManageCatalogProducts(user: AuthUser): boolean {
   return user.role === 'super_admin'
 }
 
+// Unit code (barcode/QR) permissions. Printing a label is a shop-floor
+// action — Staff up, on any unit they can already see, so a Staff member
+// tagging incoming stock doesn't need a manager. Super Admin has no units
+// of their own, same exclusion as the rest of Products.
+export function canPrintUnitCodes(user: AuthUser): boolean {
+  return user.role !== 'super_admin'
+}
+
+// Configuring what every label looks like is the opposite: it's merchant
+// settings, so it sits with the other Workspace Settings screens
+// (Admin/Owner) rather than with the people doing the printing.
+export function canConfigureBarcodeSettings(user: AuthUser): boolean {
+  return user.role !== 'super_admin' && isMerchantAdminOrAbove(user)
+}
+
 export function scopedContractTemplateList(actor: AuthUser, all: ContractTemplate[]): ContractTemplate[] {
   if (actor.role === 'super_admin') return []
   const inMerchant = all.filter(t => t.merchantId === actor.merchantId)

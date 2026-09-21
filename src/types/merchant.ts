@@ -20,6 +20,28 @@ export interface BankAccountProfile {
   isDefault: boolean
 }
 
+// Per the doc, label composition is a merchant-level setting rather than
+// something picked per print — so a branch can't quietly print a different
+// label format from the rest of the merchant.
+export type BarcodeCodeTypes = 'barcode' | 'qr' | 'both'
+
+// Which identifier the code encodes. Serial Number is the unit's own
+// primary identifier; Internal Unit ID is the system id, for merchants who
+// don't want the serial readable off a scan. Either way the Serial Number
+// stays printed as human-readable text (see the doc's note).
+export type BarcodeEncodedValue = 'serialNumber' | 'unitId'
+
+export interface BarcodeSettings {
+  codeTypes: BarcodeCodeTypes
+  encodedValue: BarcodeEncodedValue
+  // Optional human-readable lines printed under the code. Serial Number is
+  // always shown and so isn't listed here.
+  showProductName: boolean
+  showSkuCode: boolean
+  showBranch: boolean
+  showSalesPrice: boolean
+}
+
 export interface Merchant {
   id: string
   name: string
@@ -38,6 +60,7 @@ export interface Merchant {
   // the merchant-wide default every branch uses until that's built.
   collectionFeeEnabled: boolean
   collectionFeeAmount: number
+  barcodeSettings: BarcodeSettings
   // Captured at creation time (the doc's "Initial Owner account — name +
   // email"); ownerUserId links to the actual provisioned UserAccount once
   // one exists for this merchant. Kept separate rather than only storing

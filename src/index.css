@@ -1331,3 +1331,36 @@ label[for="password"]::after {
 .ant-avatar {
   border: none !important;
 }
+
+/* Unit code labels. The print copy is portalled to <body> (see
+   PrintUnitLabelModal) rather than living inside the drawer that shows the
+   preview — the drawer carries a transform for its own slide animation,
+   which would make `position: fixed` resolve against the drawer instead of
+   the page and drop the label off the paper. Off-screen entirely; printing
+   then suppresses the app shell around it (visibility rather than display,
+   so the label's ancestors keep their layout boxes and it doesn't reflow on
+   its way to the printer) and pins it to the top-left of the sheet. */
+.ifix-print-label {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .ifix-print-label,
+  .ifix-print-label * {
+    visibility: visible !important;
+  }
+
+  .ifix-print-label {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}

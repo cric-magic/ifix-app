@@ -3,7 +3,7 @@ import { Select } from '../../../components/AppSelect'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { AuthUser } from '../../../types/installment'
 import type { ContractFormat, Merchant } from '../../../types/merchant'
-import { generateMerchantId } from '../../../constants/mockMerchants'
+import { DEFAULT_BARCODE_SETTINGS, generateMerchantId } from '../../../constants/mockMerchants'
 
 interface Props {
   open: boolean
@@ -48,6 +48,7 @@ export function CreateMerchantModal({ open, actor, onClose, onCreated }: Props) 
       bankAccounts: [],
       collectionFeeEnabled: false,
       collectionFeeAmount: 0,
+      barcodeSettings: DEFAULT_BARCODE_SETTINGS,
       ownerName: values.ownerName,
       ownerEmail: values.ownerEmail,
       ownerUserId: null,

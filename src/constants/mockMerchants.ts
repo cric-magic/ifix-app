@@ -1,5 +1,19 @@
-import type { Merchant } from '../types/merchant'
+import type { BarcodeSettings, Merchant } from '../types/merchant'
 import { MERCHANT_ID, MERCHANT_NAME } from './mockUsers'
+
+// What a merchant gets before anyone visits Settings > Barcode: both code
+// types printed (a scanner that can't read one can read the other), the
+// Serial Number encoded (the identifier staff already know), and only the
+// product name alongside it. Sales price is off by default — labels sit on
+// stock that hasn't been priced for a specific contract yet.
+export const DEFAULT_BARCODE_SETTINGS: BarcodeSettings = {
+  codeTypes: 'both',
+  encodedValue: 'serialNumber',
+  showProductName: true,
+  showSkuCode: false,
+  showBranch: false,
+  showSalesPrice: false,
+}
 
 // Thai bank list — matches the app's existing Thai-market flavor (THB
 // formatting, Thai staff/customer names elsewhere in the mock data).
@@ -36,6 +50,7 @@ export const MOCK_MERCHANTS: Merchant[] = [
     ownerUserId: 'owner-1',
     collectionFeeEnabled: true,
     collectionFeeAmount: 200,
+    barcodeSettings: { ...DEFAULT_BARCODE_SETTINGS, showSkuCode: true, showBranch: true },
     createdBy: 'super-1',
     createdAt: '2023-11-01T09:10:00.000Z',
     suspendedBy: null,
@@ -71,6 +86,7 @@ export const MOCK_MERCHANTS: Merchant[] = [
     ownerUserId: null,
     collectionFeeEnabled: true,
     collectionFeeAmount: 150,
+    barcodeSettings: { ...DEFAULT_BARCODE_SETTINGS, codeTypes: 'qr', encodedValue: 'unitId' },
     createdBy: 'super-1',
     createdAt: '2024-03-14T09:00:00.000Z',
     suspendedBy: null,
@@ -90,6 +106,7 @@ export const MOCK_MERCHANTS: Merchant[] = [
     ownerUserId: null,
     collectionFeeEnabled: false,
     collectionFeeAmount: 0,
+    barcodeSettings: DEFAULT_BARCODE_SETTINGS,
     createdBy: 'super-1',
     createdAt: '2024-07-02T09:00:00.000Z',
     suspendedBy: 'super-1',

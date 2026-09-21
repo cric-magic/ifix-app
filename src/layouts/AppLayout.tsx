@@ -39,8 +39,13 @@ const SETTINGS_ITEMS = [
   { key: 'account', label: 'Account' },
   { key: 'bank-accounts', label: 'Bank Accounts' },
   { key: 'contract-templates', label: 'Contract Templates' },
+  { key: 'barcode', label: 'Barcode' },
   { key: 'members', label: 'Members' },
 ]
+
+// Tabs that only mean something inside a merchant workspace (see the
+// filter below for why Super Admin doesn't get them).
+const MERCHANT_ONLY_SETTINGS = ['bank-accounts', 'contract-templates', 'barcode']
 
 const ACCOUNT_ITEMS = [
   { key: 'general', label: 'Account' },
@@ -389,13 +394,13 @@ export function AppLayout() {
                   selectedKeys={[settingsKey]}
                   style={{ border: 'none', background: 'transparent' }}
                   items={SETTINGS_ITEMS
-                    // Bank accounts and Contract Templates are both
+                    // Bank Accounts, Contract Templates and Barcode are all
                     // merchant business data — Super Admin has no merchant
-                    // of their own for either tab to mean anything (they'd
+                    // of their own for any of them to mean anything (they'd
                     // manage a given merchant's bank accounts from that
                     // merchant's own Detail page; there's no equivalent
-                    // per-merchant template management surface yet).
-                    .filter(item => (item.key !== 'bank-accounts' && item.key !== 'contract-templates') || user.role !== 'super_admin')
+                    // per-merchant template or label surface yet).
+                    .filter(item => !MERCHANT_ONLY_SETTINGS.includes(item.key) || user.role !== 'super_admin')
                     .map(item => ({
                       ...item,
                       onClick: () => go(`/settings/${item.key}`),

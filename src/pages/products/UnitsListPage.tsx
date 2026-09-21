@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { App, Alert, ConfigProvider, Table, Button, Dropdown, Avatar, Input, theme } from 'antd'
-import { Pencil, Trash2, Plus, ChevronLeft, ChevronRight, MoreHorizontal, ImageOff, Search, Smartphone } from 'lucide-react'
+import { Pencil, Trash2, Plus, ChevronLeft, ChevronRight, MoreHorizontal, ImageOff, Printer, Search, Smartphone } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
-import { canManageUnits, scopedAllUnits, scopedProductList } from '../../constants/roles'
+import { canManageUnits, canPrintUnitCodes, scopedAllUnits, scopedProductList } from '../../constants/roles'
 import { AVAILABILITY_LABELS, GRADE_LABELS, TAX_LABELS } from '../../constants/products'
 import { useIconColors } from '../../constants/iconColors'
 import { Select } from '../../components/AppSelect'
@@ -14,6 +14,7 @@ import type { ProductUnit, UnitAvailability } from '../../types/product'
 import { UnitAvailabilityTag } from './components/UnitAvailabilityTag'
 import { EditUnitModal } from './components/EditUnitModal'
 import { CreateUnitModal } from './components/CreateUnitModal'
+import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 import { TableEmptyState } from '../../components/TableEmptyState'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
@@ -36,6 +37,7 @@ export function UnitsListPage() {
   const [version, setVersion] = useState(0)
   const [editingUnit, setEditingUnit] = useState<ProductUnit | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
+  const [printingUnit, setPrintingUnit] = useState<ProductUnit | null>(null)
   const [search, setSearch] = useState('')
   const [availability, setAvailability] = useState<AvailabilityFilter>('all')
 
@@ -136,16 +138,21 @@ export function UnitsListPage() {
       align: 'right',
       render: (_, u) => {
         const isSold = u.availability === 'sold'
+        const canPrint = canPrintUnitCodes(user)
         return (
           <Dropdown
             trigger={['click']}
             placement="bottomRight"
             menu={{
               items: [
+                // A label can be (re)printed at any point in a unit's life —
+                // including after it's sold, for a replacement sticker.
+                ...(canPrint ? [{ key: 'print', icon: <Printer size={15} strokeWidth={2.25} />, label: 'Print label' }] : []),
                 ...(isSold ? [] : [{ key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' }]),
                 ...(u.availability === 'available' ? [{ key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' }] : []),
               ],
               onClick: ({ key }) => {
+                if (key === 'print') setPrintingUnit(u)
                 if (key === 'edit') setEditingUnit(u)
                 if (key === 'remove') {
                   modal.confirm({
@@ -251,6 +258,16 @@ export function UnitsListPage() {
         onClose={() => setCreateOpen(false)}
         onCreated={handleCreate}
       />
+
+      {printingUnit && (
+        <PrintUnitLabelModal
+          open
+          unit={printingUnit}
+          product={productById.get(printingUnit.productId) ?? null}
+          merchantId={user.merchantId}
+          onClose={() => setPrintingUnit(null)}
+        />
+      )}
     </div>
   )
 }
