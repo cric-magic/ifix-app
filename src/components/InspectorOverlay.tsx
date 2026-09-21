@@ -143,6 +143,19 @@ function SideValues({ label, t, r, b, l, token, format = formatPx }: { label: st
   )
 }
 
+// Nearest ancestor that paints a solid background — what's actually visible
+// behind an element whose own background is transparent.
+function findInheritedBackground(el: HTMLElement): { color: string; source: string } | null {
+  for (let cur = el.parentElement; cur; cur = cur.parentElement) {
+    const bg = getComputedStyle(cur).backgroundColor
+    if (bg && !isTransparentColor(bg)) {
+      const cls = typeof cur.className === 'string' && cur.className ? `.${cur.className.split(' ')[0]}` : ''
+      return { color: bg, source: cur.tagName.toLowerCase() + cls }
+    }
+  }
+  return null
+}
+
 // Same row shape as SideValues' Row above (label left, value right,
 // space-between) so a color reads exactly like a padding/margin value does.
 function ColorRow({ label, value, lookup, token }: { label: string; value: string; lookup: (v: string) => string | null; token: any }) {
@@ -291,21 +304,50 @@ export function InspectorOverlay() {
     // demo's own caption labels ("Default", "Hover", ...) and backdrop div
     // aren't the thing being documented, so hovering them should show
     // nothing rather than incorrectly implying they're part of the spec.
-    const resolveTarget = (target: Element): HTMLElement | null => {
+    // A "bare wrapper" is a layout div that paints nothing itself — no
+    // background, border, or shadow, and no text of its own. Hovering empty
+    // space usually lands on one of these, which reports a transparent
+    // Background and hides which surface is actually being seen there. Those
+    // snap up to the nearest ancestor that does paint a background. Text
+    // leaves, painted boxes and bordered boxes are left alone, and holding
+    // Alt bypasses the snap for inspecting a wrapper's own padding/gap.
+    const paintsBackground = (cs: CSSStyleDeclaration) => {
+      if (cs.backgroundImage !== 'none') return true
+      const m = cs.backgroundColor.match(/rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(?:,\s*([\d.]+))?\s*\)/)
+      return !!m && (m[1] === undefined || parseFloat(m[1]) > 0)
+    }
+    const isBareWrapper = (el: HTMLElement) => {
+      const cs = getComputedStyle(el)
+      if (paintsBackground(cs)) return false
+      if (cs.boxShadow !== 'none') return false
+      if (['Top', 'Right', 'Bottom', 'Left'].some(s => parseFloat(cs[`border${s}Width` as 'borderTopWidth']) > 0)) return false
+      return !Array.from(el.childNodes).some(n => n.nodeType === Node.TEXT_NODE && n.textContent?.trim())
+    }
+    const snapToSurface = (el: HTMLElement): HTMLElement => {
+      if (!isBareWrapper(el)) return el
+      let cur: HTMLElement | null = el.parentElement
+      while (cur && containerEl!.contains(cur)) {
+        if (paintsBackground(getComputedStyle(cur))) return cur
+        cur = cur.parentElement
+      }
+      return el
+    }
+
+    const resolveTarget = (target: Element, altKey = false): HTMLElement | null => {
       const atomic = target.closest('button, a, input, textarea, select, .ant-btn, [role="button"]') as HTMLElement | null
       if (atomic) return atomic
       if (target.closest('[data-ifix-inspect-atomic-only]')) return null
-      return target as HTMLElement
+      return altKey ? (target as HTMLElement) : snapToSurface(target as HTMLElement)
     }
 
     function onMove(e: MouseEvent) {
       if (isExcluded(e.target)) return
-      setHoverEl(resolveTarget(e.target as Element))
+      setHoverEl(resolveTarget(e.target as Element, e.altKey))
     }
     function onClick(e: MouseEvent) {
       if (isExcluded(e.target)) return
       const rawTarget = e.target as HTMLElement
-      const target = resolveTarget(rawTarget)
+      const target = resolveTarget(rawTarget, e.altKey)
       if (!isRevealTrigger(rawTarget)) {
         e.preventDefault()
         e.stopPropagation()
@@ -490,6 +532,20 @@ export function InspectorOverlay() {
           <div>
             <div style={{ color: token.colorTextTertiary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Colors</div>
             <ColorRow label="Background" value={cs.backgroundColor} lookup={lookupColor} token={token} />
+            {isTransparentColor(cs.backgroundColor) && (() => {
+              const inherited = findInheritedBackground(activeEl)
+              if (!inherited) return null
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                    <span style={{ color: token.colorTextTertiary }}>Background</span>
+                    <span style={{ color: token.colorTextTertiary }}>Transparent</span>
+                  </div>
+                  <ColorRow label="Behind" value={inherited.color} lookup={lookupColor} token={token} />
+                  <div style={{ color: token.colorTextTertiary, fontSize: 11, textAlign: 'right' }}>from {inherited.source}</div>
+                </>
+              )
+            })()}
             <ColorRow label="Text" value={cs.color} lookup={lookupColor} token={token} />
             {(borderT > 0 || borderR > 0 || borderB > 0 || borderL > 0) && (
               <ColorRow label="Border" value={cs.borderTopColor} lookup={lookupColor} token={token} />
