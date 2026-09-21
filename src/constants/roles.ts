@@ -260,10 +260,20 @@ export function canManageUnits(user: AuthUser): boolean {
   return canManageProducts(user)
 }
 
+// Who sees units beyond their own branch. Admin/Owner see the whole
+// merchant; everyone below them is branch-scoped — the same rule
+// scopedContractList uses, rather than naming branch_manager alone. Staff
+// can't manage units but do read them (the catalog's Available Units count,
+// a product's Units tab), and that count has to mean "available to me" or
+// it sends them looking for stock sitting in another branch.
+function seesWholeMerchantUnits(actor: AuthUser): boolean {
+  return isMerchantAdminOrAbove(actor)
+}
+
 export function scopedUnitList(actor: AuthUser, productId: string, all: ProductUnit[]): ProductUnit[] {
   const forProduct = all.filter(u => u.productId === productId)
-  if (actor.role === 'branch_manager') return forProduct.filter(u => u.branch === actor.branch)
-  return forProduct
+  if (seesWholeMerchantUnits(actor)) return forProduct
+  return forProduct.filter(u => u.branch === actor.branch)
 }
 
 // Global unit list (across all products) — same merchant/branch scoping as
@@ -271,8 +281,8 @@ export function scopedUnitList(actor: AuthUser, productId: string, all: ProductU
 export function scopedAllUnits(actor: AuthUser, allUnits: ProductUnit[], allProducts: Product[]): ProductUnit[] {
   const merchantProductIds = new Set(scopedProductList(actor, allProducts).map(p => p.id))
   const inMerchant = allUnits.filter(u => merchantProductIds.has(u.productId))
-  if (actor.role === 'branch_manager') return inMerchant.filter(u => u.branch === actor.branch)
-  return inMerchant
+  if (seesWholeMerchantUnits(actor)) return inMerchant
+  return inMerchant.filter(u => u.branch === actor.branch)
 }
 
 // Merchant permissions — per the Merchant doc's Non-functional Requirements

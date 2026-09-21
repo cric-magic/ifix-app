@@ -138,7 +138,10 @@ export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
             label="Product Photo(s)"
             name="photos"
             rules={[{ required: true, message: 'Required for new products' }]}
-            help="Sealed box photo"
+            // `extra`, not `help` — antd's help slot replaces the validation
+            // message, so the hint was showing in red in place of the actual
+            // error when this failed. Same fix as CreateProductModal.
+            extra="Sealed box photo — up to 10"
           >
             <PhotoUpload maxCount={10} />
           </Form.Item>
