@@ -591,6 +591,28 @@ body {
   padding-inline: 12px;
 }
 
+/* Multiple-mode Select, once it actually has tags: each tag carries its own
+   4px margin-inline-end as the inter-tag gap, so the shared 12px field
+   padding above left the first tag sitting three times further from the
+   edge than the tags sit from each other. Matching the start padding to
+   that same 4px (Spacing 1) evens the row out. Scoped with :has() so an
+   empty multiple Select keeps the shared 12px, in line with Input/
+   DatePicker, and the end padding is left alone since the suffix arrow
+   still needs the full inset. */
+.ant-select-multiple:has(.ant-select-selection-item) {
+  padding-inline-start: 4px;
+}
+
+/* antd absolutely positions the multiple-mode placeholder at
+   inset-inline-start: 8px — the tag's own inner padding — so an empty
+   multiple Select lines its placeholder up with where a tag's *text*
+   would start rather than where every other field's text starts. That put
+   it 8px right of the Input/single-Select placeholders stacked above it in
+   the same form. Zeroed so the field's own padding is the only inset. */
+.ant-select-multiple .ant-select-placeholder {
+  inset-inline-start: 0;
+}
+
 /* Browser autofill (Chrome/Safari/Edge) paints its own yellow/lavender
    background via an internal UA style that ignores background-color
    entirely — the only way to override it is this inset box-shadow trick,
@@ -700,6 +722,17 @@ label[for="password"]::after {
 .ant-cascader-dropdown {
   border: 0.5px solid var(--ant-color-border);
   box-shadow: var(--ant-box-shadow-secondary) !important;
+}
+
+/* Multiple-select popups (tagged by AppSelect — see the note there) draw a
+   check icon on every chosen row, so the selected fill says the same thing
+   twice and stacks into a block once several rows are selected. Dropped
+   here, leaving the check as the only cue. Single-select popups keep the
+   fill set by optionSelectedBg in App.tsx, since there it IS the cue.
+   The :not() keeps hover working: the row under the pointer still fills,
+   selected or not. */
+.ifix-select-multiple-popup .ant-select-item-option-selected:not(.ant-select-item-option-active) {
+  background: transparent;
 }
 
 /* Tag: a touch more breathing room than antd's default (0 top/bottom padding,

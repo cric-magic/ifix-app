@@ -472,16 +472,18 @@ function AppThemed() {
           itemHoverBg: baseToken.colorFillSecondary,
         },
         Select: {
-          // colorFillTertiary looked right on paper (weaker than Secondary,
-          // as antd's own fill scale intends) but this theme's solid-color
-          // conversion (solidize() above) blends it against colorBgLayout,
-          // not colorBgElevated — the surface it actually renders on here —
-          // and the two happened to land on the exact same value, so the
-          // "selected" highlight silently disappeared into the dropdown
-          // background. colorFill (one step past Secondary/hover) keeps the
-          // persistent selected state visibly stronger than the momentary
-          // hover instead.
-          optionSelectedBg: baseToken.colorFill,
+          // Same fill as optionActiveBg (hover) below rather than the
+          // heavier colorFill this used to be: at colorFill the selected row
+          // read as a solid block, which piled up in multi-select where
+          // several rows carry it at once — and the check icon antd already
+          // draws on a selected row makes a *stronger* fill redundant.
+          // Not colorFillTertiary, which looks right on paper (weaker than
+          // Secondary, as antd's fill scale intends) but which this theme's
+          // solid-color conversion (solidize() above) blends against
+          // colorBgLayout rather than colorBgElevated — the surface it
+          // actually renders on — landing on the exact same value and making
+          // the highlight vanish into the dropdown background.
+          optionSelectedBg: baseToken.colorFillSecondary,
           optionSelectedColor: baseToken.colorText,
           // The dropdown popup itself renders on colorBgElevated (antd's
           // own default, not overridden here) — optionActiveBg (hover) needs
