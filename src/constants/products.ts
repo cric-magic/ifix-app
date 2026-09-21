@@ -1,4 +1,6 @@
 import type { ProductCategory, ProductType, ProductStatus, UnitGrade, UnitTax, UnitAvailability } from '../types/product'
+import type { ProductOptionType } from '../types/productOption'
+import { MOCK_PRODUCT_OPTIONS } from './mockProductOptions'
 
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   smartphone: 'Smartphone',
@@ -36,26 +38,14 @@ export const AVAILABILITY_LABELS: Record<UnitAvailability, string> = {
   sold: 'Sold',
 }
 
-// Storage and Color are master data: SuperAdmin owns the lists and merchants
-// pick from them without being able to add their own values. These seeds are
-// the starting catalogue — the SuperAdmin management screen that edits them
-// is a later phase, so for now they're the fixed source both the SKU form
-// and that future screen read from.
-export const STORAGE_OPTIONS = ['64GB', '128GB', '256GB', '512GB', '1TB', '2TB']
-
-export const COLOR_OPTIONS = [
-  'Space Black',
-  'Midnight',
-  'Starlight',
-  'Silver',
-  'Graphite',
-  'Phantom Black',
-  'Cream',
-  'Blue',
-  'Purple',
-  'Green',
-  'White',
-]
+// Storage and Color are master data owned by Super Admin (see
+// mockProductOptions.ts and Settings > Product Options) rather than fixed
+// lists — these readers return the values a merchant may currently pick.
+// Disabled options are filtered out here; a SKU already holding a disabled
+// value keeps it via optionsWithCurrent below.
+export function enabledOptionValues(type: ProductOptionType): string[] {
+  return MOCK_PRODUCT_OPTIONS.filter(o => o.type === type && o.enabled).map(o => o.value)
+}
 
 // RAM and Connection differ from Storage/Color: the doc fixes them as
 // predefined values with free text explicitly disallowed, and they are not

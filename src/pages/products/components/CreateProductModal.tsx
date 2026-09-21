@@ -6,7 +6,7 @@ import type { AuthUser } from '../../../types/installment'
 import type { Product, ProductCategory, ProductType, ProductStatus } from '../../../types/product'
 import {
   CATEGORY_LABELS, TYPE_LABELS, STATUS_LABELS,
-  STORAGE_OPTIONS, COLOR_OPTIONS, RAM_OPTIONS, CONNECTION_OPTIONS, optionsWithCurrent,
+  RAM_OPTIONS, CONNECTION_OPTIONS, enabledOptionValues, optionsWithCurrent,
 } from '../../../constants/products'
 
 interface Props {
@@ -91,13 +91,13 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
         {/* Storage/Color are SuperAdmin master data and RAM/Connection are
             fixed lists — all four are selects, never free text. */}
         <Form.Item label="Storage" name="storage">
-          <Select placeholder="Select storage" allowClear options={optionsWithCurrent(STORAGE_OPTIONS)} />
+          <Select placeholder="Select storage" allowClear options={optionsWithCurrent(enabledOptionValues('storage'))} />
         </Form.Item>
         <Form.Item label="RAM" name="ram">
           <Select placeholder="Select RAM" allowClear options={optionsWithCurrent(RAM_OPTIONS)} />
         </Form.Item>
         <Form.Item label="Color" name="color" rules={[{ required: true, message: 'Required' }]}>
-          <Select placeholder="Select color" options={optionsWithCurrent(COLOR_OPTIONS)} />
+          <Select placeholder="Select color" options={optionsWithCurrent(enabledOptionValues('color'))} />
         </Form.Item>
         <Form.Item label="Connection" name="connection">
           <Select placeholder="Select connection" allowClear options={optionsWithCurrent(CONNECTION_OPTIONS)} />

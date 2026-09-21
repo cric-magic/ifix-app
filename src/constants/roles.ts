@@ -389,6 +389,16 @@ export function canManageContractTemplates(user: AuthUser): boolean {
   return isMerchantAdminOrAbove(user)
 }
 
+// Product master data (the global Color/Storage option lists) is the mirror
+// image of the merchant-scoped settings above: per the doc, "SuperAdmin
+// manages the global Color and Storage options available to all merchants"
+// and "Merchant Admin/Owner can select these options but cannot create new
+// Color or Storage options" — so Super Admin is the only role that reaches
+// this screen at all.
+export function canManageProductOptions(user: AuthUser): boolean {
+  return user.role === 'super_admin'
+}
+
 export function scopedContractTemplateList(actor: AuthUser, all: ContractTemplate[]): ContractTemplate[] {
   if (actor.role === 'super_admin') return []
   const inMerchant = all.filter(t => t.merchantId === actor.merchantId)

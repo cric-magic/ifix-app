@@ -6,7 +6,7 @@ import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { Product, ProductCategory, ProductType, ProductStatus } from '../../../types/product'
 import {
   CATEGORY_LABELS, TYPE_LABELS, STATUS_LABELS,
-  STORAGE_OPTIONS, COLOR_OPTIONS, RAM_OPTIONS, CONNECTION_OPTIONS, optionsWithCurrent,
+  RAM_OPTIONS, CONNECTION_OPTIONS, enabledOptionValues, optionsWithCurrent,
 } from '../../../constants/products'
 
 interface Props {
@@ -107,13 +107,13 @@ export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
             data, RAM/Connection from fixed lists. optionsWithCurrent keeps a
             value that has since been disabled upstream from silently blanking. */}
         <Form.Item label="Storage" name="storage">
-          <Select placeholder="Select storage" allowClear options={optionsWithCurrent(STORAGE_OPTIONS, product?.storage)} />
+          <Select placeholder="Select storage" allowClear options={optionsWithCurrent(enabledOptionValues('storage'), product?.storage)} />
         </Form.Item>
         <Form.Item label="RAM" name="ram">
           <Select placeholder="Select RAM" allowClear options={optionsWithCurrent(RAM_OPTIONS, product?.ram)} />
         </Form.Item>
         <Form.Item label="Color" name="color" rules={[{ required: true, message: 'Required' }]}>
-          <Select placeholder="Select color" options={optionsWithCurrent(COLOR_OPTIONS, product?.color)} />
+          <Select placeholder="Select color" options={optionsWithCurrent(enabledOptionValues('color'), product?.color)} />
         </Form.Item>
         <Form.Item label="Connection" name="connection">
           <Select placeholder="Select connection" allowClear options={optionsWithCurrent(CONNECTION_OPTIONS, product?.connection)} />

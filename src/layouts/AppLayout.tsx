@@ -39,6 +39,9 @@ const SETTINGS_ITEMS = [
   { key: 'account', label: 'Account' },
   { key: 'bank-accounts', label: 'Bank Accounts' },
   { key: 'contract-templates', label: 'Contract Templates' },
+  // Global Color/Storage master data — the inverse of the two tabs above:
+  // Super Admin only, since merchants read those lists but can't edit them.
+  { key: 'product-options', label: 'Product Options', superAdminOnly: true },
   { key: 'members', label: 'Members' },
 ]
 
@@ -387,6 +390,7 @@ export function AppLayout() {
                     // merchant's own Detail page; there's no equivalent
                     // per-merchant template management surface yet).
                     .filter(item => (item.key !== 'bank-accounts' && item.key !== 'contract-templates') || user.role !== 'super_admin')
+                    .filter(item => !item.superAdminOnly || user.role === 'super_admin')
                     .map(item => ({
                       ...item,
                       onClick: () => go(`/settings/${item.key}`),
