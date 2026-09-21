@@ -10,7 +10,7 @@ import { useAuth, useCurrentUser } from '../contexts/AuthContext'
 import { useDevTools } from '../contexts/DevToolsContext'
 import { useAppWindowContainer } from '../contexts/AppWindowContext'
 import { useHeaderContent } from '../contexts/HeaderContentContext'
-import { canManageUsers, homePath, productsHomePath, scopedUserList, scopedBranchList, scopedContractList, scopedCustomerList } from '../constants/roles'
+import { canManageUsers, homePath, scopedUserList, scopedBranchList, scopedContractList, scopedCustomerList } from '../constants/roles'
 import { useIconColors } from '../constants/iconColors'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
 import { MOCK_PRODUCTS } from '../constants/mockProducts'
@@ -56,6 +56,7 @@ const PRODUCTS_ITEMS = [
 ]
 
 const SUPER_ADMIN_PRODUCTS_ITEMS = [
+  { key: 'catalog', label: 'Catalog' },
   { key: 'attributes', label: 'Attributes' },
 ]
 
@@ -502,9 +503,8 @@ export function AppLayout() {
                     }] : []),
                     // Products is the one section both sides share, but for
                     // different content: a merchant's own catalog/units vs
-                    // Super Admin's platform-level Attributes (see
+                    // Super Admin's standard catalog and Attributes (see
                     // PRODUCTS_ITEMS / SUPER_ADMIN_PRODUCTS_ITEMS above).
-                    // productsHomePath picks the right landing tab.
                     {
                       key: 'products',
                       icon: navIcon(<Package size={17} strokeWidth={2.25} />),
@@ -524,7 +524,7 @@ export function AppLayout() {
                           />
                         </div>
                       ),
-                      onClick: () => go(productsHomePath(user)),
+                      onClick: () => go('/products/catalog'),
                     },
                     // Same exclusion as Contracts above — Customers is also
                     // merchant-scoped, per canViewCustomers.

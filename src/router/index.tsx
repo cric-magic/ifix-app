@@ -4,13 +4,12 @@ import { AppLayout } from '../layouts/AppLayout'
 import { RequireAuth } from './RequireAuth'
 import { HeaderContentProvider } from '../contexts/HeaderContentContext'
 import { HomeRedirect } from './HomeRedirect'
-import { ProductsIndexRedirect } from './ProductsIndexRedirect'
 import { SmartCalculatorPage } from '../pages/calculator/SmartCalculatorPage'
 import { CreateContractPage } from '../pages/contracts/CreateContractPage'
 import { EditContractPage } from '../pages/contracts/EditContractPage'
 import { ContractsListPage } from '../pages/contracts/ContractsListPage'
 import { ContractDetailPage } from '../pages/contracts/ContractDetailPage'
-import { ProductsPage } from '../pages/products/ProductsPage'
+import { ProductsCatalogRoute } from './ProductsCatalogRoute'
 import { ProductDetailPage } from '../pages/products/ProductDetailPage'
 import { UnitsListPage } from '../pages/products/UnitsListPage'
 import { UnitDetailPage } from '../pages/products/UnitDetailPage'
@@ -55,8 +54,8 @@ export const router = createBrowserRouter([
           { path: 'contracts', element: <ContractsListPage /> },
           { path: 'contracts/:id', element: <ContractDetailPage /> },
           { path: 'contracts/:id/edit', element: <EditContractPage /> },
-          { path: 'products', element: <ProductsIndexRedirect /> },
-          { path: 'products/catalog', element: <ProductsPage /> },
+          { path: 'products', element: <Navigate to="/products/catalog" replace /> },
+          { path: 'products/catalog', element: <ProductsCatalogRoute /> },
           { path: 'products/catalog/:id', element: <ProductDetailPage /> },
           { path: 'products/unit', element: <UnitsListPage /> },
           { path: 'products/unit/:id', element: <UnitDetailPage /> },

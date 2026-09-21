@@ -26,6 +26,10 @@ export interface Product {
   status: ProductStatus
   photos?: string[]
   merchantId: string
+  // Set when this SKU was adopted from the global catalog. Provenance only:
+  // the record is a copy the merchant fully owns, so catalog edits never
+  // reach it and the merchant can rename or change anything afterward.
+  sourceCatalogId?: string
   createdBy: string
   createdAt: string
   deletedAt: string | null
