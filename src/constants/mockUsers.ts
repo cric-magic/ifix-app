@@ -114,6 +114,10 @@ export const MOCK_USER_ACCOUNTS: UserAccount[] = [
     role: 'staff',
     merchantId: MERCHANT_ID,
     branch: 'Khon Kaen',
+    // Restricted to phones and accessories, so the catalog hides the Tablet
+    // and Laptop SKUs for this account — the other Staff account is left
+    // unrestricted to show the default behaviour alongside it.
+    permittedCategories: ['smartphone', 'accessory'],
     status: 'active',
     isTemporaryPassword: false,
     createdBy: 'admin-1',

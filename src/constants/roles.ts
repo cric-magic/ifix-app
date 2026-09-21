@@ -1,6 +1,6 @@
 import type { AuthUser } from '../types/installment'
 import type { UserAccount, UserRole } from '../types/user'
-import type { Product, ProductUnit } from '../types/product'
+import type { Product, ProductCategory, ProductUnit } from '../types/product'
 import type { Merchant } from '../types/merchant'
 import type { Branch } from '../types/branch'
 import type { Contract } from '../types/contract'
@@ -54,6 +54,7 @@ export function toAuthUser(account: UserAccount): AuthUser {
     role: account.role,
     branch: account.branch,
     merchantId: account.merchantId,
+    permittedCategories: account.permittedCategories,
   }
 }
 
@@ -232,9 +233,24 @@ export function canViewCostPrice(user: AuthUser): boolean {
   return canManageProducts(user)
 }
 
+// Staff can be restricted to a subset of categories by a BM/Admin/Owner
+// ("Restrict Product Category Visibility"). An empty or absent list is the
+// default and means unrestricted, so this only ever narrows the catalog for
+// a Staff account that has actually been given a list.
+export function permittedCategoriesFor(actor: AuthUser): ProductCategory[] | null {
+  if (actor.role !== 'staff') return null
+  const categories = actor.permittedCategories
+  return categories && categories.length > 0 ? categories : null
+}
+
 export function scopedProductList(actor: AuthUser, all: Product[]): Product[] {
   if (actor.role === 'super_admin') return []
-  return all.filter(p => p.merchantId === actor.merchantId && !p.deletedAt)
+  const permitted = permittedCategoriesFor(actor)
+  return all.filter(p =>
+    p.merchantId === actor.merchantId
+    && !p.deletedAt
+    && (!permitted || permitted.includes(p.category)),
+  )
 }
 
 // Unit permissions — "Assign / Update Product Units" in the doc's matrix has

@@ -3,6 +3,8 @@ import { Select } from '../../../components/AppSelect'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { AuthUser } from '../../../types/installment'
 import type { UserAccount, UserRole } from '../../../types/user'
+import type { ProductCategory } from '../../../types/product'
+import { CATEGORY_LABELS } from '../../../constants/products'
 import { assignableRoles, ROLE_LABELS } from '../../../constants/roles'
 import { MOCK_USER_ACCOUNTS, generateTempPassword, MERCHANT_ID } from '../../../constants/mockUsers'
 import { MOCK_MERCHANTS } from '../../../constants/mockMerchants'
@@ -23,9 +25,12 @@ interface FormValues {
   role: UserRole
   branch?: string
   merchantId?: string
+  permittedCategories?: ProductCategory[]
 }
 
 const BRANCH_ROLES: UserRole[] = ['branch_manager', 'staff']
+
+const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label }))
 
 export function CreateUserModal({ open, actor, onClose, onCreated }: Props) {
   const [form] = Form.useForm<FormValues>()
@@ -52,6 +57,11 @@ export function CreateUserModal({ open, actor, onClose, onCreated }: Props) {
       role: values.role,
       merchantId: actor.role === 'super_admin' ? values.merchantId : actor.merchantId,
       branch: BRANCH_ROLES.includes(values.role) ? values.branch : undefined,
+      // Staff-only, and an empty selection stays undefined so the account
+      // reads as unrestricted rather than as "restricted to nothing".
+      permittedCategories: values.role === 'staff' && values.permittedCategories?.length
+        ? values.permittedCategories
+        : undefined,
       status: 'created',
       isTemporaryPassword: true,
       createdBy: actor.id,
@@ -106,6 +116,20 @@ export function CreateUserModal({ open, actor, onClose, onCreated }: Props) {
         {role && BRANCH_ROLES.includes(role) && (
           <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Required' }]}>
             <Select placeholder="Select branch" options={BRANCHES.map(b => ({ value: b, label: b }))} />
+          </Form.Item>
+        )}
+        {role === 'staff' && (
+          <Form.Item
+            label="Product Categories"
+            name="permittedCategories"
+            help="Leave empty to allow every category"
+          >
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="All categories"
+              options={CATEGORY_OPTIONS}
+            />
           </Form.Item>
         )}
       </Form>

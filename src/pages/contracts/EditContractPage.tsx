@@ -20,7 +20,7 @@ import { MOCK_CUSTOMERS, findCustomerByNationalId, generateCustomerId } from '..
 import { MOCK_CONTRACTS } from '../../constants/mockContracts'
 import { calcFixRate } from '../../utils/calculator'
 import { submitContractForApproval } from '../../utils/contract'
-import { canEditContractFields, isMerchantAdminOrAbove, scopedContractList } from '../../constants/roles'
+import { canEditContractFields, isMerchantAdminOrAbove, scopedContractList, scopedProductList } from '../../constants/roles'
 import type { Customer } from '../../types/customer'
 import type { Contract } from '../../types/contract'
 
@@ -419,7 +419,7 @@ export function EditContractPage() {
                     placeholder="Search brand or model"
                     optionFilterProp="label"
                     onChange={handleProductChange}
-                    options={MOCK_PRODUCTS.filter(p => p.merchantId === actor.merchantId && !p.deletedAt).map(p => ({
+                    options={scopedProductList(actor, MOCK_PRODUCTS).map(p => ({
                       value: p.id,
                       label: `${p.brand} ${p.name}${p.storage ? ` · ${p.storage}` : ''} (${p.type === 'used' ? 'Used' : 'New'})`,
                     }))}

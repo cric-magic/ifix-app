@@ -7,6 +7,7 @@ import { MOCK_USER_ACCOUNTS, generateTempPassword } from '../../constants/mockUs
 import { ROLE_LABELS, canManageTargetUser, canViewUserList, homePath, scopedUserList } from '../../constants/roles'
 import { getAvatarUrl } from '../../utils/avatar'
 import { SettingsCard, SettingsRow } from '../../components/SettingsCard'
+import { CATEGORY_LABELS } from '../../constants/products'
 import { UserStatusTag } from './components/UserStatusTag'
 import { EditUserModal } from './components/EditUserModal'
 import { TempPasswordModal } from './components/TempPasswordModal'
@@ -143,6 +144,13 @@ export function UserDetailPage() {
         <SettingsRow label="Staff ID">{account.staffId}</SettingsRow>
         <SettingsRow label="Role">{ROLE_LABELS[account.role]}</SettingsRow>
         {account.branch && <SettingsRow label="Branch">{account.branch}</SettingsRow>}
+        {account.role === 'staff' && (
+          <SettingsRow label="Product Categories">
+            {account.permittedCategories?.length
+              ? account.permittedCategories.map(c => CATEGORY_LABELS[c]).join(', ')
+              : 'All categories'}
+          </SettingsRow>
+        )}
       </SettingsCard>
 
       <SettingsCard title="Contact">

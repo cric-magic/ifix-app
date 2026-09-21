@@ -1,4 +1,5 @@
 import type { UserRole } from './user'
+import type { ProductCategory } from './product'
 
 export type { UserRole }
 
@@ -15,6 +16,9 @@ export interface AuthUser {
   role: UserRole
   branch?: string
   merchantId?: string
+  // Carried through from UserAccount so the catalog scoping helpers can see
+  // it — undefined/empty means unrestricted. Only ever set for Staff.
+  permittedCategories?: ProductCategory[]
 }
 
 // Legacy flat product shape used only by the standalone Smart Calculator

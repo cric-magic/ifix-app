@@ -4,6 +4,8 @@ import { Select } from '../../../components/AppSelect'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { AuthUser } from '../../../types/installment'
 import type { UserAccount, UserRole } from '../../../types/user'
+import type { ProductCategory } from '../../../types/product'
+import { CATEGORY_LABELS } from '../../../constants/products'
 import { assignableRoles, ROLE_LABELS } from '../../../constants/roles'
 import { BRANCHES } from '../../../constants/mockData'
 
@@ -21,9 +23,12 @@ interface FormValues {
   phone: string
   role: UserRole
   branch?: string
+  permittedCategories?: ProductCategory[]
 }
 
 const BRANCH_ROLES: UserRole[] = ['branch_manager', 'staff']
+
+const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label }))
 
 export function EditUserModal({ open, actor, account, onClose, onUpdated }: Props) {
   const [form] = Form.useForm<FormValues>()
@@ -39,6 +44,7 @@ export function EditUserModal({ open, actor, account, onClose, onUpdated }: Prop
         phone: account.phone,
         role: account.role,
         branch: account.branch,
+        permittedCategories: account.permittedCategories,
       })
     }
   }, [account, form])
@@ -50,6 +56,11 @@ export function EditUserModal({ open, actor, account, onClose, onUpdated }: Prop
     account.phone = values.phone
     account.role = values.role
     account.branch = BRANCH_ROLES.includes(values.role) ? values.branch : undefined
+    // Clearing the selection restores full catalog visibility, and a role
+    // change away from Staff drops the restriction entirely.
+    account.permittedCategories = values.role === 'staff' && values.permittedCategories?.length
+      ? values.permittedCategories
+      : undefined
     onUpdated()
   }
 
@@ -84,6 +95,20 @@ export function EditUserModal({ open, actor, account, onClose, onUpdated }: Prop
         {role && BRANCH_ROLES.includes(role) && (
           <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Required' }]}>
             <Select options={BRANCHES.map(b => ({ value: b, label: b }))} />
+          </Form.Item>
+        )}
+        {role === 'staff' && (
+          <Form.Item
+            label="Product Categories"
+            name="permittedCategories"
+            help="Leave empty to allow every category"
+          >
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="All categories"
+              options={CATEGORY_OPTIONS}
+            />
           </Form.Item>
         )}
       </Form>
