@@ -6,7 +6,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
-import { canManageUnits, canPrintUnitCodes, scopedAllUnits, scopedProductList } from '../../constants/roles'
+import { canManageUnits, canPrintUnitCodes, canViewUnits, scopedAllUnits, scopedProductList } from '../../constants/roles'
 import { AVAILABILITY_LABELS, GRADE_LABELS, TAX_LABELS } from '../../constants/products'
 import { useIconColors } from '../../constants/iconColors'
 import { Select } from '../../components/AppSelect'
@@ -41,16 +41,21 @@ export function UnitsListPage() {
   const [search, setSearch] = useState('')
   const [availability, setAvailability] = useState<AvailabilityFilter>('all')
 
-  if (!canManageUnits(user)) {
+  // Staff reach this list read-only, to find a unit and print its label
+  // (the doc's "Generate & Print Barcode — Staff ✅ (Own branch)"); every
+  // write action below is gated on canManageUnits separately.
+  if (!canViewUnits(user)) {
     return (
       <Alert
         type="error"
-        message="Access Denied"
-        description="The unit list is only accessible to Branch Manager and above."
+        message="Not applicable"
+        description="Units are scoped to a merchant workspace. Super Admin operates at the platform level."
         showIcon
       />
     )
   }
+
+  const canManage = canManageUnits(user)
 
   void version
   const allUnits = scopedAllUnits(user, MOCK_PRODUCT_UNITS, MOCK_PRODUCTS)
@@ -148,8 +153,8 @@ export function UnitsListPage() {
                 // A label can be (re)printed at any point in a unit's life —
                 // including after it's sold, for a replacement sticker.
                 ...(canPrint ? [{ key: 'print', icon: <Printer size={15} strokeWidth={2.25} />, label: 'Print label' }] : []),
-                ...(isSold ? [] : [{ key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' }]),
-                ...(u.availability === 'available' ? [{ key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' }] : []),
+                ...(canManage && !isSold ? [{ key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' }] : []),
+                ...(canManage && u.availability === 'available' ? [{ key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' }] : []),
               ],
               onClick: ({ key }) => {
                 if (key === 'print') setPrintingUnit(u)
@@ -192,9 +197,11 @@ export function UnitsListPage() {
             style={{ width: 160 }}
           />
         </div>
-        <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
-          Add Unit
-        </Button>
+        {canManage && (
+          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
+            Add Unit
+          </Button>
+        )}
       </div>
       <ConfigProvider theme={{
         components: {

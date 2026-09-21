@@ -253,9 +253,14 @@ export function scopedProductList(actor: AuthUser, all: Product[]): Product[] {
   )
 }
 
-// Unit permissions — "Assign / Update Product Units" in the doc's matrix has
-// the same actor set as product management (Staff ❌, BM+ ✅), but BM is
-// scoped to their own branch rather than the whole merchant.
+// Unit permissions. The doc's matrix splits these two apart: "Assign /
+// Update Product Units" is Staff ❌ / BM+ ✅, but "Generate & Print Barcode"
+// is Staff ✅ (Own branch) — so Staff reach the unit list and a unit's
+// detail read-only, with every write action hidden, and print from there.
+export function canViewUnits(user: AuthUser): boolean {
+  return canViewProducts(user)
+}
+
 export function canManageUnits(user: AuthUser): boolean {
   return canManageProducts(user)
 }

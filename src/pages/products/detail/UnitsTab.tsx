@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { App, Button, ConfigProvider, Dropdown, Table, Typography, theme } from 'antd'
-import { Plus, Pencil, Trash2, MoreHorizontal, Smartphone } from 'lucide-react'
+import { Plus, Pencil, Printer, Trash2, MoreHorizontal, Smartphone } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import type { AuthUser } from '../../../types/installment'
 import type { Product, ProductUnit } from '../../../types/product'
 import { GRADE_LABELS, TAX_LABELS } from '../../../constants/products'
-import { scopedUnitList } from '../../../constants/roles'
+import { canManageUnits, canPrintUnitCodes, scopedUnitList } from '../../../constants/roles'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 import { UnitAvailabilityTag } from '../components/UnitAvailabilityTag'
 import { CreateUnitModal } from '../components/CreateUnitModal'
 import { EditUnitModal } from '../components/EditUnitModal'
+import { PrintUnitLabelModal } from '../components/PrintUnitLabelModal'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
@@ -27,9 +28,14 @@ export function UnitsTab({ actor, product }: Props) {
   const [version, setVersion] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
   const [editingUnit, setEditingUnit] = useState<ProductUnit | null>(null)
+  const [printingUnit, setPrintingUnit] = useState<ProductUnit | null>(null)
 
   void version
   const units = scopedUnitList(actor, product.id, MOCK_PRODUCT_UNITS)
+  // Staff read this tab to find a unit and print its label; the write
+  // actions below are theirs to see only if canManageUnits says so.
+  const canManage = canManageUnits(actor)
+  const canPrint = canPrintUnitCodes(actor)
 
   function refresh() {
     setVersion(v => v + 1)
@@ -76,10 +82,12 @@ export function UnitsTab({ actor, product }: Props) {
             placement="bottomRight"
             menu={{
               items: [
-                ...(isSold ? [] : [{ key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' }]),
-                ...(u.availability === 'available' ? [{ key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' }] : []),
+                ...(canPrint ? [{ key: 'print', icon: <Printer size={15} strokeWidth={2.25} />, label: 'Print label' }] : []),
+                ...(canManage && !isSold ? [{ key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' }] : []),
+                ...(canManage && u.availability === 'available' ? [{ key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' }] : []),
               ],
               onClick: ({ key }) => {
+                if (key === 'print') setPrintingUnit(u)
                 if (key === 'edit') setEditingUnit(u)
                 if (key === 'remove') {
                   modal.confirm({
@@ -128,11 +136,13 @@ export function UnitsTab({ actor, product }: Props) {
               (56 - 36) / 2 remainder from centering a 36px-tall button in
               this 56px-tall row), so the button sits equidistant from all
               three edges instead of closer to the right one. */}
-          <div style={{ paddingRight: 2 }}>
-            <Button icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
-              Add Unit
-            </Button>
-          </div>
+          {canManage && (
+            <div style={{ paddingRight: 2 }}>
+              <Button icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
+                Add Unit
+              </Button>
+            </div>
+          )}
         </div>
 
         <div style={{ padding: 16 }}>
@@ -178,6 +188,16 @@ export function UnitsTab({ actor, product }: Props) {
           message.success('Unit updated')
         }}
       />
+
+      {printingUnit && (
+        <PrintUnitLabelModal
+          open
+          unit={printingUnit}
+          product={product}
+          merchantId={actor.merchantId}
+          onClose={() => setPrintingUnit(null)}
+        />
+      )}
     </div>
   )
 }
