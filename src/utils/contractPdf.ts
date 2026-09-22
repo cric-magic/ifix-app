@@ -1,9 +1,10 @@
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
 
-// A4 in points, jsPDF's default unit for the 'a4' format.
-const A4_WIDTH_PT = 595.28
-const A4_HEIGHT_PT = 841.89
+// Legal (8.5 x 14in) in points — the sheet the contract is laid out for
+// (see PAGE_WIDTH/PAGE_HEIGHT in ContractDocument.tsx).
+const PAGE_WIDTH_PT = 612
+const PAGE_HEIGHT_PT = 1008
 
 // Renders the contract page to a real PDF file rather than leaning on the
 // browser's own print-to-PDF, so Download produces a file directly.
@@ -58,14 +59,14 @@ export async function downloadContractPdf(element: HTMLElement, fileName: string
     logging: false,
   }))
 
-  const pdf = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait' })
+  const pdf = new jsPDF({ unit: 'pt', format: 'legal', orientation: 'portrait' })
 
-  // Fit the capture to the page width, then walk down it one page-height at
-  // a time — a contract runs past a single sheet and has to break across
+  // Fit the capture to the sheet width, then walk down it one page-height
+  // at a time — a contract runs past a single sheet and has to break across
   // pages rather than being squashed onto one.
-  const scale = A4_WIDTH_PT / canvas.width
+  const scale = PAGE_WIDTH_PT / canvas.width
   const scaledHeight = canvas.height * scale
-  const pageCount = Math.max(1, Math.ceil(scaledHeight / A4_HEIGHT_PT))
+  const pageCount = Math.max(1, Math.ceil(scaledHeight / PAGE_HEIGHT_PT))
 
   for (let page = 0; page < pageCount; page++) {
     if (page > 0) pdf.addPage()
@@ -75,8 +76,8 @@ export async function downloadContractPdf(element: HTMLElement, fileName: string
       canvas.toDataURL('image/png'),
       'PNG',
       0,
-      -page * A4_HEIGHT_PT,
-      A4_WIDTH_PT,
+      -page * PAGE_HEIGHT_PT,
+      PAGE_WIDTH_PT,
       scaledHeight,
       undefined,
       'FAST',

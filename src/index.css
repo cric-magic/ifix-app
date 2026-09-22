@@ -1384,6 +1384,13 @@ label[for="password"]::after {
    the clipping, the transform and the positioning for print only, so the
    page can anchor to the document origin and break across sheets. */
 @media print {
+  /* Legal (8.5 x 14in), matching the layout the contract is built for and
+     the format utils/contractPdf.ts exports — so Print and Download PDF
+     produce the same sheet rather than one reflowing against A4. */
+  @page {
+    size: legal portrait;
+  }
+
   body:has(.ifix-contract-page) * {
     visibility: hidden !important;
   }

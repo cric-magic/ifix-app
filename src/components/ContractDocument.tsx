@@ -92,12 +92,12 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
       <div className="ifix-contract-page" style={{
         background: token.colorBgContainer,
         color: token.colorText,
-        // A4. maxWidth caps it at true A4 width where there's room, and
-        // the aspect ratio holds A4's proportions where there isn't — a
-        // fixed A4 *height* would have made a squeezed page a long strip,
-        // which reads less like paper than no constraint at all. Content
-        // longer than one page grows past the ratio, as a real one would
-        // spill onto a second sheet.
+        // maxWidth caps it at true page width where there's room, and the
+        // aspect ratio holds the sheet's proportions where there isn't — a
+        // fixed height would have made a squeezed page a long strip, which
+        // reads less like paper than no constraint at all. Content longer
+        // than one page grows past the ratio, as a real one would spill
+        // onto a second sheet.
         maxWidth: PAGE_WIDTH,
         aspectRatio: `${PAGE_WIDTH} / ${PAGE_HEIGHT}`,
         margin: '0 auto',
@@ -248,9 +248,13 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
   )
 }
 
-// A4 at 96dpi — the page size the printed contract is laid out for.
-const PAGE_WIDTH = 794
-const PAGE_HEIGHT = 1123
+// Legal (8.5 x 14in) at 96dpi — the long paper Thai contracts are usually
+// printed on. The Contract Template doc doesn't specify a size, so this is
+// a business choice rather than a documented requirement; it's mirrored in
+// utils/contractPdf.ts's export format and the @page rule in index.css, so
+// all three have to move together.
+const PAGE_WIDTH = 816
+const PAGE_HEIGHT = 1344
 
 type Token = ReturnType<typeof theme.useToken>['token']
 
