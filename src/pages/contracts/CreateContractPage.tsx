@@ -88,6 +88,19 @@ export function CreateContractPage() {
   const selectedTemplateId = Form.useWatch('templateId', templateForm) ?? templateValues?.templateId
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId)
 
+  // Per the doc, "the default template for the selected type is pre-selected
+  // when creating a contract." This step picks a template directly rather
+  // than a type first, so the Fixed Rate default wins where both exist —
+  // Free Rate is the Easy Mode path and only Admin/Owner can reach it.
+  const selectableTemplates = templates.filter(t => t.type === 'fixed_rate' || canUseFreeRate)
+  const defaultTemplateId = (
+    selectableTemplates.find(t => t.isDefault && t.type === 'fixed_rate')
+    ?? selectableTemplates.find(t => t.isDefault)
+  )?.id
+  // This step's Form unmounts when the user leaves it, so its initialValues
+  // re-apply on the way back — seeding them from the captured templateValues
+  // keeps an earlier selection instead of resetting it to the default.
+
   const steps = [
     { title: 'Device', description: 'Pick the branch, product, and available unit for this contract.' },
     { title: 'Template & Terms', description: 'Choose a contract template and set the down payment and term.' },
@@ -405,12 +418,15 @@ export function CreateContractPage() {
         )}
 
         {step === 1 && (
-          <Form form={templateForm} layout="vertical">
+          <Form
+            form={templateForm}
+            layout="vertical"
+            initialValues={{ ...templateValues, templateId: templateValues?.templateId ?? defaultTemplateId }}
+          >
             <Form.Item label="Contract Template" name="templateId" rules={[{ required: true, message: 'Required' }]}>
               <Select
                 placeholder="Select template"
-                options={templates
-                  .filter(t => t.type === 'fixed_rate' || canUseFreeRate)
+                options={selectableTemplates
                   .map(t => ({ value: t.id, label: `${t.name}${t.isDefault ? ' (Default)' : ''}` }))}
               />
             </Form.Item>

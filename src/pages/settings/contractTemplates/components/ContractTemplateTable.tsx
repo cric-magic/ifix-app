@@ -84,7 +84,12 @@ export function ContractTemplateTable({ templates, contracts, canManage, search,
               items: [
                 { key: 'preview', icon: <Eye size={15} strokeWidth={2.25} />, label: 'Preview' },
                 ...(canManage ? [
-                  { key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' },
+                  // Archived templates are locked outright — the doc's
+                  // permission table gives "Edit Archived Template" a ❌ for
+                  // every role, Super Admin included. Duplicate stays: it
+                  // produces a new Draft rather than touching this record,
+                  // which is the documented way to revive an archived one.
+                  ...(t.status !== 'archived' ? [{ key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' }] : []),
                   { key: 'duplicate', icon: <Copy size={15} strokeWidth={2.25} />, label: 'Duplicate' },
                   ...(t.status === 'active' && !t.isDefault ? [{ key: 'default', icon: <Star size={15} strokeWidth={2.25} />, label: 'Set as default' }] : []),
                   { type: 'divider' as const },

@@ -4,6 +4,7 @@ import { Plus, Search } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { useIconColors } from '../../constants/iconColors'
 import { MOCK_MERCHANTS } from '../../constants/mockMerchants'
+import { MOCK_CONTRACT_TEMPLATES, createStarterTemplates } from '../../constants/mockContractTemplates'
 import { canViewMerchantList, canManageMerchants } from '../../constants/roles'
 import type { Merchant } from '../../types/merchant'
 import { MerchantTable } from './components/MerchantTable'
@@ -86,6 +87,10 @@ export function MerchantsPage() {
         onCreated={merchant => {
           setCreateOpen(false)
           MOCK_MERCHANTS.push(merchant)
+          // Per the Contract Template doc, creating a merchant also
+          // provisions their two default templates (Fixed Rate + Free Rate)
+          // so their first contract has something to select.
+          MOCK_CONTRACT_TEMPLATES.push(...createStarterTemplates(merchant.id, user.id))
           refresh()
           message.success(`${merchant.name} created`)
         }}

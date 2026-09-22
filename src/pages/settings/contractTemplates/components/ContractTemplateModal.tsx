@@ -91,6 +91,7 @@ export function ContractTemplateModal({ open, template, onClose, onSaved }: Prop
   }, [template, open, form])
 
   function handleSubmit(values: FormValues) {
+    if (template?.status === 'archived') return
     const saved: ContractTemplate = {
       id: template?.id ?? generateContractTemplateId(),
       merchantId: template?.merchantId ?? actor.merchantId!,
@@ -123,6 +124,11 @@ export function ContractTemplateModal({ open, template, onClose, onSaved }: Prop
     onSaved(saved)
   }
 
+  // Backstop for the archived lock the table already enforces by hiding
+  // Edit — no role may edit an Archived template, so a save is refused here
+  // too rather than relying on the one entry point staying gated.
+  const isArchived = template?.status === 'archived'
+
   return (
     <Drawer
       open={open}
@@ -136,7 +142,7 @@ export function ContractTemplateModal({ open, template, onClose, onSaved }: Prop
           <Button icon={<Eye size={16} strokeWidth={2.25} />} onClick={() => setPreviewOpen(true)}>Preview</Button>
           <Space>
             <Button onClick={onClose}>Cancel</Button>
-            <Button type="primary" onClick={() => form.submit()}>Save</Button>
+            <Button type="primary" onClick={() => form.submit()} disabled={isArchived}>Save</Button>
           </Space>
         </Space>
       }
