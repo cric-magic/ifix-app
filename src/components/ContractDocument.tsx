@@ -270,11 +270,13 @@ function Rule({ token }: { token: Token }) {
 function Panel({ token, children }: { token: Token, children: React.ReactNode }) {
   return (
     <div style={{
-      // colorFillSecondary, not the Quaternary this used to be: at 2% black
-      // the blocks were a screen-only hint that a printer would drop
-      // entirely. 6% is the usual shaded-box weight on paper and still sits
-      // well behind the text.
-      background: token.colorFillSecondary,
+      // Boxed, not shaded. Browsers strip background colours when printing
+      // unless the page opts in with print-color-adjust, and even then some
+      // drivers override it — so a fill is the one thing that might not
+      // survive the trip to paper, which is exactly what these blocks carry
+      // the document's structure with. A rule always prints, costs no ink
+      // across a whole block, and is how a contract is usually set anyway.
+      border: `0.5px solid ${token.colorTextTertiary}`,
       padding: 16,
       marginBottom: 16,
     }}>
