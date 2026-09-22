@@ -911,10 +911,15 @@ label[for="password"]::after {
   transition: opacity 0.3s ease !important;
 }
 
-/* Footer buttons optically centered against the sidebar account row (64px tall,
-   bottom-pinned) rather than the footer's own default 36px-button padding. */
+/* Symmetric block padding, replacing antd's own default around a 36px button.
+   This footer shares its bottom edge with AppLayout.tsx's 64px sidebar account
+   row, so 14px ((64 - 36) / 2) would put the Cancel/Save buttons exactly on
+   that row's centerline — but 14 isn't on the Spacing scale. Pinned to 12px
+   (Spacing 3) instead, accepting a 2px offset against that row rather than
+   carrying a scale exception for it, same call as the 4.5px/8.5px sidebar
+   buttons described in CLAUDE.md. */
 .ant-drawer-footer {
-  padding: 8px 16px 14px !important;
+  padding: 12px 16px !important;
   border-top: 0.5px solid var(--ant-color-split) !important;
 }
 
