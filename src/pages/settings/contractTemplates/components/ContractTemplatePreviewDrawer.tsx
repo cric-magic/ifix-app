@@ -23,6 +23,8 @@ export function ContractTemplatePreviewDrawer({ open, onClose, values, merchantI
       width={760}
       destroyOnHidden
       getContainer={appWindow ?? undefined}
+      // ContractDocument supplies its own canvas and padding.
+      styles={{ body: { padding: 0 } }}
     >
       <ContractTemplatePreview values={values} merchantId={merchantId} />
     </Drawer>

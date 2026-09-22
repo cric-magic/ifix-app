@@ -1,4 +1,5 @@
 import { ConfigProvider, Typography, theme } from 'antd'
+import { PAPER_THEME } from '../constants/paperTheme'
 import { ImageOff } from 'lucide-react'
 
 // The printed contract, per the Contract Template doc's "Contract Content
@@ -67,13 +68,12 @@ export interface ContractDocumentData {
   }
 }
 
-// Like the unit label, a contract is a paper artifact — it prints dark on
-// white whatever theme the app is in, so the whole document renders inside
-// antd's stock light theme and still reads every colour off a token rather
-// than a literal.
+// A contract is a paper artifact — dark on white whatever theme the app is
+// in — so the whole document renders under PAPER_THEME (see its own file for
+// why resetting the app's seeds is required, not just the algorithm).
 export function ContractDocument({ data }: { data: ContractDocumentData }) {
   return (
-    <ConfigProvider theme={{ algorithm: theme.defaultAlgorithm }}>
+    <ConfigProvider theme={PAPER_THEME}>
       <DocumentBody data={data} />
     </ConfigProvider>
   )
@@ -84,15 +84,19 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
   const { merchant, contract, customer, product, financials, schedule, payment, content } = data
 
   return (
-    <div style={{
-      background: token.colorBgContainer,
-      color: token.colorText,
-      padding: 24,
-      borderRadius: 8,
-      border: `0.5px solid ${token.colorBorderSecondary}`,
-      fontSize: 12,
-      lineHeight: 1.6,
-    }}>
+    // The surface the sheet sits on — a neutral canvas like a document
+    // viewer's, so the white page reads as paper rather than as another
+    // panel. Both colours come from the light theme this renders inside,
+    // so the page stays white on a grey desk in every app variant.
+    <div style={{ background: token.colorBgLayout, padding: 24, minHeight: '100%' }}>
+      <div style={{
+        background: token.colorBgContainer,
+        color: token.colorText,
+        padding: 32,
+        boxShadow: token.boxShadow,
+        fontSize: 12,
+        lineHeight: 1.6,
+      }}>
       {/* Header — merchant identity left, contract identity and the
           template's own title right. */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
@@ -228,8 +232,9 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
         />
       </div>
 
-      <div style={{ marginTop: 16, color: token.colorTextTertiary, fontSize: 11 }}>
-        เอกสารนี้จัดทำโดยระบบ {merchant.name} — {contract.createdAt} · ทุกหน้าต้องลงลายมือชื่อทั้งสองฝ่าย
+        <div style={{ marginTop: 16, color: token.colorTextTertiary, fontSize: 11 }}>
+          เอกสารนี้จัดทำโดยระบบ {merchant.name} — {contract.createdAt} · ทุกหน้าต้องลงลายมือชื่อทั้งสองฝ่าย
+        </div>
       </div>
     </div>
   )

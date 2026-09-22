@@ -312,7 +312,7 @@ export function ContractTemplateModal({ open, template, merchantId, onClose, onS
               minWidth: 0,
               overflowY: 'auto',
               height: '100%',
-              padding: 16,
+              // No padding here — ContractDocument brings its own canvas.
               borderLeft: `0.5px solid ${token.colorBorderSecondary}`,
             }
             : { marginTop: 24 }}

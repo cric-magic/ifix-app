@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ConfigProvider, theme } from 'antd'
+import { PAPER_THEME } from '../constants/paperTheme'
 import JsBarcode from 'jsbarcode'
 import QRCode from 'qrcode'
 import type { BarcodeSettings } from '../types/merchant'
@@ -25,11 +26,13 @@ export function encodedValueFor(unit: ProductUnit, settings: BarcodeSettings): s
 }
 
 // A physical label is always printed dark-on-white regardless of which
-// theme the app is in, so the whole thing renders inside antd's stock light
-// theme and still reads every color off a token rather than a literal.
+// theme the app is in, so it renders under PAPER_THEME. That resets the
+// app's own per-variant seeds, which a bare algorithm switch inherits — in
+// the dark variants the label's "white" was the app's near-black
+// colorBgContainer.
 export function UnitLabel({ unit, product, settings, forPrint }: Props) {
   return (
-    <ConfigProvider theme={{ algorithm: theme.defaultAlgorithm }}>
+    <ConfigProvider theme={PAPER_THEME}>
       <LabelBody unit={unit} product={product} settings={settings} forPrint={forPrint} />
     </ConfigProvider>
   )
