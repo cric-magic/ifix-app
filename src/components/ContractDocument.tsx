@@ -110,7 +110,7 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
       }}>
       {/* Header — merchant identity left, contract identity and the
           template's own title right. */}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 24 }}>
         <Logo url={merchant.logoUrl} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 600 }}>{merchant.name} ({merchant.branchName})</div>
@@ -124,8 +124,6 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
           <div style={{ marginTop: 8, fontWeight: 600, fontSize: 13 }}>{content.title}</div>
         </div>
       </div>
-
-      <Rule token={token} />
 
       {/* Lessor / Lessee, then the binding statement that the doc places
           before the product and financial details. */}
@@ -218,15 +216,13 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
         </div>
       </Panel>
 
-      <Rule token={token} />
-
       {/* Signatures and the two QR codes the doc puts side by side. */}
       {/* Top-aligned: bottom alignment let a taller caption push its QR
           upward and a wrapped name push its signature rule upward, so no
           two columns lined up. Each column now starts at the same y and
           reserves the same signing space, which puts the rules and the QR
           captions on shared baselines. */}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginTop: 8 }}>
         <Signature name={customer.name} role="ผู้เช่าซื้อ" token={token} />
         <Signature name={merchant.name} role="ผู้ให้เช่าซื้อ" token={token} />
         <QrSlot
