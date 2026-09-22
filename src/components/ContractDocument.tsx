@@ -102,9 +102,13 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
         aspectRatio: `${PAGE_WIDTH} / ${PAGE_HEIGHT}`,
         margin: '0 auto',
         padding: 48,
-        // Tertiary, not boxShadow — the default's third layer carries an
-        // 8px spread that blooms well past the page edge.
-        boxShadow: token.boxShadowTertiary,
+        // Composed rather than taken from boxShadow/-Tertiary: the former
+        // carries an 8px spread that blooms past the page edge, the latter
+        // tops out at 3% alpha and barely reads against the canvas. A tight
+        // contact layer plus a short ambient one gives the page a defined
+        // edge without the halo. Both colours are tokens (6% and 15% ink);
+        // only the offsets and blur are literal.
+        boxShadow: `0 1px 3px ${token.colorSplit}, 0 4px 12px ${token.colorFill}`,
         fontSize: 12,
         lineHeight: 1.6,
       }}>
