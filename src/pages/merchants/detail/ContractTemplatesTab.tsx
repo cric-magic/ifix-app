@@ -115,27 +115,40 @@ export function ContractTemplatesTab({ merchantId, standalone }: Props) {
     message.success(status === 'active' ? 'Template activated' : 'Template archived')
   }
 
+  // Sized differently per variant: a list view gives the filters a full row
+  // of their own, while the detail view shares a 56px header with the title
+  // and the action button, so the search shrinks rather than pushing them.
   const filterControls = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
       <Input
-        placeholder="Search by name or type"
+        placeholder={standalone ? 'Search by name or type' : 'Search'}
         prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
         allowClear
         value={search}
         onChange={e => setSearch(e.target.value)}
-        style={{ maxWidth: 320 }}
+        style={standalone ? { maxWidth: 320 } : { flex: '1 1 120px', minWidth: 0, maxWidth: 200 }}
       />
-      <Select value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} style={{ width: 150 }} />
-      <Select value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} style={{ width: 150 }} />
+      <Select
+        value={statusFilter}
+        onChange={setStatusFilter}
+        options={STATUS_OPTIONS}
+        style={{ width: standalone ? 150 : 130, flexShrink: 0 }}
+      />
+      <Select
+        value={typeFilter}
+        onChange={setTypeFilter}
+        options={TYPE_OPTIONS}
+        style={{ width: standalone ? 150 : 130, flexShrink: 0 }}
+      />
     </div>
   )
 
   return (
     <div>
       {/* List view keeps its filters and primary action above the panel;
-          the detail view hands both to the panel instead (header row and
-          filter row), so nothing that belongs to this table sits outside
-          it. See CLAUDE.md's "Panel header actions". */}
+          the detail view hands both to the panel's own header row, so
+          nothing belonging to this table sits outside it. See CLAUDE.md's
+          "Panel header actions". */}
       {standalone && (
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
           {filterControls}
@@ -148,12 +161,13 @@ export function ContractTemplatesTab({ merchantId, standalone }: Props) {
       )}
 
       <ContractTemplateTable
+        headerTitle={standalone ? undefined : `${filtered.length} Template${filtered.length === 1 ? '' : 's'}`}
         filters={standalone ? undefined : filterControls}
         templates={filtered}
         contracts={MOCK_CONTRACTS}
         canManage={canManage}
         hasActiveFilter={hasActiveFilter}
-        headerTitle={standalone ? undefined : `${filtered.length} Template${filtered.length === 1 ? '' : 's'}`}
+
         headerAction={!standalone && canManage ? (
           <Button icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => { setEditingTemplate(null); setModalOpen(true) }}>
             Create Template

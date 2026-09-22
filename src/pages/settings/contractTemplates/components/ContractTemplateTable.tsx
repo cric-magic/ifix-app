@@ -27,9 +27,10 @@ interface Props {
   // instead (see CLAUDE.md's "Panel header actions"). Set on the former.
   headerTitle?: string
   headerAction?: React.ReactNode
-  // Detail views keep the filter row inside the panel too: it only narrows
-  // this panel's own table, so floating it above would read as a control
-  // for the whole page. List views render their own above the panel.
+  // Detail views hand their filters to the panel as well, sharing the
+  // header row with the action button rather than taking a second row —
+  // a filter only narrows this panel's table, so it belongs to the panel,
+  // but it doesn't warrant its own bar. List views render theirs above.
   filters?: React.ReactNode
   onEdit: (template: ContractTemplate) => void
   onDuplicate: (template: ContractTemplate) => void
@@ -177,22 +178,30 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
       },
     }}>
       <div className="ifix-table-panel">
-        {headerTitle && (
+        {(headerTitle || filters || headerAction) && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            gap: 8,
             height: 56,
             paddingLeft: 16,
             paddingRight: 8,
             boxShadow: `inset 0 -0.5px 0 0 ${token.colorBorderSecondary}`,
           }}>
-            <Typography.Text strong style={{ fontSize: 15 }}>{headerTitle}</Typography.Text>
-            {headerAction && <div style={{ paddingRight: 2 }}>{headerAction}</div>}
+            {headerTitle && (
+              <Typography.Text strong style={{ fontSize: 15, flexShrink: 0 }}>{headerTitle}</Typography.Text>
+            )}
+            {/* Filters and the action button travel together on the right,
+                so the header reads as title | controls rather than three
+                separate things spread across the row. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, marginLeft: 'auto' }}>
+              {filters}
+              {headerAction && <div style={{ paddingRight: 2 }}>{headerAction}</div>}
+            </div>
           </div>
         )}
         <div style={{ padding: 16 }}>
-          {filters && <div style={{ marginBottom: 16 }}>{filters}</div>}
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
