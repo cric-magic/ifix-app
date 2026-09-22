@@ -215,16 +215,30 @@ export function ContractTemplateModal({ open, template, merchantId, onClose, onS
             } }]}>
               {(fields, { add, remove }, { errors }) => (
                 <>
+                  {/* The two inputs share whatever width the column has
+                      rather than taking a fixed 140px each — at 140 + 140 +
+                      the remove button the row was wider than the form
+                      column beside the preview, and scrolled it sideways. */}
                   {fields.map(field => (
-                    <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                      <Form.Item name={[field.name, 'months']} rules={[{ required: true, message: 'Required' }]} noStyle>
-                        <InputNumber placeholder="Months" min={1} addonAfter="mo" style={{ width: 140 }} />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'ratePercent']} rules={[{ required: true, message: 'Required' }]} noStyle>
-                        <InputNumber placeholder="Rate" min={0} step={0.05} precision={2} addonAfter="%/mo" style={{ width: 140 }} />
-                      </Form.Item>
-                      <Button type="text" danger icon={<Trash2 size={15} strokeWidth={2.25} />} onClick={() => remove(field.name)} />
-                    </Space>
+                    <div key={field.key} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Form.Item name={[field.name, 'months']} rules={[{ required: true, message: 'Required' }]} noStyle>
+                          <InputNumber placeholder="Months" min={1} addonAfter="mo" style={{ width: '100%' }} />
+                        </Form.Item>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Form.Item name={[field.name, 'ratePercent']} rules={[{ required: true, message: 'Required' }]} noStyle>
+                          <InputNumber placeholder="Rate" min={0} step={0.05} precision={2} addonAfter="%/mo" style={{ width: '100%' }} />
+                        </Form.Item>
+                      </div>
+                      <Button
+                        type="text"
+                        danger
+                        style={{ flexShrink: 0 }}
+                        icon={<Trash2 size={15} strokeWidth={2.25} />}
+                        onClick={() => remove(field.name)}
+                      />
+                    </div>
                   ))}
                   <Form.ErrorList errors={errors} />
                   <Button type="dashed" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => add({ months: 6, ratePercent: 1.5 })} block>
