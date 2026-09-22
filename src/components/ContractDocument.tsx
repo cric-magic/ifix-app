@@ -89,7 +89,7 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
     // panel. Both colours come from the light theme this renders inside,
     // so the page stays white on a grey desk in every app variant.
     <div style={{ background: token.colorBgLayout, padding: 32, minHeight: '100%' }}>
-      <div style={{
+      <div className="ifix-contract-page" style={{
         background: token.colorBgContainer,
         color: token.colorText,
         // A4. maxWidth caps it at true A4 width where there's room, and

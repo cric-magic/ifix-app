@@ -1,22 +1,27 @@
-import { Button, Divider, Space, Typography, message, theme } from 'antd'
+import { Button, Space, Typography, message, theme } from 'antd'
 import { Printer, Download } from 'lucide-react'
 import type { Contract } from '../../../types/contract'
 import { MOCK_MERCHANTS } from '../../../constants/mockMerchants'
-import { CurrencyDisplay } from '../../../components/CurrencyDisplay'
+import { MOCK_BRANCHES } from '../../../constants/mockBranches'
+import { ContractDocument } from '../../../components/ContractDocument'
+import { buildContractDocument } from '../../../utils/contractDocument'
 
 interface Props {
   contract: Contract
 }
 
-// Printed contract layout, per the Contract Template doc's "Contract
-// Content Template" — merchant header, lessor/lessee block, the template's
-// own binding statement/legal declarations (read from the contract's
-// snapshot, not a live template — see types/contract.ts's TemplateSnapshot),
-// asset spec, financial summary, and the installment schedule.
+// The printed contract for a real contract — the same document the template
+// editor previews, drawn from this contract's own snapshot rather than
+// sample values. Per the doc, "the printed contract uses the saved copy, not
+// the latest version of the template," so every template-controlled field
+// here comes from contract.template (see types/contract.ts's TemplateSnapshot)
+// and never from the live record.
 export function ContractPreviewTab({ contract }: Props) {
   const { token } = theme.useToken()
   const merchant = MOCK_MERCHANTS.find(m => m.id === contract.merchantId)
-  const { device, customer, template, financing } = contract
+  const branch = MOCK_BRANCHES.find(b => b.merchantId === contract.merchantId && b.name === contract.branch)
+
+  const data = buildContractDocument(contract, merchant, branch)
 
   return (
     <div className="ifix-table-panel" style={{ marginBottom: 16 }}>
@@ -35,88 +40,7 @@ export function ContractPreviewTab({ contract }: Props) {
         </Space>
       </div>
 
-      <div style={{ padding: 16 }}>
-        <div style={{
-          maxWidth: 720,
-          margin: '0 auto',
-          padding: 24,
-          background: token.colorBgElevated,
-          border: `0.5px solid ${token.colorBorderSecondary}`,
-          borderRadius: token.borderRadius,
-        }}>
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <Typography.Title level={4} style={{ margin: 0 }}>{template.title}</Typography.Title>
-            <Typography.Text type="secondary">
-              {merchant?.name} ({contract.branch}) · {contract.contractNumber}
-            </Typography.Text>
-          </div>
-
-          <Divider />
-
-          <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
-            <div style={{ flex: 1 }}>
-              <Typography.Text strong style={{ display: 'block', marginBottom: 4 }}>LESSOR</Typography.Text>
-              <Typography.Text type="secondary" style={{ display: 'block' }}>{merchant?.name} ({contract.branch})</Typography.Text>
-              <Typography.Text type="secondary" style={{ display: 'block' }}>{merchant?.address}</Typography.Text>
-            </div>
-            <div style={{ flex: 1 }}>
-              <Typography.Text strong style={{ display: 'block', marginBottom: 4 }}>LESSEE</Typography.Text>
-              <Typography.Text type="secondary" style={{ display: 'block' }}>{customer.fullName}</Typography.Text>
-              <Typography.Text type="secondary" style={{ display: 'block' }}>{customer.nationalId} · {customer.phone}</Typography.Text>
-            </div>
-          </div>
-
-          <Typography.Paragraph style={{ fontStyle: 'italic', color: token.colorTextSecondary }}>
-            {template.bindingStatement}
-          </Typography.Paragraph>
-
-          <Divider />
-
-          <Typography.Title level={5}>Asset Specification</Typography.Title>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
-            <Typography.Text type="secondary">Brand: {device.brand}</Typography.Text>
-            <Typography.Text type="secondary">Model: {device.model}</Typography.Text>
-            <Typography.Text type="secondary">Condition: {device.condition}</Typography.Text>
-            <Typography.Text type="secondary">Color: {device.color}</Typography.Text>
-            <Typography.Text type="secondary">Serial: {device.serialNumber}</Typography.Text>
-            {device.imei1 && <Typography.Text type="secondary">IMEI 1: {device.imei1}</Typography.Text>}
-            {device.imei2 && <Typography.Text type="secondary">IMEI 2: {device.imei2}</Typography.Text>}
-          </div>
-
-          <Typography.Title level={5}>Contract Financial Summary</Typography.Title>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 16 }}>
-            <Typography.Text type="secondary">Device Price: <CurrencyDisplay amount={financing.devicePrice} /></Typography.Text>
-            <Typography.Text type="secondary">Down Payment: <CurrencyDisplay amount={financing.downPaymentAmount} /> ({financing.downPaymentPercent}%)</Typography.Text>
-            <Typography.Text type="secondary">Monthly Installment: <CurrencyDisplay amount={financing.installmentAmount} /></Typography.Text>
-            <Typography.Text type="secondary">Term: {financing.paymentTermMonths} months</Typography.Text>
-          </div>
-
-          <Typography.Paragraph style={{ fontSize: 12, color: token.colorTextTertiary }}>
-            {template.legalDeclarations}
-          </Typography.Paragraph>
-
-          {template.penalty.legalText && (
-            <Typography.Paragraph style={{ fontSize: 12, color: token.colorTextTertiary }}>
-              {template.penalty.legalText}
-            </Typography.Paragraph>
-          )}
-
-          <Divider />
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
-            <div style={{ textAlign: 'center', width: '40%' }}>
-              <div style={{ borderTop: `0.5px solid ${token.colorBorderSecondary}`, paddingTop: 8 }}>
-                <Typography.Text type="secondary">({customer.fullName})<br />Lessee</Typography.Text>
-              </div>
-            </div>
-            <div style={{ textAlign: 'center', width: '40%' }}>
-              <div style={{ borderTop: `0.5px solid ${token.colorBorderSecondary}`, paddingTop: 8 }}>
-                <Typography.Text type="secondary">({merchant?.name})<br />Lessor</Typography.Text>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ContractDocument data={data} />
     </div>
   )
 }

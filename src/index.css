@@ -1350,12 +1350,17 @@ label[for="password"]::after {
 }
 
 @media print {
-  body * {
+  /* Scoped with :has so printing a page that has no label isn't blanked by
+     this rule. The show selector repeats the same :has prefix on purpose:
+     `body:has(...) *` outscores a bare `.ifix-print-label`, and !important
+     doesn't break that tie — specificity still decides, so without the
+     prefix the hide rule would hide the label itself. */
+  body:has(.ifix-print-label) * {
     visibility: hidden !important;
   }
 
-  .ifix-print-label,
-  .ifix-print-label * {
+  body:has(.ifix-print-label) .ifix-print-label,
+  body:has(.ifix-print-label) .ifix-print-label * {
     visibility: visible !important;
   }
 
@@ -1367,5 +1372,43 @@ label[for="password"]::after {
     margin: 0 !important;
     border: none !important;
     box-shadow: none !important;
+  }
+}
+
+/* The printed contract. Hidden-by-visibility like the unit label, so the
+   app shell keeps its layout boxes, but the page itself can't simply be
+   pinned: it sits under half a dozen ancestors that clip (overflow:hidden
+   on the panel, the layout, the app-window chrome) and one that carries a
+   transform, which together clipped an absolutely-positioned page out of
+   existence. :has() reaches every one of those ancestors and neutralises
+   the clipping, the transform and the positioning for print only, so the
+   page can anchor to the document origin and break across sheets. */
+@media print {
+  body:has(.ifix-contract-page) * {
+    visibility: hidden !important;
+  }
+
+  :has(.ifix-contract-page) {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    transform: none !important;
+    position: static !important;
+  }
+
+  body:has(.ifix-contract-page) .ifix-contract-page,
+  body:has(.ifix-contract-page) .ifix-contract-page * {
+    visibility: visible !important;
+  }
+
+  .ifix-contract-page {
+    position: absolute !important;
+    inset-inline-start: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    aspect-ratio: auto !important;
   }
 }

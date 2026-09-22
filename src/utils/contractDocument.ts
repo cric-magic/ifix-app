@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 import type { ContractDocumentData } from '../components/ContractDocument'
 import type { Merchant } from '../types/merchant'
 import type { Branch } from '../types/branch'
+import type { Contract } from '../types/contract'
 import { calcFixRate } from './calculator'
 import { getWorkspaceAvatarUrl } from './avatar'
 
@@ -107,5 +108,90 @@ export function buildSampleContractDocument({
       promptPayQrUrl: account?.qrCodeUrl,
     },
     content,
+  }
+}
+
+// Thai labels for the printed schedule. The stored labels are English
+// ("Down Payment", "Installment 3") because they're also shown in the app's
+// own schedule table; the printed contract is a Thai document.
+const SCHEDULE_STATUS_TH: Record<string, string> = {
+  paid: 'ชำระแล้ว',
+  paid_late: 'ชำระล่าช้า',
+  due: 'ถึงกำหนด',
+  overdue: 'เกินกำหนด',
+  future: 'รอชำระ',
+}
+
+// A real contract's printed document. Everything the template controls comes
+// from the contract's own TemplateSnapshot rather than the live template —
+// per the doc, "the printed contract uses the saved copy, not the latest
+// version of the template."
+export function buildContractDocument(
+  contract: Contract,
+  merchant: Merchant | undefined,
+  branch: Branch | undefined,
+): ContractDocumentData {
+  const { device, customer, template, financing } = contract
+  const account = branch?.bankAccount ?? merchant?.bankAccounts.find(b => b.isDefault) ?? merchant?.bankAccounts[0]
+  const dash = '—'
+
+  return {
+    merchant: {
+      name: merchant?.name ?? 'Merchant name',
+      branchName: contract.branch,
+      legalAddress: merchant?.address ?? dash,
+      phone: merchant?.phone || branch?.phone || dash,
+      logoUrl: merchant ? merchant.logoUrl ?? getWorkspaceAvatarUrl(merchant.id) : undefined,
+      lineQrUrl: merchant?.lineQrUrl,
+    },
+    contract: {
+      number: contract.contractNumber,
+      createdAt: dayjs(contract.createdAt).format('D MMM YYYY'),
+    },
+    customer: {
+      name: customer.fullName,
+      nationalId: customer.nationalId,
+      address: customer.currentAddress || customer.idCardAddress,
+      phone: customer.phone,
+      idCardPhotoUrl: contract.idCardPhotos.idCard,
+      idCardWithOwnerPhotoUrl: contract.idCardPhotos.idCardWithOwner,
+    },
+    product: {
+      condition: device.condition,
+      color: device.color,
+      imei1: device.imei1 ?? dash,
+      imei2: device.imei2 ?? dash,
+      brand: device.brand,
+      storage: device.storage ?? dash,
+      model: device.model,
+      serialNumber: device.serialNumber,
+    },
+    financials: {
+      total: financing.devicePrice,
+      downPayment: financing.downPaymentAmount,
+      monthly: financing.installmentAmount,
+      termMonths: financing.paymentTermMonths,
+    },
+    // Period 0 is the down payment; the printed table numbers it งวดที่ 1
+    // and counts the installments from there, matching the doc's layout.
+    schedule: contract.schedule.map(item => ({
+      period: String(item.period + 1),
+      amount: item.amount,
+      label: item.period === 0 ? 'เงินดาวน์ (Down Payment)' : `งวดผ่อนเดือนที่ ${item.period}`,
+      dueDate: dayjs(item.dueDate).format('D MMM YYYY'),
+      status: SCHEDULE_STATUS_TH[item.status] ?? item.status,
+    })),
+    payment: {
+      bankName: account?.bank ?? dash,
+      accountNumber: account?.accountNumber ?? dash,
+      accountName: account?.accountName ?? dash,
+      promptPayQrUrl: account?.qrCodeUrl,
+    },
+    content: {
+      title: template.title,
+      bindingStatement: template.bindingStatement,
+      legalDeclarations: template.legalDeclarations,
+      penaltyLegalText: template.penalty.legalText,
+    },
   }
 }
