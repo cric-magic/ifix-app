@@ -88,12 +88,23 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
     // viewer's, so the white page reads as paper rather than as another
     // panel. Both colours come from the light theme this renders inside,
     // so the page stays white on a grey desk in every app variant.
-    <div style={{ background: token.colorBgLayout, padding: 24, minHeight: '100%' }}>
+    <div style={{ background: token.colorBgLayout, padding: 32, minHeight: '100%' }}>
       <div style={{
         background: token.colorBgContainer,
         color: token.colorText,
-        padding: 32,
-        boxShadow: token.boxShadow,
+        // A4. maxWidth caps it at true A4 width where there's room, and
+        // the aspect ratio holds A4's proportions where there isn't — a
+        // fixed A4 *height* would have made a squeezed page a long strip,
+        // which reads less like paper than no constraint at all. Content
+        // longer than one page grows past the ratio, as a real one would
+        // spill onto a second sheet.
+        maxWidth: PAGE_WIDTH,
+        aspectRatio: `${PAGE_WIDTH} / ${PAGE_HEIGHT}`,
+        margin: '0 auto',
+        padding: 48,
+        // Tertiary, not boxShadow — the default's third layer carries an
+        // 8px spread that blooms well past the page edge.
+        boxShadow: token.boxShadowTertiary,
         fontSize: 12,
         lineHeight: 1.6,
       }}>
@@ -239,6 +250,10 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
     </div>
   )
 }
+
+// A4 at 96dpi — the page size the printed contract is laid out for.
+const PAGE_WIDTH = 794
+const PAGE_HEIGHT = 1123
 
 type Token = ReturnType<typeof theme.useToken>['token']
 

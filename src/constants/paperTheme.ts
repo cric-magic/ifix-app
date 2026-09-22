@@ -45,5 +45,6 @@ export const PAPER_THEME: ThemeConfig = {
     colorFillQuaternary: STOCK.colorFillQuaternary,
     boxShadow: STOCK.boxShadow,
     boxShadowSecondary: STOCK.boxShadowSecondary,
+    boxShadowTertiary: STOCK.boxShadowTertiary,
   },
 }
