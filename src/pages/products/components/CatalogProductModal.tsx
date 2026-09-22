@@ -85,7 +85,7 @@ export function CatalogProductModal({ open, product, onClose, onSaved }: Props) 
   return (
     <Drawer
       open={open}
-      title={product ? 'Edit catalog product' : 'Create catalog product'}
+      title={product ? 'Edit product' : 'Create product'}
       onClose={onClose}
       destroyOnHidden
       width={420}

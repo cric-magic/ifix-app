@@ -144,7 +144,7 @@ export function GlobalCatalogPage() {
           style={{ maxWidth: 320 }}
         />
         <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => { setEditing(null); setModalOpen(true) }}>
-          Create Catalog Product
+          Create Product
         </Button>
       </div>
 
