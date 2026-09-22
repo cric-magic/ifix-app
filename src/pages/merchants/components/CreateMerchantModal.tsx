@@ -16,6 +16,7 @@ interface FormValues {
   name: string
   legalName: string
   address: string
+  phone: string
   ownerName: string
   ownerEmail: string
   contractFormat: ContractFormat
@@ -42,6 +43,7 @@ export function CreateMerchantModal({ open, actor, onClose, onCreated }: Props) 
       name: values.name,
       legalName: values.legalName,
       address: values.address,
+      phone: values.phone,
       status: 'active',
       contractFormat: values.contractFormat,
       contractPrefix: values.contractPrefix,
@@ -90,6 +92,9 @@ export function CreateMerchantModal({ open, actor, onClose, onCreated }: Props) 
         </Form.Item>
         <Form.Item label="Address" name="address" rules={[{ required: true, message: 'Required' }]}>
           <Input.TextArea rows={2} placeholder="Registered business address" />
+        </Form.Item>
+        <Form.Item label="Phone" name="phone" rules={[{ required: true, message: 'Required' }]}>
+          <Input placeholder="e.g. 02-000-0000" />
         </Form.Item>
         <Form.Item label="Owner name" name="ownerName" rules={[{ required: true, message: 'Required' }]}>
           <Input placeholder="e.g. Pim Chaiyasit" />

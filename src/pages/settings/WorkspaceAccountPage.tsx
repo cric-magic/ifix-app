@@ -108,6 +108,7 @@ export function WorkspaceAccountPage() {
       <SettingsCard title="Company">
         <SettingsRow label="Legal name">{merchant.legalName}</SettingsRow>
         <SettingsRow label="Address">{merchant.address}</SettingsRow>
+        <SettingsRow label="Phone">{merchant.phone}</SettingsRow>
         <SettingsRow label="Owner">{merchant.ownerName} ({merchant.ownerEmail})</SettingsRow>
       </SettingsCard>
 

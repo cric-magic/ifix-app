@@ -77,9 +77,9 @@ export function buildSampleContractDocument({
       name: merchant?.name ?? 'Merchant name',
       branchName: branch?.name ?? 'Branch name',
       legalAddress: merchant?.address ?? 'Merchant legal address',
-      // Merchant has no phone field — the branch carries one, and a
-      // contract is always issued by a branch, so that's what prints.
-      phone: branch?.phone ?? '—',
+      // The merchant's own number, per the doc's header and LESSOR block.
+      // Falls back to the issuing branch's line where one isn't set.
+      phone: merchant?.phone || branch?.phone || '—',
       // Same fallback the rest of the app uses for a merchant with no
       // uploaded logo (see WorkspaceAccountPage).
       logoUrl: merchant ? merchant.logoUrl ?? getWorkspaceAvatarUrl(merchant.id) : undefined,

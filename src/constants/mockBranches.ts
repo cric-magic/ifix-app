@@ -20,6 +20,7 @@ export const MOCK_BRANCHES: Branch[] = [
     taxBranchCode: '00000',
     bankAccount: {
       id: 'branch-bank-bkk',
+      qrCodeUrl: '/mock/promptpay-branch-bank-bkk.png',
       bank: 'Kasikornbank (KBank)',
       accountNumber: '123-4-56789-0',
       accountName: 'Siam Gadget Repair Co., Ltd.',
@@ -43,6 +44,7 @@ export const MOCK_BRANCHES: Branch[] = [
     taxBranchCode: '00001',
     bankAccount: {
       id: 'branch-bank-cnx',
+      qrCodeUrl: '/mock/promptpay-branch-bank-cnx.png',
       bank: 'Siam Commercial Bank (SCB)',
       accountNumber: '234-5-67890-1',
       accountName: 'Siam Gadget Repair Co., Ltd.',

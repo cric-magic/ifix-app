@@ -32,12 +32,15 @@ export const MOCK_MERCHANTS: Merchant[] = [
     name: MERCHANT_NAME,
     legalName: 'Siam Gadget Repair Co., Ltd.',
     address: '123 Sukhumvit Road, Klongtoey, Bangkok 10110',
+    phone: '02-000-0001',
+    lineQrUrl: '/mock/line-qr-merchant-1.png',
     status: 'active',
     contractFormat: 'auto_running',
     contractPrefix: 'SGR',
     bankAccounts: [
       {
         id: 'bank-1',
+        qrCodeUrl: '/mock/promptpay-bank-1.png',
         bank: 'Kasikornbank (KBank)',
         accountNumber: '123-4-56789-0',
         accountName: 'Siam Gadget Repair Co., Ltd.',
@@ -61,12 +64,15 @@ export const MOCK_MERCHANTS: Merchant[] = [
     name: 'TechFix Repair Co.',
     legalName: 'TechFix Repair Co., Ltd.',
     address: '88 Nimmanhaemin Road, Suthep, Chiang Mai 50200',
+    phone: '053-000-0002',
+    lineQrUrl: '/mock/line-qr-merchant-2.png',
     status: 'active',
     contractFormat: 'random',
     contractPrefix: 'TFX',
     bankAccounts: [
       {
         id: 'bank-2',
+        qrCodeUrl: '/mock/promptpay-bank-2.png',
         bank: 'Siam Commercial Bank (SCB)',
         accountNumber: '987-6-54321-0',
         accountName: 'TechFix Repair Co., Ltd.',
@@ -75,6 +81,7 @@ export const MOCK_MERCHANTS: Merchant[] = [
       },
       {
         id: 'bank-3',
+        qrCodeUrl: '/mock/promptpay-bank-3.png',
         bank: 'Bangkok Bank',
         accountNumber: '111-2-22333-4',
         accountName: 'TechFix Repair Co., Ltd.',
@@ -97,6 +104,8 @@ export const MOCK_MERCHANTS: Merchant[] = [
     name: 'Mobile Medic',
     legalName: 'Mobile Medic Repair Ltd.',
     address: '45 Thanon Phuket, Talat Yai, Phuket 83000',
+    phone: '076-000-0003',
+    lineQrUrl: '/mock/line-qr-merchant-3.png',
     status: 'suspended',
     contractFormat: 'auto_running',
     contractPrefix: 'MMD',

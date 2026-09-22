@@ -47,6 +47,9 @@ export interface Merchant {
   name: string
   legalName: string
   address: string
+  // Printed on every contract (see the doc's Contract Content Template:
+  // the header and the LESSOR block both carry the merchant's phone).
+  phone: string
   logoUrl?: string
   status: MerchantStatus
   contractFormat: ContractFormat

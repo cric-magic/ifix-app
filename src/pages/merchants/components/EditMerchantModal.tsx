@@ -16,6 +16,7 @@ interface FormValues {
   name: string
   legalName: string
   address: string
+  phone: string
   contractFormat: ContractFormat
   contractPrefix: string
   logo?: string[]
@@ -37,6 +38,7 @@ export function EditMerchantModal({ open, merchant, onClose, onUpdated }: Props)
         name: merchant.name,
         legalName: merchant.legalName,
         address: merchant.address,
+        phone: merchant.phone,
         contractFormat: merchant.contractFormat,
         contractPrefix: merchant.contractPrefix,
         logo: merchant.logoUrl ? [merchant.logoUrl] : [],
@@ -50,6 +52,7 @@ export function EditMerchantModal({ open, merchant, onClose, onUpdated }: Props)
     merchant.name = values.name
     merchant.legalName = values.legalName
     merchant.address = values.address
+    merchant.phone = values.phone
     merchant.contractFormat = values.contractFormat
     merchant.contractPrefix = values.contractPrefix
     merchant.logoUrl = values.logo?.[0]
@@ -84,6 +87,9 @@ export function EditMerchantModal({ open, merchant, onClose, onUpdated }: Props)
         </Form.Item>
         <Form.Item label="Address" name="address" rules={[{ required: true, message: 'Required' }]}>
           <Input.TextArea rows={2} />
+        </Form.Item>
+        <Form.Item label="Phone" name="phone" rules={[{ required: true, message: 'Required' }]}>
+          <Input placeholder="e.g. 02-000-0000" />
         </Form.Item>
         <Form.Item label="Contract format" name="contractFormat" rules={[{ required: true, message: 'Required' }]}>
           <Select options={CONTRACT_FORMAT_OPTIONS} />
