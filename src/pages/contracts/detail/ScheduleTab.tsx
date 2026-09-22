@@ -74,7 +74,9 @@ export function ScheduleTab({ contract, actor, onChanged }: Props) {
     { title: 'Due Date', dataIndex: 'dueDate', key: 'dueDate' },
     { title: 'Amount', dataIndex: 'amount', key: 'amount', align: 'right', render: (val: number) => <CurrencyDisplay amount={val} /> },
     { title: 'Paid Date', dataIndex: 'paidDate', key: 'paidDate', render: (val: string | null) => val ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
-    { title: 'Status', key: 'status', render: (_, s) => <ScheduleStatusTag status={s.status} /> },
+    // Pinned right like every other Status column in the app, so it stays
+    // visible once the row scrolls horizontally on a narrow window.
+    { title: 'Status', key: 'status', fixed: 'right', render: (_, s) => <ScheduleStatusTag status={s.status} /> },
   ]
 
   return (
@@ -103,6 +105,7 @@ export function ScheduleTab({ contract, actor, onChanged }: Props) {
               dataSource={contract.schedule}
               size="small"
               pagination={false}
+              scroll={contract.schedule.length > 0 ? { x: 'max-content' } : undefined}
               // Per the doc: "Overdue (highlighted)" — the item past its
               // due date without full payment gets a tinted row, same
               // functional-error background used elsewhere for this kind
