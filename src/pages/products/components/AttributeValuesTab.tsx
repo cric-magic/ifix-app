@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { App, Button, ConfigProvider, Dropdown, Form, Input, Modal, Table, theme } from 'antd'
+import { App, Button, ConfigProvider, Drawer, Dropdown, Form, Input, Space, Table, theme } from 'antd'
 import { Plus, MoreHorizontal, Ban, RotateCcw, Palette, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import { attributeValues, type AttributeTypeMeta, type AttributeValueRow } from '../../../constants/products'
@@ -9,6 +9,7 @@ import { countProductsUsingAttribute } from '../../../utils/product'
 import { useIconColors } from '../../../constants/iconColors'
 import { DotTag } from '../../../components/DotTag'
 import { TableEmptyState } from '../../../components/TableEmptyState'
+import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 
 interface Props {
   meta: AttributeTypeMeta
@@ -25,6 +26,7 @@ export function AttributeValuesTab({ meta }: Props) {
   const [search, setSearch] = useState('')
   const [addOpen, setAddOpen] = useState(false)
   const [form] = Form.useForm<{ value: string }>()
+  const appWindow = useAppWindowContainer()
   void version // re-render after mutating the mock records in place
 
   function refresh() {
@@ -178,14 +180,21 @@ export function AttributeValuesTab({ meta }: Props) {
         </ConfigProvider>
       </div>
 
-      <Modal
+      <Drawer
         title={`Add ${meta.noun}`}
         open={addOpen}
-        onCancel={() => { setAddOpen(false); form.resetFields() }}
-        okText="Add"
-        onOk={() => form.validateFields().then(handleAdd)}
+        onClose={() => { setAddOpen(false); form.resetFields() }}
+        destroyOnHidden
+        width={420}
+        getContainer={appWindow ?? undefined}
+        footer={
+          <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button onClick={() => { setAddOpen(false); form.resetFields() }}>Cancel</Button>
+            <Button type="primary" onClick={() => form.submit()}>Add</Button>
+          </Space>
+        }
       >
-        <Form form={form} layout="vertical" requiredMark={false}>
+        <Form form={form} layout="vertical" onFinish={handleAdd} requiredMark={false}>
           <Form.Item
             label="Value"
             name="value"
@@ -205,7 +214,7 @@ export function AttributeValuesTab({ meta }: Props) {
             <Input placeholder={meta.key === 'color' ? 'e.g. Desert Titanium' : 'e.g. 1TB'} />
           </Form.Item>
         </Form>
-      </Modal>
+      </Drawer>
     </div>
   )
 }
