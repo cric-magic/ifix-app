@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Result, message } from 'antd'
+import { Button, Result, Tabs, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_MERCHANTS } from '../../constants/mockMerchants'
 import { canViewMerchantList, canEditMerchant, canManageBankAccounts, homePath } from '../../constants/roles'
 import { OverviewTab } from './detail/OverviewTab'
 import { BankAccountsTab } from './detail/BankAccountsTab'
 import { BranchesTab } from './detail/BranchesTab'
+import { ContractTemplatesTab } from './detail/ContractTemplatesTab'
 import { EditMerchantModal } from './components/EditMerchantModal'
 
 export function MerchantDetailPage() {
@@ -69,13 +70,34 @@ export function MerchantDetailPage() {
         onToggleSuspend={handleToggleSuspend}
       />
 
-      <BankAccountsTab
-        merchant={merchant}
-        canManage={canManageBankAccounts(actor, merchant)}
-        onChanged={refresh}
+      {/* Header + merchant details above, everything else in tabs — the
+          same arrangement Contract Detail uses, and what keeps this page
+          readable now that a merchant's templates live here too. */}
+      <Tabs
+        items={[
+          {
+            key: 'bank-accounts',
+            label: 'Bank Accounts',
+            children: (
+              <BankAccountsTab
+                merchant={merchant}
+                canManage={canManageBankAccounts(actor, merchant)}
+                onChanged={refresh}
+              />
+            ),
+          },
+          {
+            key: 'branches',
+            label: 'Branches',
+            children: <BranchesTab actor={actor} merchant={merchant} />,
+          },
+          {
+            key: 'contract-templates',
+            label: 'Contract Templates',
+            children: <ContractTemplatesTab merchantId={merchant.id} />,
+          },
+        ]}
       />
-
-      <BranchesTab actor={actor} merchant={merchant} />
 
       <EditMerchantModal
         open={editOpen}

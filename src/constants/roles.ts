@@ -415,12 +415,12 @@ export function scopedCustomerList(actor: AuthUser, all: Customer[]): Customer[]
 // templates, never Draft/Archived ones or any edit action.
 //
 // Super Admin is ✅ on every row, qualified "for a selected merchant" —
-// they have no merchantId of their own, so the screen makes them pick one
-// first and every list/create call is scoped to that choice.
-export function canViewContractTemplates(_user: AuthUser): boolean {
-  return true
-}
-
+// they have no merchantId of their own, so they reach a merchant's
+// templates from that merchant's own Detail page, which supplies the id.
+// There's no canViewContractTemplates: both entry points already establish
+// whose templates they are (Merchant Detail is Super-Admin-only; Workspace
+// Settings is scoped to the signed-in user's merchant), so the only
+// question left is whether this actor may change them.
 export function canManageContractTemplates(user: AuthUser): boolean {
   return user.role === 'super_admin' || isMerchantAdminOrAbove(user)
 }

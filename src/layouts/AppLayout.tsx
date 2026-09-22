@@ -45,7 +45,7 @@ const SETTINGS_ITEMS = [
 
 // Tabs that only mean something inside a merchant workspace (see the
 // filter below for why Super Admin doesn't get them).
-const MERCHANT_ONLY_SETTINGS = ['bank-accounts', 'barcode']
+const MERCHANT_ONLY_SETTINGS = ['bank-accounts', 'contract-templates', 'barcode']
 
 const ACCOUNT_ITEMS = [
   { key: 'general', label: 'Account' },
@@ -394,13 +394,10 @@ export function AppLayout() {
                   selectedKeys={[settingsKey]}
                   style={{ border: 'none', background: 'transparent' }}
                   items={SETTINGS_ITEMS
-                    // Bank Accounts and Barcode are merchant business data
-                    // with no platform-level equivalent — Super Admin would
-                    // manage a given merchant's bank accounts from that
-                    // merchant's own Detail page instead. Contract Templates
-                    // is different: the doc gives Super Admin every action
-                    // on them "for a selected merchant", so that page offers
-                    // its own merchant picker rather than being hidden.
+                    // All merchant business data — Super Admin has no
+                    // merchant of their own, and reaches any of it through
+                    // that merchant's own Detail page instead (Bank Accounts
+                    // and Contract Templates are both tabs there).
                     .filter(item => !MERCHANT_ONLY_SETTINGS.includes(item.key) || user.role !== 'super_admin')
                     .map(item => ({
                       ...item,

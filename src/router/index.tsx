@@ -26,7 +26,7 @@ import { WorkspaceAccountPage } from '../pages/settings/WorkspaceAccountPage'
 import { WorkspaceBarcodePage } from '../pages/settings/WorkspaceBarcodePage'
 import { WorkspaceBankAccountsPage } from '../pages/settings/WorkspaceBankAccountsPage'
 import { AttributesPage } from '../pages/products/AttributesPage'
-import { ContractTemplatesPage } from '../pages/settings/ContractTemplatesPage'
+import { WorkspaceContractTemplatesPage } from '../pages/settings/WorkspaceContractTemplatesPage'
 import { DesignDocsPage } from '../pages/design/DesignDocsPage'
 import { SignInPage } from '../pages/auth/SignInPage'
 import { SetPasswordPage } from '../pages/auth/SetPasswordPage'
@@ -72,7 +72,7 @@ export const router = createBrowserRouter([
           { path: 'settings/account', element: <WorkspaceAccountPage /> },
           { path: 'settings/bank-accounts', element: <WorkspaceBankAccountsPage /> },
           { path: 'settings/barcode', element: <WorkspaceBarcodePage /> },
-          { path: 'settings/contract-templates', element: <ContractTemplatesPage /> },
+          { path: 'settings/contract-templates', element: <WorkspaceContractTemplatesPage /> },
           { path: 'settings/members', element: <UserListPage /> },
           { path: 'settings/members/:id', element: <UserDetailPage /> },
           { path: 'account', element: <Navigate to="/account/general" replace /> },

@@ -1,16 +1,15 @@
 import { useState } from 'react'
-import { Alert, Button, Input, message } from 'antd'
-import { Select } from '../../components/AppSelect'
+import { Button, Input, message } from 'antd'
+import { Select } from '../../../components/AppSelect'
 import { Plus, Search } from 'lucide-react'
-import { useCurrentUser } from '../../contexts/AuthContext'
-import { useIconColors } from '../../constants/iconColors'
-import { MOCK_CONTRACT_TEMPLATES, generateContractTemplateId } from '../../constants/mockContractTemplates'
-import { MOCK_MERCHANTS } from '../../constants/mockMerchants'
-import { MOCK_CONTRACTS } from '../../constants/mockContracts'
-import { canViewContractTemplates, canManageContractTemplates, scopedContractTemplateList } from '../../constants/roles'
-import type { ContractTemplate } from '../../types/contractTemplate'
-import { ContractTemplateTable } from './contractTemplates/components/ContractTemplateTable'
-import { ContractTemplateModal } from './contractTemplates/components/ContractTemplateModal'
+import { useCurrentUser } from '../../../contexts/AuthContext'
+import { useIconColors } from '../../../constants/iconColors'
+import { MOCK_CONTRACT_TEMPLATES, generateContractTemplateId } from '../../../constants/mockContractTemplates'
+import { MOCK_CONTRACTS } from '../../../constants/mockContracts'
+import { canManageContractTemplates, scopedContractTemplateList } from '../../../constants/roles'
+import type { ContractTemplate } from '../../../types/contractTemplate'
+import { ContractTemplateTable } from '../../settings/contractTemplates/components/ContractTemplateTable'
+import { ContractTemplateModal } from '../../settings/contractTemplates/components/ContractTemplateModal'
 
 type StatusFilter = 'all' | ContractTemplate['status']
 type TypeFilter = 'all' | ContractTemplate['type']
@@ -28,41 +27,31 @@ const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
   { value: 'free_rate', label: 'Free Rate' },
 ]
 
-// Real Contract Templates list — Contract creation's "Select template" step
-// depends on records here existing (see mockContractTemplates.ts's seeded
-// defaults), but until now there was no management UI for them at all.
-export function ContractTemplatesPage() {
+interface Props {
+  // Whose templates these are. Merchant Detail passes the merchant being
+  // viewed (Super Admin's "for a selected merchant"); Workspace Settings
+  // passes the signed-in user's own merchant.
+  merchantId: string | undefined
+}
+
+// A merchant's contract templates. Rendered as a tab on Merchant Detail for
+// Super Admin and as a Workspace Settings page for the merchant's own
+// Admin/Owner — the same arrangement BankAccountsTab already uses, so
+// merchant-owned data is managed from the merchant rather than from a
+// separate screen that has to re-pick one.
+export function ContractTemplatesTab({ merchantId }: Props) {
   const actor = useCurrentUser()
   const iconColors = useIconColors()
   const [version, setVersion] = useState(0)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
-  // Super Admin has no merchant of their own; the doc scopes every template
-  // action of theirs to "a selected merchant", so this is that selection.
-  // Defaults to the first merchant rather than an empty screen.
-  const [selectedMerchantId, setSelectedMerchantId] = useState(MOCK_MERCHANTS[0]?.id)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<ContractTemplate | null>(null)
   void version // trigger re-render on mutation
 
-  if (!canViewContractTemplates(actor)) {
-    return (
-      <Alert
-        type="info"
-        message="Not applicable"
-        description="Contract templates are scoped to a merchant workspace."
-        showIcon
-      />
-    )
-  }
-
-  const isPlatformActor = actor.role === 'super_admin'
-  // Whose templates these are: the actor's own merchant, or the one a Super
-  // Admin picked. Everything below writes against this id.
-  const merchantId = isPlatformActor ? selectedMerchantId : actor.merchantId
   const canManage = canManageContractTemplates(actor)
-  const scoped = scopedContractTemplateList(actor, MOCK_CONTRACT_TEMPLATES, selectedMerchantId)
+  const scoped = scopedContractTemplateList(actor, MOCK_CONTRACT_TEMPLATES, merchantId)
   const query = search.trim().toLowerCase()
   const hasActiveFilter = !!query || statusFilter !== 'all' || typeFilter !== 'all'
   const filtered = scoped
@@ -126,14 +115,6 @@ export function ContractTemplatesPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {isPlatformActor && (
-            <Select
-              value={selectedMerchantId}
-              onChange={setSelectedMerchantId}
-              options={MOCK_MERCHANTS.map(m => ({ value: m.id, label: m.name }))}
-              style={{ width: 200 }}
-            />
-          )}
           <Input
             placeholder="Search by name or type"
             prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
