@@ -6,7 +6,10 @@ import type { ContractTemplate } from '../../../../types/contractTemplate'
 import type { Contract } from '../../../../types/contract'
 import { TableEmptyState } from '../../../../components/TableEmptyState'
 import { DotTag } from '../../../../components/DotTag'
+import { MOCK_USER_ACCOUNTS } from '../../../../constants/mockUsers'
 import { ContractTemplatePreviewDrawer } from './ContractTemplatePreviewDrawer'
+
+const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
 const STATUS_LABELS: Record<ContractTemplate['status'], string> = {
   draft: 'Draft',
@@ -18,17 +21,21 @@ interface Props {
   templates: ContractTemplate[]
   contracts: Contract[]
   canManage: boolean
-  search: string
+  hasActiveFilter: boolean
   onEdit: (template: ContractTemplate) => void
   onDuplicate: (template: ContractTemplate) => void
   onSetDefault: (template: ContractTemplate) => void
   onSetStatus: (template: ContractTemplate, status: ContractTemplate['status']) => void
 }
 
-export function ContractTemplateTable({ templates, contracts, canManage, search, onEdit, onDuplicate, onSetDefault, onSetStatus }: Props) {
+export function ContractTemplateTable({ templates, contracts, canManage, hasActiveFilter, onEdit, onDuplicate, onSetDefault, onSetStatus }: Props) {
   const { token } = theme.useToken()
   const { modal } = App.useApp()
   const [previewTemplate, setPreviewTemplate] = useState<ContractTemplate | null>(null)
+
+  function userName(id: string | null) {
+    return id ? MOCK_USER_ACCOUNTS.find(u => u.id === id)?.name : undefined
+  }
 
   function contractCount(templateId: string) {
     return contracts.filter(c => c.template.templateId === templateId).length
@@ -52,6 +59,7 @@ export function ContractTemplateTable({ templates, contracts, canManage, search,
       ),
     },
     { title: 'Type', key: 'type', render: (_, t) => t.type === 'fixed_rate' ? 'Fixed Rate' : 'Free Rate' },
+    { title: 'Template Title', key: 'title', render: (_, t) => t.title },
     {
       title: 'Payment Terms',
       key: 'terms',
@@ -59,8 +67,30 @@ export function ContractTemplateTable({ templates, contracts, canManage, search,
         ? t.fixedRateTerms.map(term => `${term.months}mo (${term.ratePercent}%)`).join(', ')
         : <span style={{ color: token.colorTextDisabled }}>—</span>,
     },
-    { title: 'Max Loan', key: 'maxLoan', render: (_, t) => `฿${t.maxLoanAmount.toLocaleString()}` },
+    { title: 'Max Loan', key: 'maxLoan', align: 'right', render: (_, t) => `฿${t.maxLoanAmount.toLocaleString()}` },
+    {
+      // Free Rate only, per the doc — a Fixed Rate template has no
+      // per-contract payment cap to show.
+      title: 'Max Payment',
+      key: 'maxPayment',
+      align: 'right',
+      render: (_, t) => t.maxPaymentAmount != null
+        ? `฿${t.maxPaymentAmount.toLocaleString()}`
+        : <span style={{ color: token.colorTextDisabled }}>—</span>,
+    },
     { title: 'Contracts', key: 'contractCount', align: 'right', render: (_, t) => contractCount(t.id) },
+    {
+      title: 'Updated',
+      key: 'updated',
+      render: (_, t) => t.updatedAt
+        ? (
+          <span>
+            {dateFormatter.format(new Date(t.updatedAt))}
+            {userName(t.updatedBy) && <span style={{ color: token.colorTextDisabled }}> · {userName(t.updatedBy)}</span>}
+          </span>
+        )
+        : <span style={{ color: token.colorTextDisabled }}>—</span>,
+    },
     {
       title: 'Status',
       key: 'status',
@@ -75,15 +105,20 @@ export function ContractTemplateTable({ templates, contracts, canManage, search,
       width: 56,
       fixed: 'right',
       align: 'right',
-      render: (_, t) => (
+      // Every action in this menu is Admin/Owner-only, so Staff and Branch
+      // Manager get no trigger at all rather than an empty dropdown.
+      render: (_, t) => !canManage ? null : (
         <div onClick={e => e.stopPropagation()}>
           <Dropdown
             trigger={['click']}
             placement="bottomRight"
             menu={{
               items: [
-                { key: 'preview', icon: <Eye size={15} strokeWidth={2.25} />, label: 'Preview' },
+                // Preview is ❌ for Staff and Branch Manager in the doc's
+                // permission table — they select an active template during
+                // contract creation rather than inspecting the document here.
                 ...(canManage ? [
+                  { key: 'preview', icon: <Eye size={15} strokeWidth={2.25} />, label: 'Preview' },
                   // Archived templates are locked outright — the doc's
                   // permission table gives "Edit Archived Template" a ❌ for
                   // every role, Super Admin included. Duplicate stays: it
@@ -140,8 +175,8 @@ export function ContractTemplateTable({ templates, contracts, canManage, search,
               dataSource={templates}
               scroll={templates.length > 0 ? { x: 'max-content' } : undefined}
               locale={{
-                emptyText: search ? (
-                  <TableEmptyState icon={<FileStack size={22} strokeWidth={2.25} />} title="No templates found" description="Try a different name or type." />
+                emptyText: hasActiveFilter ? (
+                  <TableEmptyState icon={<FileStack size={22} strokeWidth={2.25} />} title="No templates found" description="Try a different name, status, or type." />
                 ) : (
                   <TableEmptyState icon={<FileStack size={22} strokeWidth={2.25} />} title="No templates yet" description="Templates you create will show up here." />
                 ),

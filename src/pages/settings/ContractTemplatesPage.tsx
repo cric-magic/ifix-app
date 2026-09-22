@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Alert, Button, Input, message } from 'antd'
+import { Select } from '../../components/AppSelect'
 import { Plus, Search } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { useIconColors } from '../../constants/iconColors'
@@ -10,6 +11,22 @@ import type { ContractTemplate } from '../../types/contractTemplate'
 import { ContractTemplateTable } from './contractTemplates/components/ContractTemplateTable'
 import { ContractTemplateModal } from './contractTemplates/components/ContractTemplateModal'
 
+type StatusFilter = 'all' | ContractTemplate['status']
+type TypeFilter = 'all' | ContractTemplate['type']
+
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'active', label: 'Active' },
+  { value: 'archived', label: 'Archived' },
+]
+
+const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
+  { value: 'all', label: 'All types' },
+  { value: 'fixed_rate', label: 'Fixed Rate' },
+  { value: 'free_rate', label: 'Free Rate' },
+]
+
 // Real Contract Templates list — Contract creation's "Select template" step
 // depends on records here existing (see mockContractTemplates.ts's seeded
 // defaults), but until now there was no management UI for them at all.
@@ -18,6 +35,8 @@ export function ContractTemplatesPage() {
   const iconColors = useIconColors()
   const [version, setVersion] = useState(0)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<ContractTemplate | null>(null)
   void version // trigger re-render on mutation
@@ -36,9 +55,11 @@ export function ContractTemplatesPage() {
   const canManage = canManageContractTemplates(actor)
   const scoped = scopedContractTemplateList(actor, MOCK_CONTRACT_TEMPLATES)
   const query = search.trim().toLowerCase()
-  const filtered = query
-    ? scoped.filter(t => t.name.toLowerCase().includes(query) || t.type.includes(query))
-    : scoped
+  const hasActiveFilter = !!query || statusFilter !== 'all' || typeFilter !== 'all'
+  const filtered = scoped
+    .filter(t => statusFilter === 'all' || t.status === statusFilter)
+    .filter(t => typeFilter === 'all' || t.type === typeFilter)
+    .filter(t => !query || t.name.toLowerCase().includes(query) || t.type.includes(query))
 
   function refresh() {
     setVersion(v => v + 1)
@@ -95,14 +116,18 @@ export function ContractTemplatesPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <Input
-          placeholder="Search by name or type"
-          prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
-          allowClear
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ maxWidth: 320 }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Input
+            placeholder="Search by name or type"
+            prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+            allowClear
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ maxWidth: 320 }}
+          />
+          <Select value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} style={{ width: 150 }} />
+          <Select value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} style={{ width: 150 }} />
+        </div>
         {canManage && (
           <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => { setEditingTemplate(null); setModalOpen(true) }}>
             Create Template
@@ -114,7 +139,7 @@ export function ContractTemplatesPage() {
         templates={filtered}
         contracts={MOCK_CONTRACTS}
         canManage={canManage}
-        search={search}
+        hasActiveFilter={hasActiveFilter}
         onEdit={t => { setEditingTemplate(t); setModalOpen(true) }}
         onDuplicate={handleDuplicate}
         onSetDefault={handleSetDefault}
