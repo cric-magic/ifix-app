@@ -430,6 +430,14 @@ function AppThemed() {
         Tabs: {
           // antd's default gutter between tab labels is 32 (Spacing 8).
           horizontalItemGutter: 16,
+          // Default is '12px 0', making a tab 46px tall (12 + 22 line-height
+          // + 12) against the 36px of every button and input beside it.
+          // Matching 36 exactly would need 7px ((36 - 22) / 2) — the same
+          // derived value antd computes internally for Dropdown items, which
+          // this app already pins to 8px (Spacing 2) rather than carry off
+          // the scale. Same call: 8px here, so a tab is 38px — 2px over a
+          // button instead of 10px over.
+          horizontalItemPadding: '8px 0',
         },
         Dropdown: {
           // antd derives this internally as (controlHeight - fontSize *
