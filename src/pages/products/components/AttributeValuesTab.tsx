@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { App, Button, ConfigProvider, Drawer, Dropdown, Form, Input, Space, Table, theme } from 'antd'
-import { Plus, MoreHorizontal, Ban, RotateCcw, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, MoreHorizontal, Ban, RotateCcw, Tags, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import { attributeValues, type AttributeTypeMeta, type AttributeValueRow } from '../../../constants/products'
 import { MOCK_PRODUCT_ATTRIBUTES } from '../../../constants/mockProductAttributes'
@@ -27,7 +27,6 @@ export function AttributeValuesTab({ meta }: Props) {
   const [addOpen, setAddOpen] = useState(false)
   const [form] = Form.useForm<{ value: string }>()
   const appWindow = useAppWindowContainer()
-  const EmptyIcon = meta.icon
   void version // re-render after mutating the mock records in place
 
   function refresh() {
@@ -160,9 +159,9 @@ export function AttributeValuesTab({ meta }: Props) {
                 dataSource={rows}
                 locale={{
                   emptyText: query ? (
-                    <TableEmptyState icon={<EmptyIcon size={22} strokeWidth={2.25} />} title="No values found" description={`Try a different ${meta.noun} value.`} />
+                    <TableEmptyState icon={<Tags size={22} strokeWidth={2.25} />} title="No values found" description={`Try a different ${meta.noun} value.`} />
                   ) : (
-                    <TableEmptyState icon={<EmptyIcon size={22} strokeWidth={2.25} />} title={`No ${meta.noun} values yet`} description="Values you add will show up here." />
+                    <TableEmptyState icon={<Tags size={22} strokeWidth={2.25} />} title={`No ${meta.noun} values yet`} description="Values you add will show up here." />
                   ),
                 }}
                 pagination={{

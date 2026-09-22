@@ -1,6 +1,5 @@
 import type { ProductCategory, ProductType, ProductStatus, UnitGrade, UnitTax, UnitAvailability } from '../types/product'
 import type { ProductAttributeType } from '../types/productAttribute'
-import { HardDrive, MemoryStick, Palette, Signal, type LucideIcon } from 'lucide-react'
 import { MOCK_PRODUCT_ATTRIBUTES } from './mockProductAttributes'
 
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
@@ -69,18 +68,13 @@ export interface AttributeTypeMeta {
   managed: boolean
   // Which Product field carries this attribute, for usage counts.
   field: 'color' | 'storage' | 'ram' | 'connection'
-  // For this type's empty state. Per the TableEmptyState convention in
-  // CLAUDE.md the icon has to describe the content, and each tab's content
-  // is a different kind of attribute — a paint palette says nothing about
-  // storage sizes or network bands.
-  icon: LucideIcon
 }
 
 export const ATTRIBUTE_TYPES: AttributeTypeMeta[] = [
-  { key: 'color', label: 'Color', noun: 'color', managed: true, field: 'color', icon: Palette },
-  { key: 'storage', label: 'Storage', noun: 'storage', managed: true, field: 'storage', icon: HardDrive },
-  { key: 'ram', label: 'RAM', noun: 'RAM', managed: false, field: 'ram', icon: MemoryStick },
-  { key: 'connection', label: 'Connection', noun: 'connection', managed: false, field: 'connection', icon: Signal },
+  { key: 'color', label: 'Color', noun: 'color', managed: true, field: 'color' },
+  { key: 'storage', label: 'Storage', noun: 'storage', managed: true, field: 'storage' },
+  { key: 'ram', label: 'RAM', noun: 'RAM', managed: false, field: 'ram' },
+  { key: 'connection', label: 'Connection', noun: 'connection', managed: false, field: 'connection' },
 ]
 
 export function attributeType(key: string): AttributeTypeMeta | undefined {
