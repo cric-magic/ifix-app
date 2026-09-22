@@ -257,19 +257,24 @@ const PAGE_HEIGHT = 1123
 
 type Token = ReturnType<typeof theme.useToken>['token']
 
+// Rules and table borders read off the text scale rather than the border
+// scale. antd's border tokens are tuned to separate panels on a screen —
+// at rgba(0,0,0,0.06) they all but vanish on paper, where a line has to
+// survive a printer. colorTextTertiary is the same ink the secondary copy
+// uses, so the gridlines stay visibly a shade lighter than the text.
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <div style={{ fontWeight: 600, marginBottom: 8 }}>{children}</div>
 }
 
 function Rule({ token }: { token: Token }) {
-  return <div style={{ borderTop: `0.5px solid ${token.colorBorderSecondary}`, margin: '16px 0' }} />
+  return <div style={{ borderTop: `0.5px solid ${token.colorTextTertiary}`, margin: '16px 0' }} />
 }
 
 function Panel({ token, children }: { token: Token, children: React.ReactNode }) {
   return (
     <div style={{
       background: token.colorFillQuaternary,
-      borderRadius: 6,
       padding: 16,
       marginBottom: 16,
     }}>
@@ -301,7 +306,6 @@ function Logo({ url }: { url?: string }) {
       width: 56,
       height: 56,
       flexShrink: 0,
-      borderRadius: 6,
       background: token.colorFillSecondary,
       display: 'flex',
       alignItems: 'center',
@@ -320,8 +324,7 @@ function PhotoSlot({ url, token }: { url?: string, token: Token }) {
   return (
     <div style={{
       height: 96,
-      borderRadius: 6,
-      border: `0.5px dashed ${token.colorBorder}`,
+      border: `0.5px dashed ${token.colorTextTertiary}`,
       background: token.colorBgContainer,
       display: 'flex',
       alignItems: 'center',
@@ -344,7 +347,7 @@ function Signature({ name, role, token }: { name: string, role: string, token: T
       {/* Blank space to actually sign in — matched to the QR tile height so
           the rule below lands level with the QR blocks' own captions. */}
       <div style={{ height: SIGNING_SPACE }} />
-      <div style={{ borderTop: `0.5px solid ${token.colorBorderSecondary}`, paddingTop: 8 }}>
+      <div style={{ borderTop: `0.5px solid ${token.colorTextTertiary}`, paddingTop: 8 }}>
         ({name})<br />
         <span style={{ color: token.colorTextSecondary }}>({role})　วันที่ __ / __ / __</span>
       </div>
@@ -358,8 +361,7 @@ function QrSlot({ url, title, caption, token }: { url?: string, title: string, c
       <div style={{
         width: SIGNING_SPACE,
         height: SIGNING_SPACE,
-        borderRadius: 6,
-        background: token.colorFillSecondary,
+          background: token.colorFillSecondary,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -379,7 +381,7 @@ function QrSlot({ url, title, caption, token }: { url?: string, title: string, c
 function ScheduleTable({ rows, token }: { rows: ContractDocumentData['schedule'], token: Token }) {
   const cell: React.CSSProperties = {
     padding: '6px 8px',
-    borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
+    borderBottom: `0.5px solid ${token.colorTextTertiary}`,
     textAlign: 'left',
     verticalAlign: 'top',
   }
@@ -388,8 +390,7 @@ function ScheduleTable({ rows, token }: { rows: ContractDocumentData['schedule']
       width: '100%',
       borderCollapse: 'collapse',
       marginBottom: 16,
-      border: `0.5px solid ${token.colorBorderSecondary}`,
-      borderRadius: 6,
+      border: `0.5px solid ${token.colorTextTertiary}`,
     }}>
       <thead>
         <tr style={{ background: token.colorFillQuaternary }}>
