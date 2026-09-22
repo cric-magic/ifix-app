@@ -1,9 +1,10 @@
-import { Drawer, Divider, Typography, theme } from 'antd'
+import { Drawer } from 'antd'
 import { useAppWindowContainer } from '../../../../contexts/AppWindowContext'
 import { useCurrentUser } from '../../../../contexts/AuthContext'
 import { MOCK_MERCHANTS } from '../../../../constants/mockMerchants'
-import { CurrencyDisplay } from '../../../../components/CurrencyDisplay'
-import { calcFixRate } from '../../../../utils/calculator'
+import { MOCK_BRANCHES } from '../../../../constants/mockBranches'
+import { ContractDocument } from '../../../../components/ContractDocument'
+import { buildSampleContractDocument } from '../../../../utils/contractDocument'
 
 interface PreviewValues {
   title?: string
@@ -26,84 +27,52 @@ interface Props {
   values: PreviewValues
 }
 
-// Sample device/customer/financial values, per the doc's "Sample values are
-// used when no contract has been created yet" — this drawer previews the
-// live form values (title/statement/declarations/rate) laid over the same
-// fixed sample numbers every time, updating as the form changes.
-const SAMPLE_DEVICE_PRICE = 25900
-
+// Renders the real printed contract (see components/ContractDocument) over
+// sample device/customer/financial values, so what's previewed is the
+// document the merchant will actually hand a customer rather than a summary
+// of the form. Per the doc the preview "updates when the template is
+// changed" — the caller passes live form values, and only the fields the
+// template owns (title, binding statement, legal declarations, and the
+// rate driving the schedule) differ between renders.
 export function ContractTemplatePreviewDrawer({ open, onClose, values }: Props) {
-  const { token } = theme.useToken()
   const appWindow = useAppWindowContainer()
   const actor = useCurrentUser()
   const merchant = MOCK_MERCHANTS.find(m => m.id === actor.merchantId)
 
+  // The actor's own branch where they have one (Staff/Branch Manager);
+  // otherwise the merchant's first, since Admin/Owner aren't branch-bound
+  // but the printed contract always names one.
+  const branch = MOCK_BRANCHES.find(b => b.merchantId === actor.merchantId && b.name === actor.branch)
+    ?? MOCK_BRANCHES.find(b => b.merchantId === actor.merchantId)
+
+  // Free Rate templates set rate and term per contract rather than on the
+  // template, so the preview borrows a representative term to draw a
+  // schedule with — there is nothing on the template itself to read.
   const term = values.fixedRateTerms?.[0] ?? { months: 12, ratePercent: 1.75 }
-  const downPaymentAmount = Math.round(SAMPLE_DEVICE_PRICE * 0.2)
-  const loanAmount = SAMPLE_DEVICE_PRICE - downPaymentAmount
-  const calc = calcFixRate(loanAmount, term.ratePercent, term.months)
+
+  const data = buildSampleContractDocument({
+    merchant,
+    branch,
+    termMonths: term.months,
+    ratePercent: term.ratePercent,
+    content: {
+      title: values.title || 'Untitled Template',
+      bindingStatement: values.bindingStatement ?? '',
+      legalDeclarations: values.legalDeclarations ?? '',
+      penaltyLegalText: values.penaltyLegalText ?? values.penalty?.legalText,
+    },
+  })
 
   return (
     <Drawer
       open={open}
       onClose={onClose}
-      title="Template preview"
-      width={480}
+      title="Contract preview"
+      width={760}
       destroyOnHidden
       getContainer={appWindow ?? undefined}
     >
-      <div style={{
-        padding: 24,
-        background: token.colorBgElevated,
-        border: `0.5px solid ${token.colorBorderSecondary}`,
-        borderRadius: token.borderRadius,
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 16 }}>
-          <Typography.Title level={4} style={{ margin: 0 }}>{values.title || 'Untitled Template'}</Typography.Title>
-          <Typography.Text type="secondary">{merchant?.name} · Sample Preview</Typography.Text>
-        </div>
-
-        <Divider />
-
-        <Typography.Paragraph style={{ fontStyle: 'italic', color: token.colorTextSecondary }}>
-          {values.bindingStatement || <span style={{ color: token.colorTextDisabled }}>No binding statement yet.</span>}
-        </Typography.Paragraph>
-
-        <Divider />
-
-        <Typography.Title level={5}>Contract Financial Summary</Typography.Title>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 16 }}>
-          <Typography.Text type="secondary">Device Price: <CurrencyDisplay amount={SAMPLE_DEVICE_PRICE} /></Typography.Text>
-          <Typography.Text type="secondary">Down Payment: <CurrencyDisplay amount={downPaymentAmount} /> (20%)</Typography.Text>
-          <Typography.Text type="secondary">Monthly Installment: <CurrencyDisplay amount={calc.monthlyInstallment} /></Typography.Text>
-          <Typography.Text type="secondary">Term: {term.months} months{values.type === 'fixed_rate' ? ` (${term.ratePercent}%/mo)` : ''}</Typography.Text>
-        </div>
-
-        <Typography.Paragraph style={{ fontSize: 12, color: token.colorTextTertiary }}>
-          {values.legalDeclarations || <span style={{ color: token.colorTextDisabled }}>No legal declarations yet.</span>}
-        </Typography.Paragraph>
-
-        {(values.penaltyLegalText ?? values.penalty?.legalText) && (
-          <Typography.Paragraph style={{ fontSize: 12, color: token.colorTextTertiary }}>
-            {values.penaltyLegalText ?? values.penalty?.legalText}
-          </Typography.Paragraph>
-        )}
-
-        <Divider />
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
-          <div style={{ textAlign: 'center', width: '40%' }}>
-            <div style={{ borderTop: `0.5px solid ${token.colorBorderSecondary}`, paddingTop: 8 }}>
-              <Typography.Text type="secondary">(Sample Customer)<br />Lessee</Typography.Text>
-            </div>
-          </div>
-          <div style={{ textAlign: 'center', width: '40%' }}>
-            <div style={{ borderTop: `0.5px solid ${token.colorBorderSecondary}`, paddingTop: 8 }}>
-              <Typography.Text type="secondary">({merchant?.name})<br />Lessor</Typography.Text>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ContractDocument data={data} />
     </Drawer>
   )
 }
