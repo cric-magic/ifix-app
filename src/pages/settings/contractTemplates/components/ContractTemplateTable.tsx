@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { App, Button, ConfigProvider, Dropdown, Table, Tag, theme } from 'antd'
+import { App, Button, ConfigProvider, Dropdown, Table, Tag, Typography, theme } from 'antd'
 import { ChevronLeft, ChevronRight, Copy, Eye, FileStack, MoreHorizontal, Pencil, Power, Archive, Star } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import type { ContractTemplate } from '../../../../types/contractTemplate'
@@ -22,13 +22,22 @@ interface Props {
   contracts: Contract[]
   canManage: boolean
   hasActiveFilter: boolean
+  // Detail views put the title and primary action inside the panel's own
+  // header row; list views leave both out and render them above the panel
+  // instead (see CLAUDE.md's "Panel header actions"). Set on the former.
+  headerTitle?: string
+  headerAction?: React.ReactNode
+  // Detail views keep the filter row inside the panel too: it only narrows
+  // this panel's own table, so floating it above would read as a control
+  // for the whole page. List views render their own above the panel.
+  filters?: React.ReactNode
   onEdit: (template: ContractTemplate) => void
   onDuplicate: (template: ContractTemplate) => void
   onSetDefault: (template: ContractTemplate) => void
   onSetStatus: (template: ContractTemplate, status: ContractTemplate['status']) => void
 }
 
-export function ContractTemplateTable({ templates, contracts, canManage, hasActiveFilter, onEdit, onDuplicate, onSetDefault, onSetStatus }: Props) {
+export function ContractTemplateTable({ templates, contracts, canManage, hasActiveFilter, headerTitle, headerAction, filters, onEdit, onDuplicate, onSetDefault, onSetStatus }: Props) {
   const { token } = theme.useToken()
   const { modal } = App.useApp()
   const [previewTemplate, setPreviewTemplate] = useState<ContractTemplate | null>(null)
@@ -94,6 +103,7 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
     {
       title: 'Status',
       key: 'status',
+      fixed: 'right',
       render: (_, t) => {
         const dotColor = t.status === 'active' ? token.colorSuccess : t.status === 'archived' ? token.colorTextTertiary : token.colorWarning
         return <DotTag dotColor={dotColor}>{STATUS_LABELS[t.status]}</DotTag>
@@ -167,7 +177,22 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
       },
     }}>
       <div className="ifix-table-panel">
+        {headerTitle && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 56,
+            paddingLeft: 16,
+            paddingRight: 8,
+            boxShadow: `inset 0 -0.5px 0 0 ${token.colorBorderSecondary}`,
+          }}>
+            <Typography.Text strong style={{ fontSize: 15 }}>{headerTitle}</Typography.Text>
+            {headerAction && <div style={{ paddingRight: 2 }}>{headerAction}</div>}
+          </div>
+        )}
         <div style={{ padding: 16 }}>
+          {filters && <div style={{ marginBottom: 16 }}>{filters}</div>}
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"

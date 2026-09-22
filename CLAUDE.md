@@ -80,9 +80,11 @@ Lucide icons are stroked paths, and several have crossing/overlapping segments (
 ### Panel header actions: list views vs. detail views
 `.ifix-table-panel` is used on both list pages (Catalog, Unit list) and detail pages (Product Detail's "Product Details" and "Units" panels). The two use opposite placement for header actions:
 - **List/index views** (e.g. `ProductsPage`, `UnitsListPage`) — filters and the primary action button (`Create Product`, `Add Unit`) render in their own row **above** the panel, not inside it. The panel itself has no header row.
-- **Detail views** (e.g. `ProductDetailPage`'s `OverviewTab`/`UnitsTab`) — the title and action button render **inside** the panel's own header row (56px height, `paddingLeft: 16, paddingRight: 8`, bottom border), matching the layout used for `Product Details` / `N Units`. The right side is trimmed to 8px (not 16px) so it lines up with the action button's own centering gap instead of double-padding past it; a header with no button uses a plain `padding: '0 16px'`.
+- **Detail views** (e.g. `ProductDetailPage`'s `OverviewTab`/`UnitsTab`, `MerchantDetailPage`'s tabs) — the title and action button render **inside** the panel's own header row (56px height, `paddingLeft: 16, paddingRight: 8`, bottom border), matching the layout used for `Product Details` / `N Units`. The right side is trimmed to 8px (not 16px) so it lines up with the action button's own centering gap instead of double-padding past it; a header with no button uses a plain `padding: '0 16px'`.
 
-When adding a new panel, check which kind of page it's on before deciding where the header actions go.
+Filters follow the action button, not the page: on a detail view they belong **inside** the panel too, as a row between the header and the table (see `ContractTemplatesTab`, which renders them there and passes them to `ContractTemplateTable`'s `filters` prop). A filter only narrows its own panel's table, so floating it above would read as a control for the whole page — which is exactly what a list view's filter row *is*.
+
+When adding a new panel, check which kind of page it's on before deciding where the header actions go. A component used in both places takes a `standalone` flag and renders each arrangement — `BankAccountsTab` and `ContractTemplatesTab` are the reference implementations.
 
 ### DevTools panel (`src/components/DevToolsPanel.tsx`)
 - Uses `theme.useToken()` — inherits from the same `ConfigProvider` as the app

@@ -28,6 +28,10 @@ const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
 ]
 
 interface Props {
+  // Workspace Settings renders this as a page of its own (filters and the
+  // primary action above the panel); Merchant Detail renders it as one tab
+  // among several, where the title and action belong in the panel's header.
+  standalone?: boolean
   // Whose templates these are. Merchant Detail passes the merchant being
   // viewed (Super Admin's "for a selected merchant"); Workspace Settings
   // passes the signed-in user's own merchant.
@@ -39,7 +43,7 @@ interface Props {
 // Admin/Owner — the same arrangement BankAccountsTab already uses, so
 // merchant-owned data is managed from the merchant rather than from a
 // separate screen that has to re-pick one.
-export function ContractTemplatesTab({ merchantId }: Props) {
+export function ContractTemplatesTab({ merchantId, standalone }: Props) {
   const actor = useCurrentUser()
   const iconColors = useIconColors()
   const [version, setVersion] = useState(0)
@@ -111,33 +115,50 @@ export function ContractTemplatesTab({ merchantId }: Props) {
     message.success(status === 'active' ? 'Template activated' : 'Template archived')
   }
 
+  const filterControls = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <Input
+        placeholder="Search by name or type"
+        prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+        allowClear
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        style={{ maxWidth: 320 }}
+      />
+      <Select value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} style={{ width: 150 }} />
+      <Select value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} style={{ width: 150 }} />
+    </div>
+  )
+
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Input
-            placeholder="Search by name or type"
-            prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
-            allowClear
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ maxWidth: 320 }}
-          />
-          <Select value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} style={{ width: 150 }} />
-          <Select value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} style={{ width: 150 }} />
+      {/* List view keeps its filters and primary action above the panel;
+          the detail view hands both to the panel instead (header row and
+          filter row), so nothing that belongs to this table sits outside
+          it. See CLAUDE.md's "Panel header actions". */}
+      {standalone && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
+          {filterControls}
+          {canManage && (
+            <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => { setEditingTemplate(null); setModalOpen(true) }}>
+              Create Template
+            </Button>
+          )}
         </div>
-        {canManage && (
-          <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => { setEditingTemplate(null); setModalOpen(true) }}>
-            Create Template
-          </Button>
-        )}
-      </div>
+      )}
 
       <ContractTemplateTable
+        filters={standalone ? undefined : filterControls}
         templates={filtered}
         contracts={MOCK_CONTRACTS}
         canManage={canManage}
         hasActiveFilter={hasActiveFilter}
+        headerTitle={standalone ? undefined : `${filtered.length} Template${filtered.length === 1 ? '' : 's'}`}
+        headerAction={!standalone && canManage ? (
+          <Button icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => { setEditingTemplate(null); setModalOpen(true) }}>
+            Create Template
+          </Button>
+        ) : undefined}
         onEdit={t => { setEditingTemplate(t); setModalOpen(true) }}
         onDuplicate={handleDuplicate}
         onSetDefault={handleSetDefault}

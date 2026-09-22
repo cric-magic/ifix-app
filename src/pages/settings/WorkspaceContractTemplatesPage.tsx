@@ -16,5 +16,5 @@ export function WorkspaceContractTemplatesPage() {
     return <Navigate to="/settings/account" replace />
   }
 
-  return <ContractTemplatesTab merchantId={actor.merchantId} />
+  return <ContractTemplatesTab merchantId={actor.merchantId} standalone />
 }
