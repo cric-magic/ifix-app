@@ -9,6 +9,7 @@ import { MOCK_CATALOG_PRODUCTS } from '../../constants/mockCatalogProducts'
 import { CATEGORY_LABELS, TYPE_LABELS } from '../../constants/products'
 import { useIconColors } from '../../constants/iconColors'
 import { TableEmptyState } from '../../components/TableEmptyState'
+import { ProductTypeTabs, type TypeFilter } from './components/ProductTypeTabs'
 import type { CatalogProduct } from '../../types/catalogProduct'
 import { CatalogProductModal } from './components/CatalogProductModal'
 
@@ -22,6 +23,7 @@ export function GlobalCatalogPage() {
   const { modal } = App.useApp()
   const [version, setVersion] = useState(0)
   const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [editing, setEditing] = useState<CatalogProduct | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   void version // re-render after mutating the mock records in place
@@ -32,14 +34,18 @@ export function GlobalCatalogPage() {
 
   const dash = <span style={{ color: token.colorTextDisabled }}>—</span>
   const query = search.trim().toLowerCase()
-  const products = MOCK_CATALOG_PRODUCTS.filter(c => !c.deletedAt).filter(c =>
-    !query
-    || c.name.toLowerCase().includes(query)
-    || c.brand.toLowerCase().includes(query)
-    || c.model.toLowerCase().includes(query)
-    || c.modelNumber.toLowerCase().includes(query)
-    || c.skuCode.toLowerCase().includes(query),
-  )
+  const hasActiveFilter = !!query || typeFilter !== 'all'
+  const products = MOCK_CATALOG_PRODUCTS
+    .filter(c => !c.deletedAt)
+    .filter(c => typeFilter === 'all' || c.type === typeFilter)
+    .filter(c =>
+      !query
+      || c.name.toLowerCase().includes(query)
+      || c.brand.toLowerCase().includes(query)
+      || c.model.toLowerCase().includes(query)
+      || c.modelNumber.toLowerCase().includes(query)
+      || c.skuCode.toLowerCase().includes(query),
+    )
 
   function refresh() {
     setVersion(v => v + 1)
@@ -135,14 +141,17 @@ export function GlobalCatalogPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <Input
-          placeholder="Search by name, brand, or SKU code"
-          prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
-          allowClear
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ maxWidth: 320 }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Input
+            placeholder="Search by name, brand, or SKU code"
+            prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+            allowClear
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ maxWidth: 320 }}
+          />
+          <ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />
+        </div>
         <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => { setEditing(null); setModalOpen(true) }}>
           Create Product
         </Button>
@@ -158,8 +167,8 @@ export function GlobalCatalogPage() {
                 dataSource={products}
                 scroll={{ x: 'max-content' }}
                 locale={{
-                  emptyText: query ? (
-                    <TableEmptyState icon={<Package size={22} strokeWidth={2.25} />} title="No catalog products found" description="Try a different name, brand, or SKU code." />
+                  emptyText: hasActiveFilter ? (
+                    <TableEmptyState icon={<Package size={22} strokeWidth={2.25} />} title="No catalog products found" description="Try a different name, brand, SKU code, or type." />
                   ) : (
                     <TableEmptyState icon={<Package size={22} strokeWidth={2.25} />} title="No catalog products yet" description="Standard products you add will show up here." />
                   ),

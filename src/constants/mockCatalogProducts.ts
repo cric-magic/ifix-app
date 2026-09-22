@@ -102,4 +102,24 @@ export const MOCK_CATALOG_PRODUCTS: CatalogProduct[] = [
     createdAt: '2024-01-05T09:00:00.000Z',
     deletedAt: null,
   },
+  // A Used standard SKU — refurbished stock is still a catalog definition a
+  // merchant can adopt, and the generated code carries the -U suffix that
+  // distinguishes it from the same model sold new (see utils/catalogSku.ts).
+  {
+    id: 'cat-7',
+    name: 'iPhone 14 (Refurbished)',
+    brand: 'Apple',
+    category: 'smartphone',
+    model: 'iPhone 14',
+    modelNumber: 'A2882',
+    storage: '128GB',
+    ram: '6GB',
+    color: 'Midnight',
+    connection: '5G',
+    type: 'used',
+    skuCode: 'IP14-128-MID-U',
+    photos: ['https://placehold.co/400x400/1a1a1a/999999?text=iPhone+14'],
+    createdAt: '2024-01-05T09:00:00.000Z',
+    deletedAt: null,
+  },
 ]
