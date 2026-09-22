@@ -99,6 +99,13 @@ export const MOCK_CONTRACT_TEMPLATES: ContractTemplate[] = [
     updatedBy: null,
     updatedAt: null,
   },
+  // The other two merchants get theirs from the same factory that runs when
+  // a merchant is created, dated to each merchant's own createdAt. Without
+  // these they'd sit in a state a live merchant can't reach — the doc has
+  // every merchant provisioned at creation — and their owners would open
+  // contract creation to an empty template picker.
+  ...createStarterTemplates('merchant-2', 'super-1', '2024-03-14T09:00:00.000Z'),
+  ...createStarterTemplates('merchant-3', 'super-1', '2024-07-02T09:00:00.000Z'),
 ]
 
 // Per the doc's "Default Templates for New Merchants": creating a merchant
@@ -107,17 +114,23 @@ export const MOCK_CONTRACT_TEMPLATES: ContractTemplate[] = [
 // Active and default — a brand-new merchant's first contract has to have
 // something to select, and the doc pre-selects the default for the type.
 //
-// The seeded merchant above carries hand-written equivalents; this is the
-// same content, parameterised, for merchants created at runtime.
-export function createStarterTemplates(merchantId: string, createdBy: string): ContractTemplate[] {
-  const now = new Date().toISOString()
+// Siam Gadget above carries hand-written equivalents (it also has a third,
+// non-default template); this is the same content, parameterised, for every
+// other merchant — seeded or created at runtime.
+export function createStarterTemplates(
+  merchantId: string,
+  createdBy: string,
+  // Seeds pass their merchant's own creation date; a merchant created at
+  // runtime gets the current time.
+  createdAt: string = new Date().toISOString(),
+): ContractTemplate[] {
   const shared = {
     merchantId,
     status: 'active' as const,
     isDefault: true,
     minDownPaymentPercent: 10,
     createdBy,
-    createdAt: now,
+    createdAt,
     updatedBy: null,
     updatedAt: null,
   }
