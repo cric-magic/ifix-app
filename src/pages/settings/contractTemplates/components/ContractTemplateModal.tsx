@@ -147,10 +147,12 @@ export function ContractTemplateModal({ open, template, merchantId, onClose, onS
       title={template ? 'Edit contract template' : 'Create contract template'}
       onClose={onClose}
       destroyOnHidden
-      // Wide enough to hold the form and a readable contract side by side;
-      // a percentage so it still fits the Tablet/Mobile app window, where
-      // the two columns wrap instead.
-      width="94%"
+      // Full width — the form and a full-page contract side by side need
+      // every pixel the app window has. index.css docks a right-placed
+      // drawer 8px in from the right, so a flat 100% would overhang the
+      // left edge by that much; subtracting both insets leaves the same
+      // 8px gap on each side.
+      width="calc(100% - 16px)"
       getContainer={appWindow ?? undefined}
       // The body itself doesn't scroll — each column below does, so the
       // form stays put while the contract is scrolled and vice versa.
