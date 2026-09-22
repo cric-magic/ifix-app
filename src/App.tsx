@@ -427,6 +427,10 @@ function AppThemed() {
           // panel's did. Match it.
           paddingLG: 16,
         },
+        Tabs: {
+          // antd's default gutter between tab labels is 32 (Spacing 8).
+          horizontalItemGutter: 16,
+        },
         Dropdown: {
           // antd derives this internally as (controlHeight - fontSize *
           // lineHeight) / 2 to vertically center a menu item's text inside
