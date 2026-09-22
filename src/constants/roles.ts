@@ -410,16 +410,19 @@ export function scopedCustomerList(actor: AuthUser, all: Customer[]): Customer[]
 }
 
 // Contract Template permissions — per the Contract Template doc's
-// Permissions table: Merchant Admin/Owner (and Super Admin for a selected
-// merchant, not modeled here — see canViewMerchantList) can create/edit/
-// duplicate/activate/archive/set default; Staff/Branch Manager can only
-// view Active templates, never Draft/Archived ones or any edit action.
-export function canViewContractTemplates(user: AuthUser): boolean {
-  return user.role !== 'super_admin'
+// Permissions table: Merchant Admin/Owner can create/edit/duplicate/
+// activate/archive/set default; Staff/Branch Manager can only view Active
+// templates, never Draft/Archived ones or any edit action.
+//
+// Super Admin is ✅ on every row, qualified "for a selected merchant" —
+// they have no merchantId of their own, so the screen makes them pick one
+// first and every list/create call is scoped to that choice.
+export function canViewContractTemplates(_user: AuthUser): boolean {
+  return true
 }
 
 export function canManageContractTemplates(user: AuthUser): boolean {
-  return isMerchantAdminOrAbove(user)
+  return user.role === 'super_admin' || isMerchantAdminOrAbove(user)
 }
 
 // Product master data (the global Color/Storage option lists) is the mirror
@@ -454,9 +457,18 @@ export function canConfigureBarcodeSettings(user: AuthUser): boolean {
   return user.role !== 'super_admin' && isMerchantAdminOrAbove(user)
 }
 
-export function scopedContractTemplateList(actor: AuthUser, all: ContractTemplate[]): ContractTemplate[] {
-  if (actor.role === 'super_admin') return []
-  const inMerchant = all.filter(t => t.merchantId === actor.merchantId)
+// `selectedMerchantId` only applies to Super Admin, who browses one
+// merchant at a time; every other role is pinned to their own merchant and
+// ignores it. With no selection yet, Super Admin sees nothing rather than
+// every merchant's templates mixed together.
+export function scopedContractTemplateList(
+  actor: AuthUser,
+  all: ContractTemplate[],
+  selectedMerchantId?: string,
+): ContractTemplate[] {
+  const merchantId = actor.role === 'super_admin' ? selectedMerchantId : actor.merchantId
+  if (!merchantId) return []
+  const inMerchant = all.filter(t => t.merchantId === merchantId)
   if (canManageContractTemplates(actor)) return inMerchant
   return inMerchant.filter(t => t.status === 'active')
 }

@@ -199,6 +199,7 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
       </div>
 
       <ContractTemplatePreviewDrawer
+        merchantId={previewTemplate?.merchantId}
         open={!!previewTemplate}
         onClose={() => setPreviewTemplate(null)}
         values={previewTemplate ?? {}}

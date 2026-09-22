@@ -25,6 +25,10 @@ interface Props {
   open: boolean
   onClose: () => void
   values: PreviewValues
+  // Whose contract this previews. Super Admin has no merchant of their own,
+  // so the list passes the template's merchant and the form passes the one
+  // selected on the page.
+  merchantId: string | undefined
 }
 
 // Renders the real printed contract (see components/ContractDocument) over
@@ -34,16 +38,16 @@ interface Props {
 // changed" — the caller passes live form values, and only the fields the
 // template owns (title, binding statement, legal declarations, and the
 // rate driving the schedule) differ between renders.
-export function ContractTemplatePreviewDrawer({ open, onClose, values }: Props) {
+export function ContractTemplatePreviewDrawer({ open, onClose, values, merchantId }: Props) {
   const appWindow = useAppWindowContainer()
   const actor = useCurrentUser()
-  const merchant = MOCK_MERCHANTS.find(m => m.id === actor.merchantId)
+  const merchant = MOCK_MERCHANTS.find(m => m.id === merchantId)
 
   // The actor's own branch where they have one (Staff/Branch Manager);
   // otherwise the merchant's first, since Admin/Owner aren't branch-bound
   // but the printed contract always names one.
-  const branch = MOCK_BRANCHES.find(b => b.merchantId === actor.merchantId && b.name === actor.branch)
-    ?? MOCK_BRANCHES.find(b => b.merchantId === actor.merchantId)
+  const branch = MOCK_BRANCHES.find(b => b.merchantId === merchantId && b.name === actor.branch)
+    ?? MOCK_BRANCHES.find(b => b.merchantId === merchantId)
 
   // Free Rate templates set rate and term per contract rather than on the
   // template, so the preview borrows a representative term to draw a

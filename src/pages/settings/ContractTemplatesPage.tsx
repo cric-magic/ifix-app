@@ -5,6 +5,7 @@ import { Plus, Search } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { useIconColors } from '../../constants/iconColors'
 import { MOCK_CONTRACT_TEMPLATES, generateContractTemplateId } from '../../constants/mockContractTemplates'
+import { MOCK_MERCHANTS } from '../../constants/mockMerchants'
 import { MOCK_CONTRACTS } from '../../constants/mockContracts'
 import { canViewContractTemplates, canManageContractTemplates, scopedContractTemplateList } from '../../constants/roles'
 import type { ContractTemplate } from '../../types/contractTemplate'
@@ -37,6 +38,10 @@ export function ContractTemplatesPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
+  // Super Admin has no merchant of their own; the doc scopes every template
+  // action of theirs to "a selected merchant", so this is that selection.
+  // Defaults to the first merchant rather than an empty screen.
+  const [selectedMerchantId, setSelectedMerchantId] = useState(MOCK_MERCHANTS[0]?.id)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<ContractTemplate | null>(null)
   void version // trigger re-render on mutation
@@ -46,14 +51,18 @@ export function ContractTemplatesPage() {
       <Alert
         type="info"
         message="Not applicable"
-        description="Contract templates are scoped to a merchant workspace. Super Admin operates at the platform level."
+        description="Contract templates are scoped to a merchant workspace."
         showIcon
       />
     )
   }
 
+  const isPlatformActor = actor.role === 'super_admin'
+  // Whose templates these are: the actor's own merchant, or the one a Super
+  // Admin picked. Everything below writes against this id.
+  const merchantId = isPlatformActor ? selectedMerchantId : actor.merchantId
   const canManage = canManageContractTemplates(actor)
-  const scoped = scopedContractTemplateList(actor, MOCK_CONTRACT_TEMPLATES)
+  const scoped = scopedContractTemplateList(actor, MOCK_CONTRACT_TEMPLATES, selectedMerchantId)
   const query = search.trim().toLowerCase()
   const hasActiveFilter = !!query || statusFilter !== 'all' || typeFilter !== 'all'
   const filtered = scoped
@@ -117,6 +126,14 @@ export function ContractTemplatesPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {isPlatformActor && (
+            <Select
+              value={selectedMerchantId}
+              onChange={setSelectedMerchantId}
+              options={MOCK_MERCHANTS.map(m => ({ value: m.id, label: m.name }))}
+              style={{ width: 200 }}
+            />
+          )}
           <Input
             placeholder="Search by name or type"
             prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
@@ -149,6 +166,7 @@ export function ContractTemplatesPage() {
       <ContractTemplateModal
         open={modalOpen}
         template={editingTemplate}
+        merchantId={merchantId}
         onClose={() => { setModalOpen(false); setEditingTemplate(null) }}
         onSaved={handleSave}
       />

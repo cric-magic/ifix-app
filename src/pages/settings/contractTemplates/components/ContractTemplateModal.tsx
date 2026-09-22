@@ -10,6 +10,9 @@ import { ContractTemplatePreviewDrawer } from './ContractTemplatePreviewDrawer'
 interface Props {
   open: boolean
   template: ContractTemplate | null
+  // Whose template this is — the actor's own merchant, or the one a Super
+  // Admin selected on the list (they have no merchantId of their own).
+  merchantId: string | undefined
   onClose: () => void
   onSaved: (template: ContractTemplate) => void
 }
@@ -55,7 +58,7 @@ const DEFAULT_VALUES: FormValues = {
 // populated for "edit" (a duplicate is created by the table action, which
 // pushes a new record and never opens this modal at all — see
 // ContractTemplateTable's handleDuplicate).
-export function ContractTemplateModal({ open, template, onClose, onSaved }: Props) {
+export function ContractTemplateModal({ open, template, merchantId, onClose, onSaved }: Props) {
   const [form] = Form.useForm<FormValues>()
   const appWindow = useAppWindowContainer()
   const actor = useCurrentUser()
@@ -94,7 +97,7 @@ export function ContractTemplateModal({ open, template, onClose, onSaved }: Prop
     if (template?.status === 'archived') return
     const saved: ContractTemplate = {
       id: template?.id ?? generateContractTemplateId(),
-      merchantId: template?.merchantId ?? actor.merchantId!,
+      merchantId: template?.merchantId ?? merchantId!,
       name: values.name,
       description: values.description,
       type: values.type,
@@ -261,6 +264,7 @@ export function ContractTemplateModal({ open, template, onClose, onSaved }: Prop
       </Form>
 
       <ContractTemplatePreviewDrawer
+        merchantId={template?.merchantId ?? merchantId}
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
         values={form.getFieldsValue(true)}
