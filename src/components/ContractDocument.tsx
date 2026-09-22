@@ -102,13 +102,10 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
         aspectRatio: `${PAGE_WIDTH} / ${PAGE_HEIGHT}`,
         margin: '0 auto',
         padding: 48,
-        // Composed rather than taken from boxShadow/-Tertiary: the former
-        // carries an 8px spread that blooms past the page edge, the latter
-        // tops out at 3% alpha and barely reads against the canvas. A tight
-        // contact layer plus a short ambient one gives the page a defined
-        // edge without the halo. Both colours are tokens (6% and 15% ink);
-        // only the offsets and blur are literal.
-        boxShadow: `0 1px 3px ${token.colorSplit}, 0 4px 12px ${token.colorFill}`,
+        // The project's second elevation — the page floats above the canvas
+        // the way any detached surface does, rather than inventing a third
+        // level for this one component.
+        boxShadow: token.boxShadowSecondary,
         fontSize: 12,
         lineHeight: 1.6,
       }}>
@@ -268,7 +265,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 function Rule({ token }: { token: Token }) {
-  return <div style={{ borderTop: `0.5px solid ${token.colorTextTertiary}`, margin: '16px 0' }} />
+  return <div style={{ borderTop: `1px solid ${token.colorTextTertiary}`, margin: '16px 0' }} />
 }
 
 function Panel({ token, children }: { token: Token, children: React.ReactNode }) {
@@ -280,7 +277,7 @@ function Panel({ token, children }: { token: Token, children: React.ReactNode })
       // survive the trip to paper, which is exactly what these blocks carry
       // the document's structure with. A rule always prints, costs no ink
       // across a whole block, and is how a contract is usually set anyway.
-      border: `0.5px solid ${token.colorTextTertiary}`,
+      border: `1px solid ${token.colorTextTertiary}`,
       padding: 16,
       marginBottom: 16,
     }}>
@@ -330,7 +327,7 @@ function PhotoSlot({ url, token }: { url?: string, token: Token }) {
   return (
     <div style={{
       height: 96,
-      border: `0.5px dashed ${token.colorTextTertiary}`,
+      border: `1px dashed ${token.colorTextTertiary}`,
       background: token.colorBgContainer,
       display: 'flex',
       alignItems: 'center',
@@ -353,7 +350,7 @@ function Signature({ name, role, token }: { name: string, role: string, token: T
       {/* Blank space to actually sign in — matched to the QR tile height so
           the rule below lands level with the QR blocks' own captions. */}
       <div style={{ height: SIGNING_SPACE }} />
-      <div style={{ borderTop: `0.5px solid ${token.colorTextTertiary}`, paddingTop: 8 }}>
+      <div style={{ borderTop: `1px solid ${token.colorTextTertiary}`, paddingTop: 8 }}>
         ({name})<br />
         <span style={{ color: token.colorTextSecondary }}>({role})　วันที่ __ / __ / __</span>
       </div>
@@ -387,7 +384,7 @@ function QrSlot({ url, title, caption, token }: { url?: string, title: string, c
 function ScheduleTable({ rows, token }: { rows: ContractDocumentData['schedule'], token: Token }) {
   const cell: React.CSSProperties = {
     padding: '6px 8px',
-    borderBottom: `0.5px solid ${token.colorTextTertiary}`,
+    borderBottom: `1px solid ${token.colorTextTertiary}`,
     textAlign: 'left',
     verticalAlign: 'top',
   }
@@ -396,7 +393,7 @@ function ScheduleTable({ rows, token }: { rows: ContractDocumentData['schedule']
       width: '100%',
       borderCollapse: 'collapse',
       marginBottom: 16,
-      border: `0.5px solid ${token.colorTextTertiary}`,
+      border: `1px solid ${token.colorTextTertiary}`,
     }}>
       <thead>
         <tr style={{ background: token.colorFillQuaternary }}>

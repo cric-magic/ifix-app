@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { Button, Space, Typography, message, theme } from 'antd'
 import { Printer, Download } from 'lucide-react'
 import type { Contract } from '../../../types/contract'
@@ -5,6 +6,7 @@ import { MOCK_MERCHANTS } from '../../../constants/mockMerchants'
 import { MOCK_BRANCHES } from '../../../constants/mockBranches'
 import { ContractDocument } from '../../../components/ContractDocument'
 import { buildContractDocument } from '../../../utils/contractDocument'
+import { downloadContractPdf } from '../../../utils/contractPdf'
 
 interface Props {
   contract: Contract
@@ -22,6 +24,21 @@ export function ContractPreviewTab({ contract }: Props) {
   const branch = MOCK_BRANCHES.find(b => b.merchantId === contract.merchantId && b.name === contract.branch)
 
   const data = buildContractDocument(contract, merchant, branch)
+  const pageRef = useRef<HTMLDivElement>(null)
+  const [exporting, setExporting] = useState(false)
+
+  async function handleDownload() {
+    const page = pageRef.current?.querySelector<HTMLElement>('.ifix-contract-page')
+    if (!page) return
+    setExporting(true)
+    try {
+      await downloadContractPdf(page, `${contract.contractNumber}.pdf`)
+    } catch {
+      message.error('Could not generate the PDF')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
     <div className="ifix-table-panel" style={{ marginBottom: 16 }}>
@@ -36,11 +53,19 @@ export function ContractPreviewTab({ contract }: Props) {
         <Typography.Text strong style={{ fontSize: 15 }}>Contract Preview</Typography.Text>
         <Space size={4} style={{ paddingRight: 2 }}>
           <Button icon={<Printer size={16} strokeWidth={2.25} />} onClick={() => window.print()}>Print</Button>
-          <Button icon={<Download size={16} strokeWidth={2.25} />} onClick={() => message.info('PDF export coming soon')}>Download PDF</Button>
+          <Button
+            icon={<Download size={16} strokeWidth={2.25} />}
+            loading={exporting}
+            onClick={handleDownload}
+          >
+            Download PDF
+          </Button>
         </Space>
       </div>
 
-      <ContractDocument data={data} />
+      <div ref={pageRef}>
+        <ContractDocument data={data} />
+      </div>
     </div>
   )
 }

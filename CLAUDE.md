@@ -155,6 +155,9 @@ Two deliberate border weights, both plain numbers (not antd tokens with public n
 |---|---|
 | `0.5px` | Everything by default (the global seed `lineWidth`) |
 | `1px` | The input family — `Input`/`Select`/`InputNumber`/`DatePicker`/`Button`/`Upload` — to match their own text-field weight instead of the thinner global hairline |
+| `1px` | Printed artifacts — everything inside `ContractDocument.tsx`. A sub-pixel rule prints unpredictably (some drivers drop it, others round it up), and on the contract these rules carry the whole block structure, so they can't be allowed to vanish. See also the Shadow/colour notes below on `paperTheme.ts`. |
+
+Printed artifacts (`ContractDocument.tsx`, `UnitLabel.tsx`) render under `PAPER_THEME` (`src/constants/paperTheme.ts`) rather than the app theme — paper is a white sheet with dark text whatever variant the app is in. Switching a nested `ConfigProvider` to `theme.defaultAlgorithm` is **not** enough on its own: `ConfigProvider` merges with its parent, so `App.tsx`'s per-variant seeds (including its solidized copy of the whole text and fill scale) leak through. `PAPER_THEME` resets those seeds to antd's stock light values, computed once with `getDesignToken`. Their line colours also come off the **text** scale (`colorTextTertiary`), not the border scale — antd's border tokens sit around 6% black, which all but vanishes on paper.
 
 ## Consistency
 When building a new feature (a table, a form, an empty state, a detail page, etc.), first check how the same kind of thing is already done elsewhere in the app and match it — don't invent a new pattern for something that already has one. This applies to visual treatment, component structure, and copy alike.
