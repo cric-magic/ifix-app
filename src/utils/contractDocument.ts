@@ -13,7 +13,7 @@ const SAMPLE = {
   devicePrice: 25900,
   downPaymentPercent: 20,
   customer: {
-    name: 'สมชาย ใจดี (Sample Customer)',
+    name: 'สมชาย ใจดี',
     nationalId: '1-2345-67890-12-3',
     address: '99/1 ถนนสุขุมวิท กรุงเทพฯ',
     phone: '081-234-5678',

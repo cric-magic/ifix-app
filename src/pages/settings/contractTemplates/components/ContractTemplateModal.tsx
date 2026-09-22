@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Drawer, Button, Space, Form, Input, InputNumber, Radio, Divider, Typography } from 'antd'
-import { Plus, Trash2, Eye } from 'lucide-react'
+import { Drawer, Button, Space, Form, Input, InputNumber, Radio, Divider, Typography, theme} from 'antd'
+import { Plus, Trash2 } from 'lucide-react'
 import { useAppWindowContainer } from '../../../../contexts/AppWindowContext'
+import { useDevTools } from '../../../../contexts/DevToolsContext'
 import { useCurrentUser } from '../../../../contexts/AuthContext'
 import type { ContractTemplate, ContractTemplateType, PenaltyType } from '../../../../types/contractTemplate'
 import { generateContractTemplateId } from '../../../../constants/mockContractTemplates'
-import { ContractTemplatePreviewDrawer } from './ContractTemplatePreviewDrawer'
+import { ContractTemplatePreview } from './ContractTemplatePreview'
 
 interface Props {
   open: boolean
@@ -60,9 +61,17 @@ const DEFAULT_VALUES: FormValues = {
 // ContractTemplateTable's handleDuplicate).
 export function ContractTemplateModal({ open, template, merchantId, onClose, onSaved }: Props) {
   const [form] = Form.useForm<FormValues>()
+  const { token } = theme.useToken()
+  // Below the app's own md breakpoint the two columns stack, and the
+  // split-scroll layout would put the preview past the bottom of a
+  // non-scrolling body — so narrow windows fall back to one scroller.
+  const { windowSize } = useDevTools()
+  const sideBySide = windowSize.width > 768
   const appWindow = useAppWindowContainer()
   const actor = useCurrentUser()
-  const [previewOpen, setPreviewOpen] = useState(false)
+  // Bumped on every form change so the preview beside the form redraws —
+  // the doc asks for the preview to update as the template is changed.
+  const [revision, setRevision] = useState(0)
   const type = Form.useWatch('type', form)
   const penaltyType = Form.useWatch('penaltyType', form)
 
@@ -138,19 +147,31 @@ export function ContractTemplateModal({ open, template, merchantId, onClose, onS
       title={template ? 'Edit contract template' : 'Create contract template'}
       onClose={onClose}
       destroyOnHidden
-      width={480}
+      // Wide enough to hold the form and a readable contract side by side;
+      // a percentage so it still fits the Tablet/Mobile app window, where
+      // the two columns wrap instead.
+      width="94%"
       getContainer={appWindow ?? undefined}
+      // The body itself doesn't scroll — each column below does, so the
+      // form stays put while the contract is scrolled and vice versa.
+      styles={{ body: sideBySide ? { padding: 0, overflow: 'hidden' } : undefined }}
       footer={
-        <Space style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Button icon={<Eye size={16} strokeWidth={2.25} />} onClick={() => setPreviewOpen(true)}>Preview</Button>
-          <Space>
-            <Button onClick={onClose}>Cancel</Button>
-            <Button type="primary" onClick={() => form.submit()} disabled={isArchived}>Save</Button>
-          </Space>
+        <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button type="primary" onClick={() => form.submit()} disabled={isArchived}>Save</Button>
         </Space>
       }
     >
-      <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false} initialValues={DEFAULT_VALUES}>
+      <div style={sideBySide ? { display: 'flex', height: '100%' } : undefined}>
+        <div style={sideBySide ? { flex: '1 1 320px', minWidth: 0, maxWidth: 380, overflowY: 'auto', height: '100%', padding: 16 } : undefined}>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        onValuesChange={() => setRevision(r => r + 1)}
+        requiredMark={false}
+        initialValues={DEFAULT_VALUES}
+      >
         <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Required' }]}>
           <Input placeholder="e.g. Standard Fixed Rate" />
         </Form.Item>
@@ -262,13 +283,30 @@ export function ContractTemplateModal({ open, template, merchantId, onClose, onS
           <Input.TextArea rows={2} />
         </Form.Item>
       </Form>
+        </div>
 
-      <ContractTemplatePreviewDrawer
-        merchantId={template?.merchantId ?? merchantId}
-        open={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        values={form.getFieldsValue(true)}
-      />
+        {/* Live preview. `revision` is only here to re-run this render on
+            each keystroke; the values themselves come straight from the
+            form instance. */}
+        <div
+          key={revision}
+          style={sideBySide
+            ? {
+              flex: '2 1 520px',
+              minWidth: 0,
+              overflowY: 'auto',
+              height: '100%',
+              padding: 16,
+              borderLeft: `0.5px solid ${token.colorBorderSecondary}`,
+            }
+            : { marginTop: 24 }}
+        >
+          <ContractTemplatePreview
+            merchantId={template?.merchantId ?? merchantId}
+            values={form.getFieldsValue(true)}
+          />
+        </div>
+      </div>
     </Drawer>
   )
 }

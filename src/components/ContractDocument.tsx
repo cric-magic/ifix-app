@@ -206,7 +206,12 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
       <Rule token={token} />
 
       {/* Signatures and the two QR codes the doc puts side by side. */}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
+      {/* Top-aligned: bottom alignment let a taller caption push its QR
+          upward and a wrapped name push its signature rule upward, so no
+          two columns lined up. Each column now starts at the same y and
+          reserves the same signing space, which puts the rules and the QR
+          captions on shared baselines. */}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
         <Signature name={customer.name} role="ผู้เช่าซื้อ" token={token} />
         <Signature name={merchant.name} role="ผู้ให้เช่าซื้อ" token={token} />
         <QrSlot
@@ -311,10 +316,14 @@ function PhotoSlot({ url, token }: { url?: string, token: Token }) {
   )
 }
 
+const SIGNING_SPACE = 72
+
 function Signature({ name, role, token }: { name: string, role: string, token: Token }) {
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ height: 32 }} />
+      {/* Blank space to actually sign in — matched to the QR tile height so
+          the rule below lands level with the QR blocks' own captions. */}
+      <div style={{ height: SIGNING_SPACE }} />
       <div style={{ borderTop: `0.5px solid ${token.colorBorderSecondary}`, paddingTop: 8 }}>
         ({name})<br />
         <span style={{ color: token.colorTextSecondary }}>({role})　วันที่ __ / __ / __</span>
@@ -327,8 +336,8 @@ function QrSlot({ url, title, caption, token }: { url?: string, title: string, c
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{
-        width: 72,
-        height: 72,
+        width: SIGNING_SPACE,
+        height: SIGNING_SPACE,
         borderRadius: 6,
         background: token.colorFillSecondary,
         display: 'flex',
