@@ -179,6 +179,22 @@ export interface PenaltyAdjustment {
   voidedAt: string | null
 }
 
+// One uploaded file of the signed copy — a PDF, or a photo of a page (staff
+// often photograph the signed pages at the counter rather than scan them).
+// Read as a data URL and kept on the record, same as every other upload in
+// this prototype.
+export interface SignedContractFile {
+  name: string
+  type: string
+  dataUrl: string
+}
+
+export interface SignedContract {
+  files: SignedContractFile[]
+  uploadedBy: string
+  uploadedAt: string
+}
+
 export interface Contract {
   id: string
   contractNumber: string
@@ -208,7 +224,9 @@ export interface Contract {
   penaltyBalance: number
   collectionFeeBalance: number
   rejectionNote: string | null
-  signedContractUploaded: boolean
+  // The customer-signed copy uploaded after printing (Awaiting Signature →
+  // Pending Payment). Null until then.
+  signedContract: SignedContract | null
   createdBy: string
   createdAt: string
   submittedBy: string | null

@@ -336,7 +336,7 @@ export function CreateContractPage() {
       penaltyBalance: 0,
       collectionFeeBalance: 0,
       rejectionNote: null,
-      signedContractUploaded: false,
+      signedContract: null,
       createdBy: actor.id,
       createdAt: now,
       submittedBy: null,

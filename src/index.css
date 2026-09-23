@@ -1482,3 +1482,21 @@ label[for="password"]::after {
     aspect-ratio: auto !important;
   }
 }
+
+/* The header's Print Contract renders its own copy of the document (see
+   ContractPrintCopy) — invisible on screen, the one that prints. If the
+   Contract Preview tab's copy is on the page too, that one steps aside so
+   the two don't print stacked on the same sheet. */
+.ifix-print-copy {
+  display: none;
+}
+
+@media print {
+  .ifix-print-copy {
+    display: block;
+  }
+
+  body:has(.ifix-print-copy) .ifix-contract-page:not(.ifix-print-copy .ifix-contract-page) {
+    display: none !important;
+  }
+}

@@ -7,6 +7,7 @@ import { MOCK_PRODUCTS } from './mockProducts'
 import { MOCK_PRODUCT_UNITS, unitIdFor } from './mockProductUnits'
 import { MOCK_CUSTOMERS } from './mockCustomers'
 import { MOCK_CONTRACT_TEMPLATES } from './mockContractTemplates'
+import { sampleSignedContract } from './sampleSignedCopy'
 
 function deviceSnapshotFor(unitId: string): DeviceSnapshot {
   const unit = MOCK_PRODUCT_UNITS.find(u => u.id === unitId)!
@@ -219,7 +220,9 @@ export const MOCK_CONTRACTS: Contract[] = SEEDS.map(seed => {
     penaltyBalance: 0,
     collectionFeeBalance: 0,
     rejectionNote: seed.rejectionNote ?? null,
-    signedContractUploaded: seed.signedContractUploaded ?? false,
+    signedContract: seed.signedContractUploaded
+      ? sampleSignedContract(seed.contractNumber, seed.approvedBy ?? seed.createdBy, createdAt)
+      : null,
     createdBy: seed.createdBy,
     createdAt,
     submittedBy: seed.submittedBy ?? null,
