@@ -1,239 +1,85 @@
 import type { ProductUnit } from '../types/product'
+import { LINEUP_VARIANTS } from './mockCatalogProducts'
+import { productIdFor } from './mockProducts'
 
-export const MOCK_PRODUCT_UNITS: ProductUnit[] = [
-  {
-    id: 'unit-1',
-    productId: 'prod-1',
-    imei1: '353241001234561',
-    serialNumber: 'SN-IP14P-0001',
-    branch: 'Bangkok HQ',
-    tax: 'vat',
-    // Sold via contract-009 (Overdue) in mockContracts.ts — the furthest-
-    // progressed of the three contracts that reference this unit (the
-    // other two, contract-002/contract-006, are earlier superseded attempts).
-    availability: 'sold',
-    soldAt: '2024-06-11T09:00:00.000Z',
-    soldBy: 'admin-1',
-    createdAt: '2024-01-11T09:00:00.000Z',
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+1+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+1+IMEI',
-    ],
-  },
-  {
-    id: 'unit-2',
-    productId: 'prod-1',
-    imei1: '353241001234562',
-    serialNumber: 'SN-IP14P-0002',
-    branch: 'Bangkok HQ',
-    tax: 'vat',
-    availability: 'reserved',
-    soldAt: null,
-    soldBy: null,
-    createdAt: '2024-01-11T09:00:00.000Z',
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+Back',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+2+IMEI',
-    ],
-  },
-  {
-    id: 'unit-3',
-    productId: 'prod-1',
-    imei1: '353241001234563',
-    serialNumber: 'SN-IP14P-0003',
-    branch: 'Chiang Mai',
-    tax: 'vat',
-    availability: 'sold',
-    soldAt: '2024-04-02T10:30:00.000Z',
-    soldBy: 'branch-1',
-    createdAt: '2024-01-11T09:00:00.000Z',
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Back',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+IMEI',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+3+Seal',
-    ],
-  },
-  {
-    id: 'unit-4',
-    productId: 'prod-2',
-    imei1: '353241009876541',
-    serialNumber: 'SN-GS23-0001',
-    branch: 'Phuket',
-    tax: 'vat',
-    // Reserved by contract-005 (Approved) in mockContracts.ts.
-    availability: 'reserved',
-    soldAt: null,
-    soldBy: null,
-    createdAt: '2024-01-13T09:00:00.000Z',
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+4+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+4+IMEI',
-    ],
-  },
-  {
-    id: 'unit-5',
-    productId: 'prod-5',
-    imei1: '353241005551211',
-    serialNumber: 'SN-IP13-0001',
-    branch: 'Khon Kaen',
-    grade: 'B',
-    batteryPercentage: 87,
-    notes: 'Minor scuff on back panel',
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+5+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+5+IMEI',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+5+Scuff',
-    ],
-    tax: 'non_vat',
-    customPrice: 20900,
-    availability: 'available',
-    soldAt: null,
-    soldBy: null,
-    createdAt: '2024-03-06T09:00:00.000Z',
-  },
-  {
-    id: 'unit-6',
-    productId: 'prod-1',
-    imei1: '353241001234564',
-    serialNumber: 'SN-IP14P-0004',
-    branch: 'Chiang Mai',
-    tax: 'vat',
-    // Sold via contract-008 (Active, SGR-20260601-000002) in mockContracts.ts.
-    availability: 'sold',
-    soldAt: '2024-07-08T09:00:00.000Z',
-    soldBy: 'branch-1',
-    createdAt: '2024-04-10T09:00:00.000Z',
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+6+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+6+IMEI',
-    ],
-  },
-  {
-    id: 'unit-7',
-    productId: 'prod-1',
-    imei1: '353241001234565',
-    serialNumber: 'SN-IP14P-0005',
-    branch: 'Chiang Mai',
-    tax: 'vat',
-    availability: 'sold',
-    soldAt: '2024-05-15T14:20:00.000Z',
-    soldBy: 'branch-1',
-    createdAt: '2024-02-20T09:00:00.000Z',
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+7+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+7+IMEI',
-    ],
-  },
-  {
-    id: 'unit-8',
-    productId: 'prod-2',
-    imei1: '353241009876542',
-    serialNumber: 'SN-GS23-0002',
-    branch: 'Chiang Mai',
-    tax: 'vat',
-    availability: 'reserved',
-    soldAt: null,
-    soldBy: null,
-    createdAt: '2024-05-01T09:00:00.000Z',
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+8+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+8+IMEI',
-    ],
-  },
-  {
-    id: 'unit-9',
-    productId: 'prod-5',
-    imei1: '353241005551212',
-    serialNumber: 'SN-IP13-0002',
-    branch: 'Chiang Mai',
-    grade: 'C',
-    batteryPercentage: 78,
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+9+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+9+IMEI',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+9+Defect',
-    ],
-    tax: 'non_vat',
-    customPrice: 19900,
-    // Reserved by contract-007 (Pending Payment) in mockContracts.ts.
-    availability: 'reserved',
-    soldAt: null,
-    soldBy: null,
-    createdAt: '2024-04-18T09:00:00.000Z',
-  },
-  {
-    id: 'unit-10',
-    productId: 'prod-5',
-    imei1: '353241005551213',
-    serialNumber: 'SN-IP13-0003',
-    branch: 'Chiang Mai',
-    grade: 'A',
-    batteryPercentage: 92,
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+10+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+10+IMEI',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+10+Defect',
-    ],
-    tax: 'non_vat',
-    customPrice: 21500,
-    availability: 'sold',
-    soldAt: '2024-04-30T11:05:00.000Z',
-    soldBy: 'branch-1',
-    createdAt: '2024-03-25T09:00:00.000Z',
-  },
-  {
-    id: 'unit-11',
-    productId: 'prod-6',
-    imei1: '353241006661101',
-    serialNumber: 'SN-APP2-0001',
-    branch: 'Chiang Mai',
-    tax: 'vat',
-    availability: 'available',
-    soldAt: null,
-    soldBy: null,
-    createdAt: '2024-05-05T09:00:00.000Z',
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+11+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+11+IMEI',
-    ],
-  },
-  {
-    id: 'unit-12',
-    productId: 'prod-3',
-    imei1: '353241003331101',
-    serialNumber: 'SN-IPADAIR-0001',
-    branch: 'Bangkok HQ',
-    tax: 'vat',
-    availability: 'sold',
-    soldAt: '2024-03-01T16:45:00.000Z',
-    soldBy: 'admin-1',
-    createdAt: '2024-02-10T09:00:00.000Z',
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+12+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+12+IMEI',
-    ],
-  },
-  {
-    id: 'unit-13',
-    productId: 'prod-4',
-    imei1: '353241004441101',
-    serialNumber: 'SN-MBAM2-0001',
-    branch: 'Phuket',
-    tax: 'vat',
-    // Sold via contract-010 (Settled) in mockContracts.ts — this is the
-    // MacBook Air M2's only tracked unit, so the product itself is
-    // currently out of stock even though its own `status` stays
-    // 'available' (that field means "we still sell this SKU," independent
-    // of whether any unit happens to be in stock right now).
-    availability: 'sold',
-    soldAt: '2024-02-01T09:00:00.000Z',
-    soldBy: 'branch-2',
-    createdAt: '2024-03-01T09:00:00.000Z',
-    conditionPhotos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+13+Front',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Unit+13+IMEI',
-    ],
-  },
+// Branch name -> the short code used in serial numbers (the first part of
+// each branch's own code in mockBranches.ts).
+const BRANCHES: [name: string, code: string][] = [
+  ['Bangkok HQ', 'BKK'],
+  ['Chiang Mai', 'CNX'],
+  ['Phuket', 'HKT'],
+  ['Khon Kaen', 'KKC'],
 ]
+
+// Used stock is scarcer than new — two branches rather than all four — and
+// each unit carries the grade, battery and notes the Used type requires.
+const USED_STOCK: Record<string, { branch: string; grade: 'A' | 'B'; battery: number; notes: string }[]> = {
+  'iPhone 17 Pro': [
+    { branch: 'Bangkok HQ', grade: 'A', battery: 96, notes: 'Like new, original box' },
+    { branch: 'Chiang Mai', grade: 'B', battery: 89, notes: 'Light scratches on frame' },
+  ],
+  'Galaxy S25': [
+    { branch: 'Bangkok HQ', grade: 'B', battery: 91, notes: 'Small scuff on back panel' },
+    { branch: 'Chiang Mai', grade: 'A', battery: 95, notes: 'Screen protector fitted' },
+  ],
+}
+
+function codeFor(branch: string): string {
+  return BRANCHES.find(([name]) => name === branch)![1]
+}
+
+// A readable serial: SKU plus branch, e.g. SN-IP17P-256-COR-BKK. With one
+// unit of each SKU per branch that's already unique, and it says what and
+// where a unit is without opening it.
+export function serialFor(sku: string, branch: string): string {
+  return `SN-${sku}-${codeFor(branch)}`
+}
+
+export function unitIdFor(sku: string, branch: string): string {
+  return `unit-${sku.toLowerCase()}-${codeFor(branch).toLowerCase()}`
+}
+
+// Deterministic 15-digit IMEIs, unique per unit.
+let imeiSeq = 0
+function nextImei(): string {
+  imeiSeq += 1
+  return `35241700${String(imeiSeq).padStart(7, '0')}`
+}
+
+// Every unit starts Available. Reserved and Sold aren't seeded here — they
+// come from the contracts that hold each unit (mockContracts.ts applies
+// them when it builds), which is the only way a unit can reach either state
+// in the app itself. Seeding them here as well is how the two drifted apart
+// before: units marked sold that no contract had sold.
+export const MOCK_PRODUCT_UNITS: ProductUnit[] = LINEUP_VARIANTS.flatMap(v => {
+  const productId = productIdFor(v.skuCode)
+  const isPhone = v.line.category === 'smartphone'
+  // Samsung ships dual physical SIM; the iPhone 17 family is eSIM plus one.
+  const dualImei = isPhone && v.line.brand === 'Samsung'
+  const createdAt = v.line.brand === 'Apple' ? '2025-09-25T09:00:00.000Z' : '2025-02-12T09:00:00.000Z'
+
+  const base = (branch: string): ProductUnit => ({
+    id: unitIdFor(v.skuCode, branch),
+    productId,
+    serialNumber: serialFor(v.skuCode, branch),
+    imei1: isPhone ? nextImei() : undefined,
+    imei2: dualImei ? nextImei() : undefined,
+    branch,
+    tax: v.type === 'used' ? 'non_vat' : 'vat',
+    availability: 'available',
+    soldAt: null,
+    soldBy: null,
+    createdAt,
+  })
+
+  if (v.type === 'used') {
+    return USED_STOCK[v.line.model].map(u => ({
+      ...base(u.branch),
+      grade: u.grade,
+      batteryPercentage: u.battery,
+      notes: u.notes,
+      conditionPhotos: [`https://placehold.co/400x400/1a1a1a/999999?text=${encodeURIComponent(v.skuCode)}`],
+    }))
+  }
+  return BRANCHES.map(([branch]) => base(branch))
+})

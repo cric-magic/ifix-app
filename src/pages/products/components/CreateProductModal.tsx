@@ -223,7 +223,7 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
             </div>
           )}
           <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Required' }]}>
-            <Input placeholder="e.g. iPhone 14 Pro" />
+            <Input placeholder="e.g. iPhone 17 Pro" />
           </Form.Item>
           <Form.Item label="Brand" name="brand" rules={[{ required: true, message: 'Required' }]}>
             <Input placeholder="e.g. Apple" />
@@ -232,7 +232,7 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
             <Select placeholder="Select category" options={CATEGORY_OPTIONS} />
           </Form.Item>
           <Form.Item label="Model" name="model" rules={[{ required: true, message: 'Required' }]}>
-            <Input placeholder="e.g. iPhone 14 Pro" />
+            <Input placeholder="e.g. iPhone 17 Pro" />
           </Form.Item>
           <Form.Item label="Model Number" name="modelNumber" rules={[{ required: true, message: 'Required' }]}>
             <Input placeholder="e.g. A2890" />
@@ -252,7 +252,7 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
             <Select placeholder="Select connection" allowClear options={optionsWithCurrent(CONNECTION_OPTIONS, source?.connection)} />
           </Form.Item>
           <Form.Item label="SKU Code" name="sku" rules={[{ required: true, message: 'Required' }]}>
-            <Input placeholder="e.g. IP14P-128-BLK" />
+            <Input placeholder="e.g. IP17P-256-COR" />
           </Form.Item>
           <Form.Item label="Cost Price" name="costPrice" rules={[{ required: true, message: 'Required' }]}>
             <InputNumber min={0} style={{ width: '100%' }} addonBefore="฿" />

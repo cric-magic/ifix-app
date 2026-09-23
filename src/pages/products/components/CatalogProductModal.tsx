@@ -99,7 +99,7 @@ export function CatalogProductModal({ open, product, onClose, onSaved }: Props) 
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false}>
         <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Required' }]}>
-          <Input placeholder="e.g. iPhone 15 Pro" />
+          <Input placeholder="e.g. iPhone 17 Pro" />
         </Form.Item>
         <Form.Item label="Brand" name="brand" rules={[{ required: true, message: 'Required' }]}>
           <Input placeholder="e.g. Apple" />
@@ -108,7 +108,7 @@ export function CatalogProductModal({ open, product, onClose, onSaved }: Props) 
           <Select placeholder="Select category" options={CATEGORY_OPTIONS} />
         </Form.Item>
         <Form.Item label="Model" name="model" rules={[{ required: true, message: 'Required' }]}>
-          <Input placeholder="e.g. iPhone 15 Pro" />
+          <Input placeholder="e.g. iPhone 17 Pro" />
         </Form.Item>
         <Form.Item label="Model Number" name="modelNumber" rules={[{ required: true, message: 'Required' }]}>
           <Input placeholder="e.g. A2848" />

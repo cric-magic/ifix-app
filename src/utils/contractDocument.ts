@@ -11,7 +11,7 @@ import { getWorkspaceAvatarUrl } from './avatar'
 // sample device/customer/financials so the only thing that changes as the
 // form is edited is what the template actually controls.
 const SAMPLE = {
-  devicePrice: 25900,
+  devicePrice: 41900,
   downPaymentPercent: 20,
   customer: {
     name: 'สมชาย ใจดี',
@@ -21,13 +21,13 @@ const SAMPLE = {
   },
   product: {
     condition: 'New',
-    color: 'Space Black',
-    imei1: '353241001234561',
-    imei2: '353241001234562',
+    color: 'Cosmic Orange',
+    imei1: '352417000000001',
+    imei2: '—',
     brand: 'Apple',
-    storage: '128GB',
-    model: 'iPhone 14 Pro',
-    serialNumber: 'SN-SAMPLE-0001',
+    storage: '256GB',
+    model: 'iPhone 17 Pro',
+    serialNumber: 'SN-IP17P-256-COR-BKK',
   },
 }
 

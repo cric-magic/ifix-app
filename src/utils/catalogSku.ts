@@ -18,7 +18,11 @@ function stripOrdinal(token: string): string {
 // to IPAD, MacBook to MB but AirPods to AP), so no single rule reproduces
 // them all. Existing merchant SKUs keep whatever code they already have.
 function modelToken(model: string): string {
-  const words = model.toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean)
+  // "+" is a model name in its own right (Galaxy S25 vs S25+), not
+  // punctuation — splitting it away made both models GAS25 and their SKUs
+  // collide wherever they share a storage and colour. Spelt as a Plus word
+  // first so it contributes a P like any other trailing word.
+  const words = model.toUpperCase().replace(/\+/g, ' PLUS ').split(/[^A-Z0-9]+/).filter(Boolean)
   return words
     .map(stripOrdinal)
     .filter(w => !NOISE_WORDS.has(w))

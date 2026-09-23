@@ -111,7 +111,7 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
             },
           ]}
         >
-          <Input placeholder="e.g. SN-IP14P-0001" />
+          <Input placeholder="e.g. SN-IP17P-256-COR-BKK" />
         </Form.Item>
         <Form.Item
           label="IMEI 1"

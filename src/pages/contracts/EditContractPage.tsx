@@ -421,7 +421,7 @@ export function EditContractPage() {
                     onChange={handleProductChange}
                     options={scopedProductList(actor, MOCK_PRODUCTS).map(p => ({
                       value: p.id,
-                      label: `${p.brand} ${p.name}${p.storage ? ` · ${p.storage}` : ''} (${p.type === 'used' ? 'Used' : 'New'})`,
+                      label: `${p.brand} ${p.name}${p.storage ? ` · ${p.storage}` : ''} · ${p.color} (${p.type === 'used' ? 'Used' : 'New'})`,
                     }))}
                   />
                 </Form.Item>

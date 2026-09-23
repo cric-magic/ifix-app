@@ -4,7 +4,7 @@ import type { ContractTemplate } from '../types/contractTemplate'
 import { calcFixRate } from '../utils/calculator'
 import { MERCHANT_ID } from './mockUsers'
 import { MOCK_PRODUCTS } from './mockProducts'
-import { MOCK_PRODUCT_UNITS } from './mockProductUnits'
+import { MOCK_PRODUCT_UNITS, unitIdFor } from './mockProductUnits'
 import { MOCK_CUSTOMERS } from './mockCustomers'
 import { MOCK_CONTRACT_TEMPLATES } from './mockContractTemplates'
 
@@ -164,16 +164,16 @@ function seedContractNumber(monthsSinceStart: number, seqInMonth: number): strin
 }
 
 const SEEDS: Seed[] = [
-  { id: 'contract-001', contractNumber: seedContractNumber(0, 1), status: 'draft', branch: 'Khon Kaen', unitId: 'unit-5', customerId: 'cust-004', template: tmplFixed1, downPaymentPercent: 20, termMonths: 12, createdBy: 'staff-1', monthsSinceStart: 0, paidCount: 0, overdueCount: 0 },
-  { id: 'contract-002', contractNumber: seedContractNumber(0, 2), status: 'pending_approval', branch: 'Bangkok HQ', unitId: 'unit-1', customerId: 'cust-001', template: tmplFixed1, downPaymentPercent: 15, termMonths: 6, createdBy: 'staff-2', monthsSinceStart: 0, paidCount: 0, overdueCount: 0, submittedBy: 'staff-2' },
-  { id: 'contract-003', contractNumber: seedContractNumber(0, 3), status: 'under_review', branch: 'Bangkok HQ', unitId: 'unit-2', customerId: 'cust-005', template: tmplFixed2, downPaymentPercent: 20, termMonths: 12, createdBy: 'staff-2', monthsSinceStart: 0, paidCount: 0, overdueCount: 0, submittedBy: 'staff-2' },
-  { id: 'contract-004', contractNumber: seedContractNumber(1, 4), status: 'rejected', branch: 'Khon Kaen', unitId: 'unit-5', customerId: 'cust-004', template: tmplFixed1, downPaymentPercent: 15, termMonths: 12, createdBy: 'staff-1', monthsSinceStart: 1, paidCount: 0, overdueCount: 0, submittedBy: 'staff-1', rejectedBy: 'admin-1', rejectionNote: 'ID card photo is blurry — please re-upload a clearer copy.' },
-  { id: 'contract-005', contractNumber: seedContractNumber(0, 4), status: 'approved', branch: 'Phuket', unitId: 'unit-4', customerId: 'cust-003', template: tmplFixed1, downPaymentPercent: 25, termMonths: 12, createdBy: 'branch-2', monthsSinceStart: 0, paidCount: 0, overdueCount: 0, approvedBy: 'branch-2' },
-  { id: 'contract-006', contractNumber: seedContractNumber(0, 5), status: 'awaiting_signature', branch: 'Bangkok HQ', unitId: 'unit-1', customerId: 'cust-001', template: tmplFixed1, downPaymentPercent: 15, termMonths: 6, createdBy: 'staff-2', monthsSinceStart: 0, paidCount: 0, overdueCount: 0, submittedBy: 'staff-2', approvedBy: 'admin-1' },
-  { id: 'contract-007', contractNumber: seedContractNumber(1, 5), status: 'pending_payment', branch: 'Chiang Mai', unitId: 'unit-9', customerId: 'cust-002', template: tmplFixed2, downPaymentPercent: 20, termMonths: 12, createdBy: 'branch-1', monthsSinceStart: 1, paidCount: 0, overdueCount: 0, approvedBy: 'branch-1', signedContractUploaded: true },
-  { id: 'contract-008', contractNumber: seedContractNumber(3, 2), status: 'active', branch: 'Chiang Mai', unitId: 'unit-6', customerId: 'cust-006', template: tmplFixed1, downPaymentPercent: 20, termMonths: 12, createdBy: 'branch-1', monthsSinceStart: 3, paidCount: 3, overdueCount: 0, approvedBy: 'branch-1', signedContractUploaded: true },
-  { id: 'contract-009', contractNumber: seedContractNumber(3, 3), status: 'overdue', branch: 'Bangkok HQ', unitId: 'unit-1', customerId: 'cust-005', template: tmplFixed1, downPaymentPercent: 10, termMonths: 6, createdBy: 'staff-2', monthsSinceStart: 3, paidCount: 1, overdueCount: 2, submittedBy: 'staff-2', approvedBy: 'admin-1', signedContractUploaded: true },
-  { id: 'contract-010', contractNumber: seedContractNumber(7, 1), status: 'settled', branch: 'Phuket', unitId: 'unit-13', customerId: 'cust-003', template: tmplFixed2, downPaymentPercent: 30, termMonths: 6, createdBy: 'branch-2', monthsSinceStart: 7, paidCount: 6, overdueCount: 0, approvedBy: 'branch-2', signedContractUploaded: true },
+  { id: 'contract-001', contractNumber: seedContractNumber(0, 1), status: 'draft', branch: 'Khon Kaen', unitId: unitIdFor('GAS25-256-NAV', 'Khon Kaen'), customerId: 'cust-004', template: tmplFixed1, downPaymentPercent: 20, termMonths: 12, createdBy: 'staff-1', monthsSinceStart: 0, paidCount: 0, overdueCount: 0 },
+  { id: 'contract-002', contractNumber: seedContractNumber(0, 2), status: 'pending_approval', branch: 'Bangkok HQ', unitId: unitIdFor('IP17P-256-COR', 'Bangkok HQ'), customerId: 'cust-001', template: tmplFixed1, downPaymentPercent: 15, termMonths: 6, createdBy: 'staff-2', monthsSinceStart: 0, paidCount: 0, overdueCount: 0, submittedBy: 'staff-2' },
+  { id: 'contract-003', contractNumber: seedContractNumber(0, 3), status: 'under_review', branch: 'Bangkok HQ', unitId: unitIdFor('IP17PM-512-SIL', 'Bangkok HQ'), customerId: 'cust-005', template: tmplFixed2, downPaymentPercent: 20, termMonths: 12, createdBy: 'staff-2', monthsSinceStart: 0, paidCount: 0, overdueCount: 0, submittedBy: 'staff-2' },
+  { id: 'contract-004', contractNumber: seedContractNumber(1, 4), status: 'rejected', branch: 'Khon Kaen', unitId: unitIdFor('IP17-256-BLA', 'Khon Kaen'), customerId: 'cust-004', template: tmplFixed1, downPaymentPercent: 15, termMonths: 12, createdBy: 'staff-1', monthsSinceStart: 1, paidCount: 0, overdueCount: 0, submittedBy: 'staff-1', rejectedBy: 'admin-1', rejectionNote: 'ID card photo is blurry — please re-upload a clearer copy.' },
+  { id: 'contract-005', contractNumber: seedContractNumber(0, 4), status: 'approved', branch: 'Phuket', unitId: unitIdFor('GAS25U-256-TBL', 'Phuket'), customerId: 'cust-003', template: tmplFixed1, downPaymentPercent: 25, termMonths: 12, createdBy: 'branch-2', monthsSinceStart: 0, paidCount: 0, overdueCount: 0, approvedBy: 'branch-2' },
+  { id: 'contract-006', contractNumber: seedContractNumber(0, 5), status: 'awaiting_signature', branch: 'Bangkok HQ', unitId: unitIdFor('GAS25P-256-NAV', 'Bangkok HQ'), customerId: 'cust-001', template: tmplFixed1, downPaymentPercent: 15, termMonths: 6, createdBy: 'staff-2', monthsSinceStart: 0, paidCount: 0, overdueCount: 0, submittedBy: 'staff-2', approvedBy: 'admin-1' },
+  { id: 'contract-007', contractNumber: seedContractNumber(1, 5), status: 'pending_payment', branch: 'Chiang Mai', unitId: unitIdFor('IP17P-512-DBL', 'Chiang Mai'), customerId: 'cust-002', template: tmplFixed2, downPaymentPercent: 20, termMonths: 12, createdBy: 'branch-1', monthsSinceStart: 1, paidCount: 0, overdueCount: 0, approvedBy: 'branch-1', signedContractUploaded: true },
+  { id: 'contract-008', contractNumber: seedContractNumber(3, 2), status: 'active', branch: 'Chiang Mai', unitId: unitIdFor('IP17-256-LAV', 'Chiang Mai'), customerId: 'cust-006', template: tmplFixed1, downPaymentPercent: 20, termMonths: 12, createdBy: 'branch-1', monthsSinceStart: 3, paidCount: 3, overdueCount: 0, approvedBy: 'branch-1', signedContractUploaded: true },
+  { id: 'contract-009', contractNumber: seedContractNumber(3, 3), status: 'overdue', branch: 'Bangkok HQ', unitId: unitIdFor('GAS25-128-ICY', 'Bangkok HQ'), customerId: 'cust-005', template: tmplFixed1, downPaymentPercent: 10, termMonths: 6, createdBy: 'staff-2', monthsSinceStart: 3, paidCount: 1, overdueCount: 2, submittedBy: 'staff-2', approvedBy: 'admin-1', signedContractUploaded: true },
+  { id: 'contract-010', contractNumber: seedContractNumber(7, 1), status: 'settled', branch: 'Phuket', unitId: unitIdFor('IP17PM-256-COR', 'Phuket'), customerId: 'cust-003', template: tmplFixed2, downPaymentPercent: 30, termMonths: 6, createdBy: 'branch-2', monthsSinceStart: 7, paidCount: 6, overdueCount: 0, approvedBy: 'branch-2', signedContractUploaded: true },
 ]
 
 export const MOCK_CONTRACTS: Contract[] = SEEDS.map(seed => {
@@ -232,6 +232,26 @@ export const MOCK_CONTRACTS: Contract[] = SEEDS.map(seed => {
     settledAt: seed.status === 'settled' ? dayjs().subtract(1, 'day').toISOString() : null,
   }
 })
+
+// The units' availability comes from here, not from mockProductUnits.ts —
+// the same transitions the app makes itself: creating a contract reserves
+// its unit, activation sells it, rejection releases it. Applied once at
+// load so a seeded unit can only be Reserved or Sold because a seeded
+// contract put it there.
+const HOLDS_UNIT: ContractStatus[] = ['draft', 'pending_approval', 'under_review', 'approved', 'awaiting_signature', 'pending_payment']
+const SOLD_UNIT: ContractStatus[] = ['active', 'overdue', 'settled']
+
+for (const contract of MOCK_CONTRACTS) {
+  const unit = MOCK_PRODUCT_UNITS.find(u => u.id === contract.device.unitId)
+  if (!unit) continue
+  if (HOLDS_UNIT.includes(contract.status)) {
+    unit.availability = 'reserved'
+  } else if (SOLD_UNIT.includes(contract.status)) {
+    unit.availability = 'sold'
+    unit.soldAt = contract.activatedAt
+    unit.soldBy = contract.approvedBy ?? contract.createdBy
+  }
+}
 
 export function generateContractId(): string {
   return `contract-${Date.now()}`

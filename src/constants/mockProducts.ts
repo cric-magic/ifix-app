@@ -1,139 +1,64 @@
 import type { Product } from '../types/product'
 import { MERCHANT_ID } from './mockUsers'
+import { LINEUP_VARIANTS, catalogIdFor, photoFor } from './mockCatalogProducts'
 
-export const MOCK_PRODUCTS: Product[] = [
-  {
-    id: 'prod-1',
-    name: 'iPhone 14 Pro',
-    brand: 'Apple',
-    category: 'smartphone',
-    model: 'iPhone 14 Pro',
-    modelNumber: 'A2890',
-    storage: '128GB',
-    color: 'Space Black',
-    ram: '6GB',
-    connection: '5G',
-    sku: 'IP14P-128-BLK',
-    costPrice: 32000,
-    salesPrice: 38900,
-    type: 'new',
+// Sales prices in THB, by model and storage — colour doesn't change the
+// price. Roughly Thai retail at launch; cost is derived below.
+const PRICES: Record<string, Record<string, number>> = {
+  'iPhone 17': { '256GB': 29900, '512GB': 37900 },
+  'iPhone 17 Pro': { '256GB': 41900, '512GB': 49900, '1TB': 57900 },
+  'iPhone 17 Pro Max': { '256GB': 48900, '512GB': 56900, '1TB': 64900 },
+  'Galaxy S25': { '128GB': 28900, '256GB': 31900, '512GB': 35900 },
+  'Galaxy S25+': { '256GB': 36900, '512GB': 40900 },
+  'Galaxy S25 Ultra': { '256GB': 46900, '512GB': 50900, '1TB': 58900 },
+  'AirPods Pro 3': { '': 8990 },
+}
+
+// Used stock sells well under the new price — its own figure rather than a
+// flat discount, the way a merchant would actually set it.
+const USED_PRICES: Record<string, number> = {
+  'iPhone 17 Pro': 34900,
+  'Galaxy S25': 23900,
+}
+
+// Roughly a 14% margin, rounded to the nearest hundred.
+function costFor(salesPrice: number): number {
+  return Math.round(salesPrice * 0.86 / 100) * 100
+}
+
+export function productIdFor(sku: string): string {
+  return `prod-${sku.toLowerCase()}`
+}
+
+// The demo merchant's catalog: every lineup variant, adopted from the
+// platform catalog. Each is a copy the merchant owns (sourceCatalogId is
+// provenance only — see types/product.ts), carrying the catalog's spec and
+// SKU code plus the merchant's own pricing.
+export const MOCK_PRODUCTS: Product[] = LINEUP_VARIANTS.map(v => {
+  const salesPrice = v.type === 'used'
+    ? USED_PRICES[v.line.model]
+    : PRICES[v.line.model][v.storage ?? '']
+  return {
+    id: productIdFor(v.skuCode),
+    name: v.line.model,
+    brand: v.line.brand,
+    category: v.line.category,
+    model: v.line.model,
+    modelNumber: v.line.modelNumber,
+    storage: v.storage,
+    ram: v.line.ram,
+    color: v.color,
+    connection: v.line.connection,
+    sku: v.skuCode,
+    costPrice: costFor(salesPrice),
+    salesPrice,
+    type: v.type,
     status: 'available',
+    photos: [photoFor(v.line.model)],
     merchantId: MERCHANT_ID,
+    sourceCatalogId: catalogIdFor(v.skuCode),
     createdBy: 'admin-1',
-    createdAt: '2024-01-10T09:00:00.000Z',
+    createdAt: v.line.brand === 'Apple' ? '2025-09-22T09:00:00.000Z' : '2025-02-10T09:00:00.000Z',
     deletedAt: null,
-    photos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=iPhone+14+Pro+1',
-      'https://placehold.co/400x400/1a1a1a/999999?text=iPhone+14+Pro+2',
-      'https://placehold.co/400x400/1a1a1a/999999?text=iPhone+14+Pro+3',
-    ],
-  },
-  {
-    id: 'prod-2',
-    name: 'Galaxy S23',
-    brand: 'Samsung',
-    category: 'smartphone',
-    model: 'Galaxy S23',
-    modelNumber: 'SM-S911B',
-    storage: '256GB',
-    color: 'Phantom Black',
-    ram: '8GB',
-    connection: '5G',
-    sku: 'GS23-256-BLK',
-    costPrice: 24000,
-    salesPrice: 29900,
-    type: 'new',
-    status: 'available',
-    merchantId: MERCHANT_ID,
-    createdBy: 'admin-1',
-    createdAt: '2024-01-12T09:00:00.000Z',
-    deletedAt: null,
-    photos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=Galaxy+S23+1',
-      'https://placehold.co/400x400/1a1a1a/999999?text=Galaxy+S23+2',
-    ],
-  },
-  {
-    id: 'prod-3',
-    name: 'iPad Air',
-    brand: 'Apple',
-    category: 'tablet',
-    model: 'iPad Air 5th Gen',
-    modelNumber: 'A2588',
-    storage: '64GB',
-    color: 'Starlight',
-    ram: '8GB',
-    connection: 'Wi-Fi',
-    sku: 'IPADAIR5-64-STL',
-    costPrice: 18000,
-    salesPrice: 22900,
-    type: 'new',
-    status: 'available',
-    merchantId: MERCHANT_ID,
-    createdBy: 'branch-1',
-    createdAt: '2024-02-01T09:00:00.000Z',
-    deletedAt: null,
-  },
-  {
-    id: 'prod-4',
-    name: 'MacBook Air M2',
-    brand: 'Apple',
-    category: 'laptop',
-    model: 'MacBook Air 13" M2',
-    modelNumber: 'A2681',
-    storage: '256GB',
-    color: 'Midnight',
-    ram: '8GB',
-    sku: 'MBA13M2-256-MID',
-    costPrice: 34000,
-    salesPrice: 41900,
-    type: 'new',
-    status: 'available',
-    merchantId: MERCHANT_ID,
-    createdBy: 'admin-1',
-    createdAt: '2024-02-15T09:00:00.000Z',
-    deletedAt: null,
-    photos: [
-      'https://placehold.co/400x400/1a1a1a/999999?text=MacBook+Air+M2',
-    ],
-  },
-  {
-    id: 'prod-5',
-    name: 'iPhone 13',
-    brand: 'Apple',
-    category: 'smartphone',
-    model: 'iPhone 13',
-    modelNumber: 'A2633',
-    storage: '128GB',
-    color: 'Midnight',
-    ram: '4GB',
-    connection: '5G',
-    sku: 'IP13-128-MID-U',
-    costPrice: 17500,
-    salesPrice: 21900,
-    type: 'used',
-    status: 'available',
-    merchantId: MERCHANT_ID,
-    createdBy: 'branch-2',
-    createdAt: '2024-03-05T09:00:00.000Z',
-    deletedAt: null,
-  },
-  {
-    id: 'prod-6',
-    name: 'AirPods Pro 2',
-    brand: 'Apple',
-    category: 'accessory',
-    model: 'AirPods Pro 2nd Gen',
-    modelNumber: 'A2698',
-    color: 'White',
-    sku: 'APP2-WHT',
-    costPrice: 6500,
-    salesPrice: 8900,
-    type: 'new',
-    status: 'available',
-    merchantId: MERCHANT_ID,
-    createdBy: 'admin-1',
-    createdAt: '2024-03-20T09:00:00.000Z',
-    deletedAt: null,
-  },
-]
+  }
+})
