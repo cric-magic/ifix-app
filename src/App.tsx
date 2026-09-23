@@ -480,7 +480,10 @@ function AppThemed() {
           borderRadiusSM: baseToken.borderRadius - 1,
           trackPadding: 1,
           trackBg: baseToken.colorFillTertiary,
-          itemSelectedBg: baseToken.colorBgLayout,
+          // The raised-surface colour (white in the light variant) rather
+          // than colorBgLayout, which is the page's own grey — the thumb
+          // should read as lifted off the track, not as a hole in it.
+          itemSelectedBg: baseToken.colorBgElevated,
           itemHoverBg: baseToken.colorFillSecondary,
         },
         Select: {
