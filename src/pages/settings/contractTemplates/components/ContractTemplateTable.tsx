@@ -178,27 +178,20 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
         },
       },
     }}>
-      <div className="ifix-table-panel">
+      <div className="ifix-table-panel ifix-stackable-panel">
         {(headerTitle || filters || headerAction) && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-            height: 56,
-            paddingLeft: 16,
-            paddingRight: 8,
-            boxShadow: `inset 0 -0.5px 0 0 ${token.colorBorderSecondary}`,
-          }}>
+          // Layout lives in index.css (.ifix-stackable-header) so it can
+          // stack when the panel is narrow — see the note there.
+          <div className="ifix-stackable-header">
             {headerTitle && (
               <Typography.Text strong style={{ fontSize: 15, flexShrink: 0 }}>{headerTitle}</Typography.Text>
             )}
             {/* Filters and the action button travel together on the right,
                 so the header reads as title | controls rather than three
                 separate things spread across the row. */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, marginLeft: 'auto' }}>
+            <div className="ifix-stackable-header-controls">
               {filters}
-              {headerAction && <div style={{ paddingRight: 2 }}>{headerAction}</div>}
+              {headerAction && <div className="ifix-stackable-header-action">{headerAction}</div>}
             </div>
           </div>
         )}

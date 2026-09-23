@@ -805,6 +805,69 @@ label[for="password"]::after {
   box-shadow: var(--ant-box-shadow);
 }
 
+/* Panel header that carries filters as well as a title and action (see
+   ContractTemplateTable): one 56px row while the panel is wide enough, and
+   stacked — title above, controls below, both start-aligned — once it
+   isn't. Queried against the panel's own width rather than the viewport,
+   since the app renders inside the device-size stage and the panel's width
+   also depends on the sidebar. 720px is roughly what the title, search,
+   two filters and the button need side by side. */
+.ifix-stackable-panel {
+  container-type: inline-size;
+}
+
+.ifix-stackable-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 56px;
+  padding: 0 8px 0 16px;
+  box-shadow: inset 0 -0.5px 0 0 var(--ant-color-border-secondary);
+}
+
+.ifix-stackable-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-left: auto;
+}
+
+/* 2px on top of the row's 8px right padding — the same 10px the 36px button
+   has above and below it in the 56px row, so it sits equidistant from the
+   three edges (matches UnitsTab's Add Unit). */
+.ifix-stackable-header-action {
+  padding-right: 2px;
+}
+
+@container (max-width: 720px) {
+  .ifix-stackable-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    height: auto;
+    padding: 16px;
+  }
+
+  .ifix-stackable-header-controls {
+    flex-wrap: wrap;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  /* The filter group takes the row's spare width (so the search gets back
+     what the single row squeezed out); the button keeps its own width and
+     drops to the next line when there isn't room beside the filters. */
+  .ifix-stackable-header-controls > :not(.ifix-stackable-header-action) {
+    flex: 1 1 auto;
+  }
+
+  .ifix-stackable-header-action {
+    padding-right: 0;
+  }
+}
+
 /* Drawer: solid panel (see Drawer.colorBgElevated in App.tsx). Inset
    top/right/bottom by the same 8px the app shell's Header/Content wrapper
    uses (see the Layout margin:8/borderRadius:12 block in AppLayout.tsx), so
