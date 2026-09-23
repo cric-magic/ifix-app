@@ -13,6 +13,7 @@ import { useHeaderContent } from '../contexts/HeaderContentContext'
 import { canManageUsers, homePath, scopedUserList, scopedBranchList, scopedContractList, scopedCustomerList } from '../constants/roles'
 import { useIconColors } from '../constants/iconColors'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
+import { MOCK_CATALOG_PRODUCTS } from '../constants/mockCatalogProducts'
 import { MOCK_PRODUCTS } from '../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../constants/mockProductUnits'
 import { MOCK_MERCHANTS } from '../constants/mockMerchants'
@@ -158,7 +159,12 @@ export function AppLayout() {
   // Product detail route (/products/catalog/:id) — show a 2-level breadcrumb
   // ("Products / <name>") instead of the flat section title.
   const productDetailId = inProducts && productsKey === 'catalog' ? location.pathname.split('/')[3] : undefined
-  const productDetailName = productDetailId ? MOCK_PRODUCTS.find(p => p.id === productDetailId)?.name : undefined
+  // Super Admin's rows are standard catalog entries (see ProductDetailRoute).
+  const productDetailName = productDetailId
+    ? (user.role === 'super_admin'
+      ? MOCK_CATALOG_PRODUCTS.find(c => c.id === productDetailId)?.name
+      : MOCK_PRODUCTS.find(p => p.id === productDetailId)?.name)
+    : undefined
 
   // Unit detail route (/products/unit/:id) — same 2-level treatment
   // ("Units / <Serial Number>"), parallel to the product detail breadcrumb

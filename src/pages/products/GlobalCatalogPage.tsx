@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { App, Avatar, Button, ConfigProvider, Dropdown, Input, Table, message, theme } from 'antd'
 import { Plus, Pencil, Trash2, MoreHorizontal, ImageOff, Package, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
@@ -19,6 +19,7 @@ import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../constants/paginationIcons'
 // their own catalog at this same route (see ProductsCatalogRoute).
 export function GlobalCatalogPage() {
   const actor = useCurrentUser()
+  const navigate = useNavigate()
   const { token } = theme.useToken()
   const iconColors = useIconColors()
   const { modal } = App.useApp()
@@ -110,31 +111,33 @@ export function GlobalCatalogPage() {
       fixed: 'right',
       align: 'right',
       render: (_, c) => (
-        <Dropdown
-          trigger={['click']}
-          placement="bottomRight"
-          menu={{
-            items: [
-              { key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' },
-              { type: 'divider' as const },
-              { key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' },
-            ],
-            onClick: ({ key }) => {
-              if (key === 'edit') { setEditing(c); setModalOpen(true) }
-              if (key === 'remove') {
-                modal.confirm({
-                  title: 'Remove this catalog product?',
-                  content: 'Merchants can no longer adopt it. Those who already did keep their own copy.',
-                  okText: 'Remove',
-                  okButtonProps: { danger: true },
-                  onOk: () => handleRemove(c),
-                })
-              }
-            },
-          }}
-        >
-          <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
-        </Dropdown>
+        <div onClick={e => e.stopPropagation()}>
+          <Dropdown
+            trigger={['click']}
+            placement="bottomRight"
+            menu={{
+              items: [
+                { key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' },
+                { type: 'divider' as const },
+                { key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' },
+              ],
+              onClick: ({ key }) => {
+                if (key === 'edit') { setEditing(c); setModalOpen(true) }
+                if (key === 'remove') {
+                  modal.confirm({
+                    title: 'Remove this catalog product?',
+                    content: 'Merchants can no longer adopt it. Those who already did keep their own copy.',
+                    okText: 'Remove',
+                    okButtonProps: { danger: true },
+                    onOk: () => handleRemove(c),
+                  })
+                }
+              },
+            }}
+          >
+            <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+          </Dropdown>
+        </div>
       ),
     },
   ]
@@ -167,6 +170,10 @@ export function GlobalCatalogPage() {
                 columns={columns}
                 dataSource={products}
                 scroll={{ x: 'max-content' }}
+                onRow={record => ({
+                  onClick: () => navigate(`/products/catalog/${record.id}`),
+                  style: { cursor: 'pointer' },
+                })}
                 locale={{
                   emptyText: hasActiveFilter ? (
                     <TableEmptyState icon={<Package size={22} strokeWidth={2.25} />} title="No catalog products found" description="Try a different name, brand, SKU code, or type." />

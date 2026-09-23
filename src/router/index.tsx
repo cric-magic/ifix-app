@@ -10,7 +10,7 @@ import { EditContractPage } from '../pages/contracts/EditContractPage'
 import { ContractsListPage } from '../pages/contracts/ContractsListPage'
 import { ContractDetailPage } from '../pages/contracts/ContractDetailPage'
 import { ProductsCatalogRoute } from './ProductsCatalogRoute'
-import { ProductDetailPage } from '../pages/products/ProductDetailPage'
+import { ProductDetailRoute } from './ProductDetailRoute'
 import { UnitsListPage } from '../pages/products/UnitsListPage'
 import { UnitDetailPage } from '../pages/products/UnitDetailPage'
 import { CustomersPage } from '../pages/customers/CustomersPage'
@@ -57,7 +57,7 @@ export const router = createBrowserRouter([
           { path: 'contracts/:id/edit', element: <EditContractPage /> },
           { path: 'products', element: <Navigate to="/products/catalog" replace /> },
           { path: 'products/catalog', element: <ProductsCatalogRoute /> },
-          { path: 'products/catalog/:id', element: <ProductDetailPage /> },
+          { path: 'products/catalog/:id', element: <ProductDetailRoute /> },
           { path: 'products/unit', element: <UnitsListPage /> },
           { path: 'products/unit/:id', element: <UnitDetailPage /> },
           { path: 'products/attributes', element: <AttributesPage /> },
