@@ -16,6 +16,7 @@ import { EditUnitModal } from './components/EditUnitModal'
 import { CreateUnitModal } from './components/CreateUnitModal'
 import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 import { TableEmptyState } from '../../components/TableEmptyState'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../constants/paginationIcons'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 
@@ -232,6 +233,8 @@ export function UnitsListPage() {
               showSizeChanger: false,
               prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
               nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
+              jumpPrevIcon: JUMP_PREV_ICON,
+              jumpNextIcon: JUMP_NEXT_ICON,
               showTotal: (total, range) => (
                 <span style={{ color: token.colorTextTertiary }}>
                   {range[0]}–{range[1]} of {total}

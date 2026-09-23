@@ -11,6 +11,7 @@ import { useIconColors } from '../../../constants/iconColors'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { countAvailableUnits } from '../../../utils/product'
 import { ProductStatusTag } from './ProductStatusTag'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../constants/paginationIcons'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 
@@ -171,6 +172,8 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
                 showSizeChanger: false,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
+                jumpPrevIcon: JUMP_PREV_ICON,
+                jumpNextIcon: JUMP_NEXT_ICON,
                 showTotal: (total, range) => (
                   <span style={{ color: token.colorTextTertiary }}>
                     {range[0]}–{range[1]} of {total}

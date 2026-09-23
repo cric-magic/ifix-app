@@ -12,6 +12,7 @@ import { TableEmptyState } from '../../components/TableEmptyState'
 import { ProductTypeTabs, type TypeFilter } from './components/ProductTypeTabs'
 import type { CatalogProduct } from '../../types/catalogProduct'
 import { CatalogProductModal } from './components/CatalogProductModal'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../constants/paginationIcons'
 
 // The platform's standard SKU definitions — what merchants adopt from rather
 // than defining common devices themselves. Super Admin only; merchants see
@@ -179,6 +180,8 @@ export function GlobalCatalogPage() {
                   showSizeChanger: false,
                   prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                   nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
+                  jumpPrevIcon: JUMP_PREV_ICON,
+                  jumpNextIcon: JUMP_NEXT_ICON,
                   showTotal: (total, range) => (
                     <span style={{ color: token.colorTextTertiary }}>{range[0]}–{range[1]} of {total}</span>
                   ),

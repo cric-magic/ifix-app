@@ -8,6 +8,7 @@ import { CurrencyDisplay } from '../../../components/CurrencyDisplay'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { getOutstandingBalance, getNextDue, getOverdueDays, getNetPosition } from '../../../utils/contract'
 import { ContractStatusTag } from './ContractStatusTag'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../constants/paginationIcons'
 
 interface Props {
   contracts: Contract[]
@@ -108,6 +109,8 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
                 showSizeChanger: false,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
+                jumpPrevIcon: JUMP_PREV_ICON,
+                jumpNextIcon: JUMP_NEXT_ICON,
                 showTotal: (total, range) => (
                   <span style={{ color: token.colorTextTertiary }}>
                     {range[0]}–{range[1]} of {total}

@@ -8,6 +8,7 @@ import { TableEmptyState } from '../../../../components/TableEmptyState'
 import { DotTag } from '../../../../components/DotTag'
 import { MOCK_USER_ACCOUNTS } from '../../../../constants/mockUsers'
 import { ContractTemplatePreviewDrawer } from './ContractTemplatePreviewDrawer'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../../constants/paginationIcons'
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
@@ -221,6 +222,8 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
                 showSizeChanger: false,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
+                jumpPrevIcon: JUMP_PREV_ICON,
+                jumpNextIcon: JUMP_NEXT_ICON,
                 showTotal: (total, range) => (
                   <span style={{ color: token.colorTextTertiary }}>
                     {range[0]}–{range[1]} of {total}

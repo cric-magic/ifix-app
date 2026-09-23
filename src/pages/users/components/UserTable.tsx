@@ -10,6 +10,7 @@ import { getAvatarUrl } from '../../../utils/avatar'
 import { UserStatusTag } from './UserStatusTag'
 import { mockCreatedContracts, mockMonthlyCollection } from '../mockStats'
 import { TableEmptyState } from '../../../components/TableEmptyState'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../constants/paginationIcons'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 
@@ -174,6 +175,8 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
                 showSizeChanger: false,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
+                jumpPrevIcon: JUMP_PREV_ICON,
+                jumpNextIcon: JUMP_NEXT_ICON,
                 showTotal: (total, range) => (
                   <span style={{ color: token.colorTextTertiary }}>
                     {range[0]}–{range[1]} of {total}

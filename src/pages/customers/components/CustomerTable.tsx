@@ -6,6 +6,7 @@ import type { Customer } from '../../../types/customer'
 import type { Contract } from '../../../types/contract'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { DotTag } from '../../../components/DotTag'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../constants/paginationIcons'
 
 interface Props {
   customers: Customer[]
@@ -75,6 +76,8 @@ export function CustomerTable({ customers, contracts, search }: Props) {
                 showSizeChanger: false,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
+                jumpPrevIcon: JUMP_PREV_ICON,
+                jumpNextIcon: JUMP_NEXT_ICON,
                 showTotal: (total, range) => (
                   <span style={{ color: token.colorTextTertiary }}>
                     {range[0]}–{range[1]} of {total}
