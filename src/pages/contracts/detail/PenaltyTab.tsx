@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { App, Button, Drawer, Dropdown, Form, Input, InputNumber, Space, Table, Typography, theme } from 'antd'
+import { App, Button, Drawer, Dropdown, Form, Input, Space, Table, Typography, theme } from 'antd'
+import { InputNumber } from '../../../components/AppInputNumber'
 import { AlertTriangle, MoreHorizontal, Receipt, ShieldOff } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import type { Contract, CollectionFeeRecord, PenaltyAdjustment } from '../../../types/contract'

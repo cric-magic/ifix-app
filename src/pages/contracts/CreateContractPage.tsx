@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Steps, Card, Form, Input, InputNumber, Button, Space, Row, Col,
+  Steps, Card, Form, Input, Button, Space, Row, Col,
   Typography, Divider, Alert, DatePicker, message,
 } from 'antd'
+import { InputNumber } from '../../components/AppInputNumber'
 import dayjs from 'dayjs'
 import { Check, X } from 'lucide-react'
 import { Select } from '../../components/AppSelect'

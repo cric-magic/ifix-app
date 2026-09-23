@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Drawer, Button, Space, Form, Input, InputNumber, Typography, theme } from 'antd'
+import { Drawer, Button, Space, Form, Input, Typography, theme } from 'antd'
+import { InputNumber } from '../../../components/AppInputNumber'
 import { Search, ArrowLeft, Package } from 'lucide-react'
 import { Select } from '../../../components/AppSelect'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'

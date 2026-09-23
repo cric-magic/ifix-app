@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { App, Button, ConfigProvider, DatePicker, Drawer, Form, Input, InputNumber, Space, Table, Typography, theme } from 'antd'
+import { App, Button, ConfigProvider, DatePicker, Drawer, Form, Input, Space, Table, Typography, theme } from 'antd'
+import { InputNumber } from '../../../components/AppInputNumber'
 import dayjs from 'dayjs'
 import { CalendarClock, Wallet } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'

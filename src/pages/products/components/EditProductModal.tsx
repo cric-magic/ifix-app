@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { Drawer, Button, Space, Form, Input, InputNumber } from 'antd'
+import { Drawer, Button, Space, Form, Input } from 'antd'
+import { InputNumber } from '../../../components/AppInputNumber'
 import { Select } from '../../../components/AppSelect'
 import { PhotoUpload } from '../../../components/PhotoUpload'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'

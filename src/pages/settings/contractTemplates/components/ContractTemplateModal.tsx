@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Drawer, Button, Space, Form, Input, InputNumber, Radio, Divider, Typography, theme} from 'antd'
+import { Drawer, Button, Space, Form, Input, Radio, Divider, Typography, theme } from 'antd'
+import { InputNumber } from '../../../../components/AppInputNumber'
 import { Plus, Trash2 } from 'lucide-react'
 import { useAppWindowContainer } from '../../../../contexts/AppWindowContext'
 import { useDevTools } from '../../../../contexts/DevToolsContext'

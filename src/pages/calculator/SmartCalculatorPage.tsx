@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
-  Tabs, Form, InputNumber, Button, Table, Space,
+  Tabs, Form, Button, Table, Space,
   Statistic, Row, Col, Switch, Typography, Divider, Alert, theme,
 } from 'antd'
+import { InputNumber } from '../../components/AppInputNumber'
 import { ArrowRight } from 'lucide-react'
 import { Select } from '../../components/AppSelect'
 import type { ColumnsType } from 'antd/es/table'

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { Drawer, Button, Space, Form, InputNumber, Switch } from 'antd'
+import { Drawer, Button, Space, Form, Switch } from 'antd'
+import { InputNumber } from '../../../components/AppInputNumber'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { Merchant } from '../../../types/merchant'
 

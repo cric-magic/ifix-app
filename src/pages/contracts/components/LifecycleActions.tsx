@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { App, Button, Form, Input, InputNumber, Modal, Space } from 'antd'
+import { App, Button, Form, Input, Modal, Space } from 'antd'
+import { InputNumber } from '../../../components/AppInputNumber'
 import { Check, X, Printer, Upload, Wallet } from 'lucide-react'
 import { Select } from '../../../components/AppSelect'
 import type { AuthUser } from '../../../types/installment'
