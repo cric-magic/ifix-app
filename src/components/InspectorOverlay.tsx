@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { theme } from 'antd'
+import type { GlobalToken } from 'antd'
 import { useDevTools } from '../contexts/DevToolsContext'
 import { useIconColors } from '../constants/iconColors'
 import { getNamedColorTokens, getNamedShadowTokens, getFontSizeScale, findSpacingName, findRadiusName, findFontSizeName, findBorderWidthName } from '../constants/designTokens'
@@ -228,6 +229,74 @@ function CornerValues({ label, tl, tr, br, bl, token }: { label: string; tl: num
   )
 }
 
+// Icons, so a dev can see exactly which one to use. lucide-react renders
+// every icon as <svg class="lucide lucide-chevron-down">, so the component
+// name is that kebab-case class in PascalCase (aliases like MoreHorizontal
+// report their canonical name, Ellipsis — both import fine). antd's own
+// icons render as <span class="anticon anticon-close"> instead; those are
+// named from that class and flagged, since the app otherwise uses Lucide.
+interface IconInfo {
+  library: 'lucide' | 'antd'
+  name: string
+  size: string | null
+  strokeWidth: string | null
+}
+
+function toPascal(kebab: string) {
+  return kebab.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('')
+}
+
+function getIconInfo(el: Element): IconInfo | null {
+  const classes = (el.getAttribute('class') ?? '').split(/\s+/)
+  if (el.tagName.toLowerCase() === 'svg' && classes.includes('lucide')) {
+    const nameClass = classes.find(c => c.startsWith('lucide-'))
+    if (!nameClass) return null
+    return {
+      library: 'lucide',
+      name: toPascal(nameClass.slice('lucide-'.length)),
+      size: el.getAttribute('width'),
+      strokeWidth: el.getAttribute('stroke-width'),
+    }
+  }
+  if (classes.includes('anticon')) {
+    const nameClass = classes.find(c => c.startsWith('anticon-') && c !== 'anticon-spin')
+    return { library: 'antd', name: nameClass ?? 'anticon', size: null, strokeWidth: null }
+  }
+  return null
+}
+
+// Click to copy — the Clipboard API first, then the execCommand fallback
+// DesignDocsPage uses for contexts where the API is blocked.
+function CopyValue({ value, token }: { value: string; token: GlobalToken }) {
+  const [copied, setCopied] = useState(false)
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value)
+    } catch {
+      const textarea = document.createElement('textarea')
+      textarea.value = value
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1200)
+  }
+  return (
+    <span
+      onClick={copy}
+      title="Click to copy"
+      style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, cursor: 'pointer', color: token.colorText }}
+    >
+      <span style={{ fontFamily: token.fontFamilyCode, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</span>
+      <span style={{ color: token.colorTextTertiary, flexShrink: 0 }}>{copied ? 'Copied' : 'Copy'}</span>
+    </span>
+  )
+}
+
 export function InspectorOverlay() {
   const { inspectMode, setInspectMode, appWindowEl: containerEl } = useDevTools()
   const { token } = theme.useToken()
@@ -334,6 +403,11 @@ export function InspectorOverlay() {
     }
 
     const resolveTarget = (target: Element, altKey = false): HTMLElement | null => {
+      // An icon is its own target, ahead of the button it sits in, so its
+      // name can be read off (see getIconInfo). Hover the button's padding
+      // to inspect the button itself.
+      const icon = target.closest('svg.lucide, .anticon')
+      if (icon) return icon as unknown as HTMLElement
       const atomic = target.closest('button, a, input, textarea, select, .ant-btn, [role="button"]') as HTMLElement | null
       if (atomic) return atomic
       if (target.closest('[data-ifix-inspect-atomic-only]')) return null
@@ -409,7 +483,9 @@ export function InspectorOverlay() {
   const popoverLeft = placeRight ? rect.right + gap : Math.max(gap, rect.left - popoverWidth - gap)
   const popoverTop = Math.min(Math.max(gap, rect.top), Math.max(gap, window.innerHeight - popoverMaxHeight - gap))
 
-  const tagLabel = activeEl.tagName.toLowerCase() + (activeEl.className && typeof activeEl.className === 'string' ? `.${activeEl.className.split(' ')[0]}` : '')
+  const firstClass = (activeEl.getAttribute('class') ?? '').split(/\s+/).filter(Boolean)[0]
+  const tagLabel = activeEl.tagName.toLowerCase() + (firstClass ? `.${firstClass}` : '')
+  const iconInfo = getIconInfo(activeEl)
 
   return (
     <div ref={rootRef} data-ifix-inspector-root>
@@ -476,6 +552,45 @@ export function InspectorOverlay() {
           <div style={{ marginBottom: 8 }}>
             <span style={{ color: token.colorText, fontFamily: token.fontFamilyCode, fontWeight: 600 }}>{tagLabel}</span>
           </div>
+
+          {iconInfo && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ color: token.colorTextTertiary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Icon</div>
+              {iconInfo.library === 'lucide' ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                    <span style={{ color: token.colorTextTertiary, flexShrink: 0 }}>Lucide</span>
+                    <CopyValue value={iconInfo.name} token={token} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                    <span style={{ color: token.colorTextTertiary, flexShrink: 0 }}>Import</span>
+                    <CopyValue value={`import { ${iconInfo.name} } from 'lucide-react'`} token={token} />
+                  </div>
+                  {iconInfo.size && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                      <span style={{ color: token.colorTextTertiary }}>Size</span>
+                      <span style={{ color: token.colorText }}>{/^\d+(\.\d+)?$/.test(iconInfo.size) ? `${iconInfo.size}px` : `${iconInfo.size} (${Math.round(rect.width)}px)`}</span>
+                    </div>
+                  )}
+                  {iconInfo.strokeWidth && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                      <span style={{ color: token.colorTextTertiary }}>Stroke width</span>
+                      <span style={{ color: token.colorText }}>{iconInfo.strokeWidth}</span>
+                    </div>
+                  )}
+                  <ColorRow label="Color" value={cs.color} lookup={lookupColor} token={token} />
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                    <span style={{ color: token.colorTextTertiary, flexShrink: 0 }}>antd</span>
+                    <span style={{ color: token.colorText, fontFamily: token.fontFamilyCode }}>{iconInfo.name}</span>
+                  </div>
+                  <div style={{ color: token.colorWarning }}>antd's own icon, not Lucide</div>
+                </>
+              )}
+            </div>
+          )}
 
           <div style={{ marginBottom: 8 }}>
             <div style={{ color: token.colorTextTertiary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Size</div>
