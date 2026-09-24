@@ -1,11 +1,17 @@
 import { useState } from 'react'
 import { Form, Input, Button, Alert, Typography, theme } from 'antd'
-import { Mail, Lock } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { MOCK_USER_ACCOUNTS } from '../../constants/mockUsers'
 import { homePath, toAuthUser } from '../../constants/roles'
 import { AuthLayout } from './AuthLayout'
+
+// Password fields' show/hide toggle as Lucide icons at 16px, matching the
+// Lock icon at the other end of the field — antd's own EyeOutlined /
+// EyeInvisibleOutlined render at its 14px default.
+const passwordToggleIcon = (visible: boolean) =>
+  visible ? <Eye size={16} strokeWidth={2} /> : <EyeOff size={16} strokeWidth={2} />
 
 export function SignInPage() {
   const { status, user, login } = useAuth()
@@ -69,7 +75,7 @@ export function SignInPage() {
           name="password"
           rules={[{ required: true, message: 'Password is required' }]}
         >
-          <Input.Password prefix={<Lock size={16} strokeWidth={2} />} placeholder="Password" autoComplete="current-password" />
+          <Input.Password iconRender={passwordToggleIcon} prefix={<Lock size={16} strokeWidth={2} />} placeholder="Password" autoComplete="current-password" />
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>

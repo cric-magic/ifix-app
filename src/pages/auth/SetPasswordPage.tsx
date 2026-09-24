@@ -1,8 +1,14 @@
 import { Form, Input, Button, Alert, Typography, theme } from 'antd'
-import { Lock } from 'lucide-react'
+import { Lock, Eye, EyeOff } from 'lucide-react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { AuthLayout } from './AuthLayout'
+
+// Password fields' show/hide toggle as Lucide icons at 16px, matching the
+// Lock icon at the other end of the field — antd's own EyeOutlined /
+// EyeInvisibleOutlined render at its 14px default.
+const passwordToggleIcon = (visible: boolean) =>
+  visible ? <Eye size={16} strokeWidth={2} /> : <EyeOff size={16} strokeWidth={2} />
 
 export function SetPasswordPage() {
   const { status, pendingAccount, setNewPassword, logout } = useAuth()
@@ -59,7 +65,7 @@ export function SetPasswordPage() {
           rules={[{ required: true, message: 'New password is required' }, { min: 8, message: 'At least 8 characters' }]}
           hasFeedback
         >
-          <Input.Password prefix={<Lock size={16} strokeWidth={2} />} placeholder="New password" autoComplete="new-password" />
+          <Input.Password iconRender={passwordToggleIcon} prefix={<Lock size={16} strokeWidth={2} />} placeholder="New password" autoComplete="new-password" />
         </Form.Item>
 
         <Form.Item
@@ -77,7 +83,7 @@ export function SetPasswordPage() {
             }),
           ]}
         >
-          <Input.Password prefix={<Lock size={16} strokeWidth={2} />} placeholder="Confirm new password" autoComplete="new-password" />
+          <Input.Password iconRender={passwordToggleIcon} prefix={<Lock size={16} strokeWidth={2} />} placeholder="Confirm new password" autoComplete="new-password" />
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 0 }}>

@@ -270,6 +270,16 @@ body {
   color: var(--ant-color-icon-hover);
 }
 
+/* A password field's show/hide toggle (Lucide Eye/EyeOff via iconRender on
+   the auth pages): secondary at rest like every icon, primary on hover. */
+.ant-input-password-icon {
+  color: var(--ant-color-icon) !important;
+}
+
+.ant-input-password-icon:hover {
+  color: var(--ant-color-icon-hover) !important;
+}
+
 .ant-btn:not(.ant-btn-variant-solid) .ant-btn-icon svg {
   color: var(--ant-color-icon);
 }
