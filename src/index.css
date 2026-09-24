@@ -1269,20 +1269,13 @@ label[for="password"]::after {
   flex: 1 1 auto;
   min-height: 0;
   max-height: none !important;
-  /* The rows scroll both ways here, and macOS's native "thin" overlay
-     scrollbar draws the horizontal bar visibly fatter than the vertical
-     one. In Chromium any scrollbar-width/-color value switches the custom
-     ::-webkit-scrollbar rules at the top of this file off, so resetting
-     them to auto hands this element to those rules instead — the same
-     6px thumb (10px bar, 2px inset) on both axes. Firefox, which has no
-     ::-webkit-scrollbar, falls back to its own native bars either way. */
-  scrollbar-width: auto;
-  scrollbar-color: auto;
-  /* antd's own overflow-y: scroll stays: it measures the bar once and pads
-     the header by its width, so the bar has to be there even when the rows
-     fit — or the header's pinned-right columns drift out of line. The
-     track is transparent, so an always-on bar only shows a thumb when
-     there's something to scroll. */
+  /* Native scrollbars here, like the rest of the app. The app's own
+     ::-webkit-scrollbar rules were tried to make the vertical and
+     horizontal bars match (macOS draws its horizontal "thin" bar a little
+     fatter), but they take up space: antd keeps the vertical bar always
+     on so its header stays aligned, which left a permanent 10px strip
+     that stopped rows and the header line short of the panel edge.
+     macOS's overlay bars take none. */
 }
 
 /* Only the rows give up height. Everything else in the column keeps its
