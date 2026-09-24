@@ -833,6 +833,16 @@ label[for="password"]::after {
   font-size: var(--ant-font-size-sm);
 }
 
+/* SettingsCard rows: a hairline between rows, none under the last one —
+   the card's own edge closes the list, so a final divider just doubled it. */
+.ifix-settings-row {
+  border-bottom: 0.5px solid var(--ant-color-border-secondary);
+}
+
+.ifix-settings-row:last-child {
+  border-bottom: none;
+}
+
 /* Panel header that carries filters as well as a title and action (see
    ContractTemplateTable): one 56px row while the panel is wide enough, and
    stacked — title above, controls below, both start-aligned — once it

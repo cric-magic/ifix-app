@@ -120,7 +120,14 @@ export function WorkspaceAccountPage() {
         </SettingsRow>
       </SettingsCard>
 
-      <SettingsCard title="Collection Fee">
+      <SettingsCard
+        title="Collection Fee"
+        action={canManageCollectionFee && (
+          <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setCollectionFeeOpen(true)}>
+            Edit
+          </Button>
+        )}
+      >
         <SettingsRow label="Status">
           {merchant.collectionFeeEnabled ? 'Enabled' : 'Disabled'}
         </SettingsRow>
@@ -128,11 +135,6 @@ export function WorkspaceAccountPage() {
           <SettingsRow label="Default amount">
             <span style={{ fontFamily: token.fontFamilyCode }}>฿{merchant.collectionFeeAmount.toLocaleString()}</span>
           </SettingsRow>
-        )}
-        {canManageCollectionFee && (
-          <Button style={{ marginTop: 16 }} icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setCollectionFeeOpen(true)}>
-            Edit
-          </Button>
         )}
       </SettingsCard>
 

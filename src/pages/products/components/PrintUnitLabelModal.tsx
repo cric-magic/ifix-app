@@ -4,7 +4,7 @@ import { Printer } from 'lucide-react'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import { MOCK_MERCHANTS } from '../../../constants/mockMerchants'
 import type { Product, ProductUnit } from '../../../types/product'
-import { UnitLabel, encodedValueFor } from '../../../components/UnitLabel'
+import { UnitLabel, UnitLabelPreview, encodedValueFor } from '../../../components/UnitLabel'
 
 interface Props {
   open: boolean
@@ -49,8 +49,8 @@ export function PrintUnitLabelModal({ open, unit, product, merchantId, onClose }
         </Space>
       }
     >
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-        <UnitLabel unit={unit} product={product} settings={settings} />
+      <div style={{ marginBottom: 16 }}>
+        <UnitLabelPreview unit={unit} product={product} settings={settings} />
       </div>
 
       {/* The copy that actually prints. Portalled to <body> so it sits

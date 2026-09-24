@@ -8,7 +8,7 @@ import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
 import { canConfigureBarcodeSettings, scopedAllUnits } from '../../constants/roles'
 import { SettingsCard, SettingsRow } from '../../components/SettingsCard'
-import { UnitLabel } from '../../components/UnitLabel'
+import { UnitLabelPreview } from '../../components/UnitLabel'
 import { BarcodeSettingsModal } from './components/BarcodeSettingsModal'
 
 const CODE_TYPE_LABELS = {
@@ -58,17 +58,19 @@ export function WorkspaceBarcodePage() {
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto' }}>
-      <SettingsCard title="Barcode">
+      <SettingsCard
+        title="Barcode"
+        action={canEdit && (
+          <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>
+            Edit
+          </Button>
+        )}
+      >
         <SettingsRow label="Code types">{CODE_TYPE_LABELS[settings.codeTypes]}</SettingsRow>
         <SettingsRow label="Encoded value">{ENCODED_LABELS[settings.encodedValue]}</SettingsRow>
         <SettingsRow label="Label fields">
           Serial Number{fields.length > 0 ? `, ${fields.join(', ')}` : ''}
         </SettingsRow>
-        {canEdit && (
-          <Button style={{ marginTop: 16 }} icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>
-            Edit
-          </Button>
-        )}
       </SettingsCard>
 
       {sampleUnit && sampleProduct && (
@@ -76,15 +78,15 @@ export function WorkspaceBarcodePage() {
           <Typography.Text type="secondary" style={{ fontSize: 13, marginBottom: 16 }}>
             How a label prints for {sampleUnit.serialNumber}.
           </Typography.Text>
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <UnitLabel unit={sampleUnit} product={sampleProduct} settings={settings} />
-          </div>
+          <UnitLabelPreview unit={sampleUnit} product={sampleProduct} settings={settings} />
         </SettingsCard>
       )}
 
       <BarcodeSettingsModal
         open={editOpen}
         merchant={merchant}
+        sampleUnit={sampleUnit}
+        sampleProduct={sampleProduct}
         onClose={() => setEditOpen(false)}
         onSaved={() => {
           setEditOpen(false)

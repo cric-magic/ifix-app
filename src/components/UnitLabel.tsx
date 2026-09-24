@@ -38,6 +38,43 @@ export function UnitLabel({ unit, product, settings, forPrint }: Props) {
   )
 }
 
+// The on-screen preview of a label: the label on a light grey canvas, the
+// same "desk" the contract preview sits on (PAPER_THEME's colorBgLayout), so
+// a white label reads as paper in every app variant rather than as another
+// white panel. Used wherever a label is shown before printing — the Barcode
+// settings page, its edit drawer, and the Print Label drawer.
+//
+// `fill` makes the canvas take its container's full height with the label
+// centred, square-cornered — for the edit drawer, where the canvas is the
+// whole preview column (as ContractDocument's is in the contract editor)
+// rather than a rounded box inside a card.
+export function UnitLabelPreview({ unit, product, settings, fill }: Omit<Props, 'forPrint'> & { fill?: boolean }) {
+  return (
+    <ConfigProvider theme={PAPER_THEME}>
+      <PreviewCanvas fill={fill}>
+        <LabelBody unit={unit} product={product} settings={settings} />
+      </PreviewCanvas>
+    </ConfigProvider>
+  )
+}
+
+function PreviewCanvas({ fill, children }: { fill?: boolean; children: React.ReactNode }) {
+  const { token } = theme.useToken()
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: fill ? 'center' : undefined,
+      minHeight: fill ? '100%' : undefined,
+      padding: 24,
+      borderRadius: fill ? 0 : token.borderRadiusLG,
+      background: token.colorBgLayout,
+    }}>
+      {children}
+    </div>
+  )
+}
+
 function LabelBody({ unit, product, settings, forPrint }: Props) {
   const { token } = theme.useToken()
   const value = encodedValueFor(unit, settings)
@@ -66,7 +103,11 @@ function LabelBody({ unit, product, settings, forPrint }: Props) {
         background: paper,
         color: token.colorText,
         border: forPrint ? 'none' : `0.5px solid ${token.colorBorderSecondary}`,
-        borderRadius: forPrint ? 0 : 6,
+        // Square-cornered like the contract sheet: it's a piece of paper, not
+        // a card. The shadow is screen only — it lifts the label off the
+        // preview canvas (the project's second elevation, from the paper
+        // theme); the printed label is the sticker itself, so no shadow.
+        boxShadow: forPrint ? 'none' : token.boxShadowSecondary,
         display: 'flex',
         flexDirection: 'column',
         gap: 8,
