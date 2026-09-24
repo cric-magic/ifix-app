@@ -7,6 +7,7 @@ import type { Product } from '../../../types/product'
 import { canManageProducts, canManageUnits, canViewCostPrice, scopedUnitList } from '../../../constants/roles'
 import { CATEGORY_LABELS, TYPE_LABELS } from '../../../constants/products'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
+import { MOCK_CONTRACTS } from '../../../constants/mockContracts'
 import { useIconColors } from '../../../constants/iconColors'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { countAvailableUnits } from '../../../utils/product'
@@ -33,6 +34,35 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
   const showCostPrice = canViewCostPrice(actor)
   const canManage = canManageProducts(actor)
   const canAddUnit = canManageUnits(actor)
+
+  // Removing a SKU is a soft delete: its units stay in the Units list,
+  // marked Removed. But a Reserved unit is committed to a live contract, so
+  // the SKU can't be removed until that contract is done with it — the
+  // warning names the contract(s) so it's clear what's in the way.
+  function confirmRemove(p: Product) {
+    const units = MOCK_PRODUCT_UNITS.filter(u => u.productId === p.id)
+    const reservedIds = new Set(units.filter(u => u.availability === 'reserved').map(u => u.id))
+    if (reservedIds.size > 0) {
+      const holding = MOCK_CONTRACTS
+        .filter(c => reservedIds.has(c.device.unitId))
+        .map(c => c.contractNumber)
+      modal.warning({
+        title: "Can't remove this product",
+        content: `${reservedIds.size === 1 ? 'A unit is' : `${reservedIds.size} units are`} reserved for ${holding.length === 1 ? 'contract' : 'contracts'} ${holding.join(', ')}. Remove it once ${holding.length === 1 ? 'that contract' : 'those contracts'} no longer ${holding.length === 1 ? 'holds' : 'hold'} the unit.`,
+        okText: 'OK',
+      })
+      return
+    }
+    modal.confirm({
+      title: 'Remove this product?',
+      content: units.length > 0
+        ? `It will no longer appear in the catalog. Its ${units.length} ${units.length === 1 ? 'unit stays' : 'units stay'} in the Units list, marked Removed.`
+        : 'It will no longer appear in the catalog.',
+      okText: 'Remove',
+      okButtonProps: { danger: true },
+      onOk: () => onRemove(p),
+    })
+  }
 
   const columns: ColumnsType<Product> = [
     {
@@ -119,15 +149,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
               onClick: ({ key }) => {
                 if (key === 'edit') onEdit(p)
                 if (key === 'add-unit') onAddUnit(p)
-                if (key === 'remove') {
-                  modal.confirm({
-                    title: 'Remove this product?',
-                    content: 'It will no longer appear in the catalog.',
-                    okText: 'Remove',
-                    okButtonProps: { danger: true },
-                    onOk: () => onRemove(p),
-                  })
-                }
+                if (key === 'remove') confirmRemove(p)
               },
             }}
           >

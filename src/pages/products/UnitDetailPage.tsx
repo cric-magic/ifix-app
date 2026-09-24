@@ -14,6 +14,7 @@ import { DetailDescriptions } from '../../components/DetailDescriptions'
 import { UnitAvailabilityTag } from './components/UnitAvailabilityTag'
 import { EditUnitModal } from './components/EditUnitModal'
 import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
+import { UnitProductName } from './components/UnitProductName'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
@@ -64,11 +65,7 @@ export function UnitDetailPage() {
     {
       key: 'product',
       label: 'Product',
-      children: product ? (
-        <a onClick={() => navigate(`/products/catalog/${product.id}`)} style={{ color: token.colorText }}>
-          {product.name}
-        </a>
-      ) : '—',
+      children: <UnitProductName product={product} color={token.colorText} />,
     },
     { key: 'serialNumber', label: 'Serial Number', children: unit.serialNumber },
     { key: 'imei1', label: 'IMEI 1', children: unit.imei1 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },

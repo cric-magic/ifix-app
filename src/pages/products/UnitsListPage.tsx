@@ -16,6 +16,7 @@ import { EditUnitModal } from './components/EditUnitModal'
 import { CreateUnitModal } from './components/CreateUnitModal'
 import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 import { TableEmptyState } from '../../components/TableEmptyState'
+import { UnitProductName } from './components/UnitProductName'
 import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../constants/paginationIcons'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
@@ -120,12 +121,7 @@ export function UnitsListPage() {
       title: 'Product',
       key: 'product',
       render: (_, u) => {
-        const product = productById.get(u.productId)
-        return (
-          <a onClick={() => navigate(`/products/catalog/${u.productId}`)} style={{ color: token.colorTextTertiary }}>
-            {product?.name ?? '—'}
-          </a>
-        )
+        return <UnitProductName product={productById.get(u.productId)} color={token.colorTextTertiary} />
       },
     },
     { title: 'IMEI 1', key: 'imei1', render: (_, u) => u.imei1 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },

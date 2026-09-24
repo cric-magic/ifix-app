@@ -260,12 +260,20 @@ function inBranchCatalog(actor: AuthUser, product: Product, units: ProductUnit[]
   return forProduct.length === 0 || forProduct.some(u => u.branch === actor.branch)
 }
 
-export function scopedProductList(actor: AuthUser, all: Product[], units: ProductUnit[] = MOCK_PRODUCT_UNITS): Product[] {
+// `includeRemoved` keeps soft-deleted SKUs in — only for reaching the units
+// that belonged to them (see scopedAllUnits); every picker and catalog view
+// leaves it off, since a removed SKU can't be stocked or sold again.
+export function scopedProductList(
+  actor: AuthUser,
+  all: Product[],
+  units: ProductUnit[] = MOCK_PRODUCT_UNITS,
+  { includeRemoved = false }: { includeRemoved?: boolean } = {},
+): Product[] {
   if (actor.role === 'super_admin') return []
   const permitted = permittedCategoriesFor(actor)
   return all.filter(p =>
     p.merchantId === actor.merchantId
-    && !p.deletedAt
+    && (includeRemoved || !p.deletedAt)
     && (!permitted || permitted.includes(p.category))
     && (isMerchantAdminOrAbove(actor) || inBranchCatalog(actor, p, units)),
   )
@@ -302,7 +310,10 @@ export function scopedUnitList(actor: AuthUser, productId: string, all: ProductU
 // Global unit list (across all products) — same merchant/branch scoping as
 // scopedUnitList, just not narrowed to one product.
 export function scopedAllUnits(actor: AuthUser, allUnits: ProductUnit[], allProducts: Product[]): ProductUnit[] {
-  const merchantProductIds = new Set(scopedProductList(actor, allProducts).map(p => p.id))
+  // Units of a removed SKU stay listed: removing a SKU is a soft delete of
+  // the catalog entry, not of the physical units — a reserved one is still
+  // committed to a contract and a sold one is still sales history.
+  const merchantProductIds = new Set(scopedProductList(actor, allProducts, MOCK_PRODUCT_UNITS, { includeRemoved: true }).map(p => p.id))
   const inMerchant = allUnits.filter(u => merchantProductIds.has(u.productId))
   if (seesWholeMerchantUnits(actor)) return inMerchant
   return inMerchant.filter(u => u.branch === actor.branch)
