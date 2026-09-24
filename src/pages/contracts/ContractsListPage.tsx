@@ -63,7 +63,7 @@ export function ContractsListPage() {
           onBranchChange={setBranch}
         />
         {canCreateContract(user) && (
-          <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => navigate('/contracts/new')}>
+          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => navigate('/contracts/new')}>
             Create Contract
           </Button>
         )}

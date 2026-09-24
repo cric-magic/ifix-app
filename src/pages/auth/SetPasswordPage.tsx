@@ -59,7 +59,7 @@ export function SetPasswordPage() {
           rules={[{ required: true, message: 'New password is required' }, { min: 8, message: 'At least 8 characters' }]}
           hasFeedback
         >
-          <Input.Password prefix={<Lock size={15} strokeWidth={2} />} placeholder="New password" autoComplete="new-password" />
+          <Input.Password prefix={<Lock size={16} strokeWidth={2} />} placeholder="New password" autoComplete="new-password" />
         </Form.Item>
 
         <Form.Item
@@ -77,7 +77,7 @@ export function SetPasswordPage() {
             }),
           ]}
         >
-          <Input.Password prefix={<Lock size={15} strokeWidth={2} />} placeholder="Confirm new password" autoComplete="new-password" />
+          <Input.Password prefix={<Lock size={16} strokeWidth={2} />} placeholder="Confirm new password" autoComplete="new-password" />
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 0 }}>

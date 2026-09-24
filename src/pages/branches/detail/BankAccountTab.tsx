@@ -76,9 +76,9 @@ export function BankAccountTab({ branch, canManage, onChanged }: Props) {
                 placement="bottomRight"
                 menu={{
                   items: [
-                    { key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' },
+                    { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
                     { type: 'divider' },
-                    { key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' },
+                    { key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' },
                   ],
                   onClick: ({ key }) => {
                     if (key === 'edit') setModalOpen(true)
@@ -93,7 +93,7 @@ export function BankAccountTab({ branch, canManage, onChanged }: Props) {
                   },
                 }}
               >
-                <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+                <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
               </Dropdown>
             )}
           </div>

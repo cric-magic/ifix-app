@@ -70,7 +70,7 @@ export function MerchantTable({ merchants, search, onToggleSuspend }: Props) {
                   {
                     key: 'suspend',
                     danger: !isSuspended,
-                    icon: isSuspended ? <RotateCcw size={15} strokeWidth={2.25} /> : <Ban size={15} strokeWidth={2.25} />,
+                    icon: isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />,
                     label: isSuspended ? 'Reactivate' : 'Suspend',
                   },
                 ],
@@ -87,7 +87,7 @@ export function MerchantTable({ merchants, search, onToggleSuspend }: Props) {
                 },
               }}
             >
-              <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+              <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
             </Dropdown>
           </div>
         )

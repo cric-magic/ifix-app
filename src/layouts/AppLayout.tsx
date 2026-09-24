@@ -317,9 +317,9 @@ export function AppLayout() {
                   ),
                 },
                 { type: 'divider' },
-                { key: 'settings', icon: <Settings size={17} strokeWidth={2.25} />, label: 'Settings' },
+                { key: 'settings', icon: <Settings size={16} strokeWidth={2.25} />, label: 'Settings' },
                 ...(canManageUsers(user)
-                  ? [{ key: 'invite', icon: <UserPlus size={17} strokeWidth={2.25} />, label: 'Invite members' }]
+                  ? [{ key: 'invite', icon: <UserPlus size={16} strokeWidth={2.25} />, label: 'Invite members' }]
                   : []),
               ],
               onClick: ({ key }) => {
@@ -385,7 +385,7 @@ export function AppLayout() {
                       style: { paddingLeft: 4, paddingRight: 4 },
                       label: (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
-                          <Button type="text" size="small" style={{ borderRadius: 6, justifySelf: 'start' }} icon={<ChevronLeft size={17} strokeWidth={2.25} />} />
+                          <Button type="text" size="small" style={{ borderRadius: 6, justifySelf: 'start' }} icon={<ChevronLeft size={16} strokeWidth={2.25} />} />
                           <span>Settings</span>
                           <span />
                         </div>
@@ -431,7 +431,7 @@ export function AppLayout() {
                       style: { paddingLeft: 4, paddingRight: 4 },
                       label: (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
-                          <Button type="text" size="small" style={{ borderRadius: 6, justifySelf: 'start' }} icon={<ChevronLeft size={17} strokeWidth={2.25} />} />
+                          <Button type="text" size="small" style={{ borderRadius: 6, justifySelf: 'start' }} icon={<ChevronLeft size={16} strokeWidth={2.25} />} />
                           <span>Settings</span>
                           <span />
                         </div>
@@ -471,7 +471,7 @@ export function AppLayout() {
                       style: { paddingLeft: 4, paddingRight: 4 },
                       label: (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
-                          <Button type="text" size="small" style={{ borderRadius: 6, justifySelf: 'start' }} icon={<ChevronLeft size={17} strokeWidth={2.25} />} />
+                          <Button type="text" size="small" style={{ borderRadius: 6, justifySelf: 'start' }} icon={<ChevronLeft size={16} strokeWidth={2.25} />} />
                           <span>Products</span>
                           <span />
                         </div>
@@ -506,7 +506,7 @@ export function AppLayout() {
                     // exclusion as canViewContracts.
                     ...(user.role !== 'super_admin' ? [{
                       key: 'contracts',
-                      icon: navIcon(<FileText size={17} strokeWidth={2.25} />),
+                      icon: navIcon(<FileText size={16} strokeWidth={2.25} />),
                       label: 'Contracts',
                       onClick: () => go('/contracts'),
                     }] : []),
@@ -516,7 +516,7 @@ export function AppLayout() {
                     // PRODUCTS_ITEMS / SUPER_ADMIN_PRODUCTS_ITEMS above).
                     {
                       key: 'products',
-                      icon: navIcon(<Package size={17} strokeWidth={2.25} />),
+                      icon: navIcon(<Package size={16} strokeWidth={2.25} />),
                       // Right padding matches the sidebar's shared 4px (Spacing 1) item
                       // inset (see .ifix-main-nav .ant-menu-item in index.css) instead of
                       // a mismatched flat 16px. Previously 4.5px (exact antd button-height
@@ -539,13 +539,13 @@ export function AppLayout() {
                     // merchant-scoped, per canViewCustomers.
                     ...(user.role !== 'super_admin' ? [{
                       key: 'customers',
-                      icon: navIcon(<Contact size={17} strokeWidth={2.25} />),
+                      icon: navIcon(<Contact size={16} strokeWidth={2.25} />),
                       label: 'Customers',
                       onClick: () => go('/customers'),
                     }] : []),
                     ...(user.role === 'super_admin' ? [{
                       key: 'merchants',
-                      icon: navIcon(<Building2 size={17} strokeWidth={2.25} />),
+                      icon: navIcon(<Building2 size={16} strokeWidth={2.25} />),
                       label: 'Merchants',
                       onClick: () => go('/merchants'),
                     }] : []),
@@ -556,7 +556,7 @@ export function AppLayout() {
                     // the opposite direction.
                     ...(user.role !== 'super_admin' ? [{
                       key: 'branches',
-                      icon: navIcon(<Store size={17} strokeWidth={2.25} />),
+                      icon: navIcon(<Store size={16} strokeWidth={2.25} />),
                       label: 'Branches',
                       onClick: () => go('/branches'),
                     }] : []),
@@ -572,9 +572,9 @@ export function AppLayout() {
             dropdownRender={menu => <div style={{ margin: '0 4px 4px' }}>{menu}</div>}
             menu={{
               items: [
-                { key: 'settings', icon: <User size={17} strokeWidth={2.25} />, label: 'Account Settings' },
+                { key: 'settings', icon: <User size={16} strokeWidth={2.25} />, label: 'Account Settings' },
                 { type: 'divider' },
-                { key: 'logout', icon: <LogOut size={17} strokeWidth={2.25} />, label: 'Log out' },
+                { key: 'logout', icon: <LogOut size={16} strokeWidth={2.25} />, label: 'Log out' },
               ],
               onClick: ({ key }) => {
                 if (key === 'logout') handleLogout()
@@ -602,7 +602,7 @@ export function AppLayout() {
             }}>
               <Avatar
                 src={getAvatarUrl(user.id)}
-                icon={<User size={17} strokeWidth={2.25} />}
+                icon={<User size={16} strokeWidth={2.25} />}
                 size={28}
                 style={{ background: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}
               />

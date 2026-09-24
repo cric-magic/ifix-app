@@ -45,7 +45,7 @@ export function ColumnPickerButton({ items, onToggle }: { items: ColumnPickerIte
       }}
     >
       {/* Same size and icon as the "…" buttons in the rows below. */}
-      <Button type="text" size="small" aria-label="Choose columns" icon={<Columns3 size={15} strokeWidth={2.25} />} />
+      <Button type="text" size="small" aria-label="Choose columns" icon={<Columns3 size={16} strokeWidth={2.25} />} />
     </Dropdown>
   )
 }

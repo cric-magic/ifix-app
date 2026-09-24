@@ -58,7 +58,7 @@ export function ForgotPasswordPage() {
           name="email"
           rules={[{ required: true, message: 'Email is required' }, { type: 'email', message: 'Enter a valid email' }]}
         >
-          <Input prefix={<Mail size={15} strokeWidth={2} />} placeholder="you@company.com" autoComplete="username" />
+          <Input prefix={<Mail size={16} strokeWidth={2} />} placeholder="you@company.com" autoComplete="username" />
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 8 }}>

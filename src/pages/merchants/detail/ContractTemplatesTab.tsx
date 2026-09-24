@@ -122,7 +122,7 @@ export function ContractTemplatesTab({ merchantId, standalone }: Props) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
       <Input
         placeholder={standalone ? 'Search by name or type' : 'Search'}
-        prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+        prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
         allowClear
         value={search}
         onChange={e => setSearch(e.target.value)}
@@ -156,7 +156,7 @@ export function ContractTemplatesTab({ merchantId, standalone }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
           {filterControls}
           {canManage && (
-            <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => { setEditingTemplate(null); setModalOpen(true) }}>
+            <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => { setEditingTemplate(null); setModalOpen(true) }}>
               Create Template
             </Button>
           )}

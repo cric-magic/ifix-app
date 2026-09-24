@@ -120,9 +120,9 @@ export function GlobalCatalogPage() {
             placement="bottomRight"
             menu={{
               items: [
-                { key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' },
+                { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
                 { type: 'divider' as const },
-                { key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' },
+                { key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' },
               ],
               onClick: ({ key }) => {
                 if (key === 'edit') { setEditing(c); setModalOpen(true) }
@@ -138,7 +138,7 @@ export function GlobalCatalogPage() {
               },
             }}
           >
-            <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+            <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
           </Dropdown>
         </div>
       ),
@@ -151,7 +151,7 @@ export function GlobalCatalogPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Input
             placeholder="Search by name, brand, or SKU code"
-            prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+            prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
             allowClear
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -159,7 +159,7 @@ export function GlobalCatalogPage() {
           />
           <ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />
         </div>
-        <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => { setEditing(null); setModalOpen(true) }}>
+        <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => { setEditing(null); setModalOpen(true) }}>
           Create Product
         </Button>
       </div>

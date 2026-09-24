@@ -53,7 +53,7 @@ export function BranchesTab({ actor, merchant }: Props) {
         canManage={branch => canManageBranch(actor, branch)}
         onToggleArchive={handleToggleArchive}
         headerAction={canCreateBranch(actor) ? (
-          <Button icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
+          <Button icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
             Create Branch
           </Button>
         ) : null}

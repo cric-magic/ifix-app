@@ -238,13 +238,13 @@ export function ContractTemplateModal({ open, template, merchantId, onClose, onS
                         type="text"
                         danger
                         style={{ flexShrink: 0 }}
-                        icon={<Trash2 size={15} strokeWidth={2.25} />}
+                        icon={<Trash2 size={16} strokeWidth={2.25} />}
                         onClick={() => remove(field.name)}
                       />
                     </div>
                   ))}
                   <Form.ErrorList errors={errors} />
-                  <Button type="dashed" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => add({ months: 6, ratePercent: 1.5 })} block>
+                  <Button type="dashed" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => add({ months: 6, ratePercent: 1.5 })} block>
                     Add Term
                   </Button>
                 </>

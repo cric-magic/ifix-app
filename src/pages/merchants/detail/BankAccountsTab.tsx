@@ -92,10 +92,10 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
           placement="bottomRight"
           menu={{
             items: [
-              { key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' },
-              ...(a.isDefault ? [] : [{ key: 'default', icon: <Star size={15} strokeWidth={2.25} />, label: 'Set as default' }]),
+              { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
+              ...(a.isDefault ? [] : [{ key: 'default', icon: <Star size={16} strokeWidth={2.25} />, label: 'Set as default' }]),
               { type: 'divider' as const },
-              { key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' },
+              { key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' },
             ],
             onClick: ({ key }) => {
               if (key === 'edit') { setEditingAccount(a); setModalOpen(true) }
@@ -111,7 +111,7 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
             },
           }}
         >
-          <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+          <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
         </Dropdown>
       ),
     }] : []),

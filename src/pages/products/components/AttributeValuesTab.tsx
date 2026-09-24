@@ -118,14 +118,14 @@ export function AttributeValuesTab({ meta }: Props) {
                 key: 'toggle',
                 danger: r.enabled,
                 icon: r.enabled
-                  ? <Ban size={15} strokeWidth={2.25} />
-                  : <RotateCcw size={15} strokeWidth={2.25} />,
+                  ? <Ban size={16} strokeWidth={2.25} />
+                  : <RotateCcw size={16} strokeWidth={2.25} />,
                 label: r.enabled ? 'Disable' : 'Enable',
               }],
               onClick: () => handleToggle(r),
             }}
           >
-            <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+            <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
           </Dropdown>
         ),
       },
@@ -137,14 +137,14 @@ export function AttributeValuesTab({ meta }: Props) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8 }}>
         <Input
           placeholder={`Search ${meta.noun} values`}
-          prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+          prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
           allowClear
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{ maxWidth: 320 }}
         />
         {meta.managed && (
-          <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => setAddOpen(true)}>
+          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setAddOpen(true)}>
             Add {meta.noun}
           </Button>
         )}

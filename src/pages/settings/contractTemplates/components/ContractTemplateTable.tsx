@@ -137,18 +137,18 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
                 // permission table — they select an active template during
                 // contract creation rather than inspecting the document here.
                 ...(canManage ? [
-                  { key: 'preview', icon: <Eye size={15} strokeWidth={2.25} />, label: 'Preview' },
+                  { key: 'preview', icon: <Eye size={16} strokeWidth={2.25} />, label: 'Preview' },
                   // Archived templates are locked outright — the doc's
                   // permission table gives "Edit Archived Template" a ❌ for
                   // every role, Super Admin included. Duplicate stays: it
                   // produces a new Draft rather than touching this record,
                   // which is the documented way to revive an archived one.
-                  ...(t.status !== 'archived' ? [{ key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' }] : []),
-                  { key: 'duplicate', icon: <Copy size={15} strokeWidth={2.25} />, label: 'Duplicate' },
-                  ...(t.status === 'active' && !t.isDefault ? [{ key: 'default', icon: <Star size={15} strokeWidth={2.25} />, label: 'Set as default' }] : []),
+                  ...(t.status !== 'archived' ? [{ key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' }] : []),
+                  { key: 'duplicate', icon: <Copy size={16} strokeWidth={2.25} />, label: 'Duplicate' },
+                  ...(t.status === 'active' && !t.isDefault ? [{ key: 'default', icon: <Star size={16} strokeWidth={2.25} />, label: 'Set as default' }] : []),
                   { type: 'divider' as const },
-                  ...(t.status === 'draft' ? [{ key: 'activate', icon: <Power size={15} strokeWidth={2.25} />, label: 'Activate' }] : []),
-                  ...(t.status === 'active' ? [{ key: 'archive', danger: true, icon: <Archive size={15} strokeWidth={2.25} />, label: 'Archive' }] : []),
+                  ...(t.status === 'draft' ? [{ key: 'activate', icon: <Power size={16} strokeWidth={2.25} />, label: 'Activate' }] : []),
+                  ...(t.status === 'active' ? [{ key: 'archive', danger: true, icon: <Archive size={16} strokeWidth={2.25} />, label: 'Archive' }] : []),
                 ] : []),
               ],
               onClick: ({ key }) => {
@@ -169,7 +169,7 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
               },
             }}
           >
-            <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+            <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
           </Dropdown>
         </div>
       ),

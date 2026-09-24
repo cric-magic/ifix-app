@@ -78,7 +78,7 @@ export function BranchTable({ branches, search, canManage, onToggleArchive, head
                   {
                     key: 'archive',
                     danger: !isArchived,
-                    icon: isArchived ? <ArchiveRestore size={15} strokeWidth={2.25} /> : <Archive size={15} strokeWidth={2.25} />,
+                    icon: isArchived ? <ArchiveRestore size={16} strokeWidth={2.25} /> : <Archive size={16} strokeWidth={2.25} />,
                     label: isArchived ? 'Unarchive' : 'Archive',
                   },
                 ],
@@ -95,7 +95,7 @@ export function BranchTable({ branches, search, canManage, onToggleArchive, head
                 },
               }}
             >
-              <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+              <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
             </Dropdown>
           </div>
         )

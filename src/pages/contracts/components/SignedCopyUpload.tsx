@@ -79,7 +79,7 @@ export function SignedCopyUpload({ value = [], onChange }: Props) {
                 type="text"
                 size="small"
                 aria-label={`Remove ${file.name}`}
-                icon={<Trash2 size={15} strokeWidth={2.25} />}
+                icon={<Trash2 size={16} strokeWidth={2.25} />}
                 onClick={() => onChange?.(value.filter((_, idx) => idx !== i))}
               />
             </div>

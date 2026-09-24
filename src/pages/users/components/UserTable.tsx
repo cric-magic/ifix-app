@@ -107,13 +107,13 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
               placement="bottomRight"
               menu={{
                 items: [
-                  { key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' },
-                  { key: 'reset', icon: <KeyRound size={15} strokeWidth={2.25} />, label: 'Reset password' },
+                  { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
+                  { key: 'reset', icon: <KeyRound size={16} strokeWidth={2.25} />, label: 'Reset password' },
                   { type: 'divider' },
                   {
                     key: 'suspend',
                     danger: !isSuspended,
-                    icon: isSuspended ? <RotateCcw size={15} strokeWidth={2.25} /> : <Ban size={15} strokeWidth={2.25} />,
+                    icon: isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />,
                     label: isSuspended ? 'Reactivate' : 'Suspend',
                   },
                 ],
@@ -131,7 +131,7 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
                 },
               }}
             >
-              <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+              <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
             </Dropdown>
           </div>
         )

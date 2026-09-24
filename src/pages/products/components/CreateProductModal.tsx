@@ -153,7 +153,7 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
           </Typography.Text>
           <Input
             placeholder="Search the standard catalog"
-            prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+            prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
             allowClear
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -212,7 +212,7 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
               <Button
                 type="text"
                 size="small"
-                icon={<ArrowLeft size={15} strokeWidth={2.25} />}
+                icon={<ArrowLeft size={16} strokeWidth={2.25} />}
                 onClick={() => setStage('pick')}
                 style={{ paddingLeft: 4, marginBottom: 4 }}
               >

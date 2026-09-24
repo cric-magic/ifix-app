@@ -90,7 +90,7 @@ export function PaymentHistoryTab({ contract, actor, onChanged }: Props) {
             trigger={['click']}
             menu={{
               items: [
-                { key: 'void', danger: true, icon: <Ban size={15} strokeWidth={2.25} />, label: 'Void' },
+                { key: 'void', danger: true, icon: <Ban size={16} strokeWidth={2.25} />, label: 'Void' },
               ],
               onClick: ({ key }) => {
                 if (key === 'void') {

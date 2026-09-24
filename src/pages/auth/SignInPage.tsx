@@ -49,7 +49,7 @@ export function SignInPage() {
           name="email"
           rules={[{ required: true, message: 'Email is required' }, { type: 'email', message: 'Enter a valid email' }]}
         >
-          <Input prefix={<Mail size={15} strokeWidth={2} />} placeholder="you@company.com" autoComplete="username" />
+          <Input prefix={<Mail size={16} strokeWidth={2} />} placeholder="you@company.com" autoComplete="username" />
         </Form.Item>
 
         <Form.Item
@@ -69,7 +69,7 @@ export function SignInPage() {
           name="password"
           rules={[{ required: true, message: 'Password is required' }]}
         >
-          <Input.Password prefix={<Lock size={15} strokeWidth={2} />} placeholder="Password" autoComplete="current-password" />
+          <Input.Password prefix={<Lock size={16} strokeWidth={2} />} placeholder="Password" autoComplete="current-password" />
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>

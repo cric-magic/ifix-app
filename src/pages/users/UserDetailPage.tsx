@@ -106,18 +106,18 @@ export function UserDetailPage() {
         </div>
         {canEdit && (
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-            <Button icon={<Pencil size={15} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+            <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
             <Dropdown
               trigger={['click']}
               placement="bottomRight"
               menu={{
                 items: [
-                  { key: 'reset', icon: <KeyRound size={15} strokeWidth={2.25} />, label: 'Reset password' },
+                  { key: 'reset', icon: <KeyRound size={16} strokeWidth={2.25} />, label: 'Reset password' },
                   { type: 'divider' },
                   {
                     key: 'suspend',
                     danger: !isSuspended,
-                    icon: isSuspended ? <RotateCcw size={15} strokeWidth={2.25} /> : <Ban size={15} strokeWidth={2.25} />,
+                    icon: isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />,
                     label: isSuspended ? 'Reactivate' : 'Suspend',
                   },
                 ],
@@ -134,7 +134,7 @@ export function UserDetailPage() {
                 },
               }}
             >
-              <Button icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+              <Button icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
             </Dropdown>
           </div>
         )}

@@ -92,7 +92,7 @@ export function DevToolsPanel() {
       <Space size={6}>
         <Avatar
           src={getAvatarUrl(u.id)}
-          icon={<User size={15} strokeWidth={2.25} />}
+          icon={<User size={16} strokeWidth={2.25} />}
           size={20}
           style={{ background: BAR_FILL, flexShrink: 0 }}
         />
@@ -155,7 +155,7 @@ export function DevToolsPanel() {
             className="ifix-menubar-item"
             style={{ display: 'flex', alignItems: 'center', color: BAR_TEXT }}
           >
-            <Home size={15} strokeWidth={2.25} />
+            <Home size={16} strokeWidth={2.25} />
           </a>
 
           <MenuBarTrigger

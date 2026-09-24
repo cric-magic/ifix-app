@@ -144,10 +144,10 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
             placement="bottomRight"
             menu={{
               items: [
-                { key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' },
-                ...(canAddUnit ? [{ key: 'add-unit', icon: <Boxes size={15} strokeWidth={2.25} />, label: 'Add Unit' }] : []),
+                { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
+                ...(canAddUnit ? [{ key: 'add-unit', icon: <Boxes size={16} strokeWidth={2.25} />, label: 'Add Unit' }] : []),
                 { type: 'divider' as const },
-                { key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' },
+                { key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' },
               ],
               onClick: ({ key }) => {
                 if (key === 'edit') onEdit(p)
@@ -156,7 +156,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
               },
             }}
           >
-            <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+            <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
           </Dropdown>
         </div>
       ),

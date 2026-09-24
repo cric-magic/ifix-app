@@ -125,8 +125,8 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
           trigger={['click']}
           menu={{
             items: [
-              { key: 'waive', icon: <ShieldOff size={15} strokeWidth={2.25} />, label: 'Waive' },
-              { key: 'void', danger: true, icon: <AlertTriangle size={15} strokeWidth={2.25} />, label: 'Void' },
+              { key: 'waive', icon: <ShieldOff size={16} strokeWidth={2.25} />, label: 'Waive' },
+              { key: 'void', danger: true, icon: <AlertTriangle size={16} strokeWidth={2.25} />, label: 'Void' },
             ],
             onClick: ({ key }) => {
               if (key === 'waive') setFeeWaiveTarget(r)

@@ -64,7 +64,7 @@ export function ProductsPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Input
             placeholder="Search by name, brand, or SKU"
-            prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+            prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
             allowClear
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -73,7 +73,7 @@ export function ProductsPage() {
           <ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />
         </div>
         {canManageProducts(user) && (
-          <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
+          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
             Create Product
           </Button>
         )}

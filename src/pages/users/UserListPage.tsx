@@ -86,14 +86,14 @@ export function UserListPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <Input
           placeholder="Search by name, email, or staff ID"
-          prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+          prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
           allowClear
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{ maxWidth: 320 }}
         />
         {canManageUsers(user) && (
-          <Button type="primary" icon={<Plus size={15} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
+          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
             Create User
           </Button>
         )}

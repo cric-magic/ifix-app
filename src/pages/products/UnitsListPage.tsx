@@ -151,9 +151,9 @@ export function UnitsListPage() {
               items: [
                 // A label can be (re)printed at any point in a unit's life —
                 // including after it's sold, for a replacement sticker.
-                ...(canPrint ? [{ key: 'print', icon: <Printer size={15} strokeWidth={2.25} />, label: 'Print label' }] : []),
-                ...(canManage && !isSold ? [{ key: 'edit', icon: <Pencil size={15} strokeWidth={2.25} />, label: 'Edit' }] : []),
-                ...(canManage && u.availability === 'available' ? [{ key: 'remove', danger: true, icon: <Trash2 size={15} strokeWidth={2.25} />, label: 'Remove' }] : []),
+                ...(canPrint ? [{ key: 'print', icon: <Printer size={16} strokeWidth={2.25} />, label: 'Print label' }] : []),
+                ...(canManage && !isSold ? [{ key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' }] : []),
+                ...(canManage && u.availability === 'available' ? [{ key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' }] : []),
               ],
               onClick: ({ key }) => {
                 if (key === 'print') setPrintingUnit(u)
@@ -170,7 +170,7 @@ export function UnitsListPage() {
               },
             }}
           >
-            <Button type="text" size="small" icon={<MoreHorizontal size={15} strokeWidth={2.25} />} />
+            <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
           </Dropdown>
         )
       },
@@ -183,7 +183,7 @@ export function UnitsListPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Input
             placeholder="Search by serial number or IMEI"
-            prefix={<Search size={15} strokeWidth={2.25} color={iconColors.secondary} />}
+            prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
             allowClear
             value={search}
             onChange={e => setSearch(e.target.value)}
