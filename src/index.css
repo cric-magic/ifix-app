@@ -824,6 +824,15 @@ label[for="password"]::after {
   box-shadow: var(--ant-box-shadow);
 }
 
+/* A form field's help text (Form.Item `extra`) at the small text size, so
+   it reads as a hint under the field rather than competing with the
+   options above it at the same 14px. antd has no component token for it,
+   and its own rule is scoped under .ant-form-item, so this matches that
+   specificity to win. */
+.ant-form-item .ant-form-item-extra {
+  font-size: var(--ant-font-size-sm);
+}
+
 /* Panel header that carries filters as well as a title and action (see
    ContractTemplateTable): one 56px row while the panel is wide enough, and
    stacked — title above, controls below, both start-aligned — once it
@@ -1154,12 +1163,17 @@ label[for="password"]::after {
 }
 
 
-/* Form.Item `help` text eats into the item's own bottom margin (antd cancels
-   it out with a negative margin-offset so error messages don't shift layout),
-   which leaves little to no visible gap before the next field's label. Add
-   it back so fields with help text are spaced the same as fields without. */
+/* A validation message (or `help`) eats into the item's own bottom margin
+   — antd cancels it with a negative margin-offset so the message doesn't
+   shift the layout — leaving little to no gap before the next field's
+   label, so the padding adds it back. Scoped to items actually showing one:
+   plain `extra` help text gets no margin-offset, so the padding there
+   doubled the item's own 24px margin into a 48px gap between groups. */
 .ant-form-item-additional {
   margin-top: 4px;
+}
+
+.ant-form-item-additional:has(.ant-form-item-explain) {
   padding-bottom: 24px;
 }
 
