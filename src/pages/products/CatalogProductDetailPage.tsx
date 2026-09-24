@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Button, Result, Tag, Typography, message, theme } from 'antd'
-import { Pencil } from 'lucide-react'
+import { Button, Tag, Typography, message, theme } from 'antd'
+import { Pencil, Lock, Package } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { canManageCatalogProducts, homePath } from '../../constants/roles'
 import { MOCK_CATALOG_PRODUCTS } from '../../constants/mockCatalogProducts'
@@ -10,6 +10,7 @@ import { DetailDescriptions } from '../../components/DetailDescriptions'
 import type { CatalogProduct } from '../../types/catalogProduct'
 import { CatalogProductModal } from './components/CatalogProductModal'
 import { ProductPhotoThumbnail } from './components/ProductPhotoThumbnail'
+import { PageEmptyState } from '../../components/PageEmptyState'
 
 // Super Admin's view of one standard catalog entry. Mirrors the header of a
 // merchant's product detail (detail/OverviewTab) — photo, name and Type tag
@@ -27,11 +28,11 @@ export function CatalogProductDetailPage() {
 
   if (!canManageCatalogProducts(actor)) {
     return (
-      <Result
-        status="403"
+      <PageEmptyState
+        icon={<Lock size={22} strokeWidth={2.25} />}
         title="Not applicable"
-        subTitle="The standard catalog is managed at the platform level by Super Admin."
-        extra={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
+        description="The standard catalog is managed at the platform level by Super Admin."
+        action={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
       />
     )
   }
@@ -39,10 +40,10 @@ export function CatalogProductDetailPage() {
   const product = MOCK_CATALOG_PRODUCTS.find(c => c.id === id && !c.deletedAt)
   if (!product) {
     return (
-      <Result
-        status="404"
+      <PageEmptyState
+        icon={<Package size={22} strokeWidth={2.25} />}
         title="Catalog product not found"
-        extra={<Button onClick={() => navigate('/products/catalog')}>Back to list</Button>}
+        action={<Button onClick={() => navigate('/products/catalog')}>Back to list</Button>}
       />
     )
   }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Image, Result, Typography, message, theme } from 'antd'
-import { ImageOff, Pencil, Printer } from 'lucide-react'
+import { Button, Image, Typography, message, theme } from 'antd'
+import { ImageOff, Pencil, Printer, Lock, Smartphone } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
@@ -16,6 +16,7 @@ import { EditUnitModal } from './components/EditUnitModal'
 import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 import { UnitProductName } from './components/UnitProductName'
 import { UnitPrice } from './components/UnitPrice'
+import { PageEmptyState } from '../../components/PageEmptyState'
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -35,21 +36,21 @@ export function UnitDetailPage() {
 
   if (!canViewProducts(user)) {
     return (
-      <Result
-        status="403"
+      <PageEmptyState
+        icon={<Lock size={22} strokeWidth={2.25} />}
         title="Not applicable"
-        subTitle="Units are scoped to a merchant workspace. Super Admin operates at the platform level."
-        extra={<Button onClick={() => navigate(homePath(user))}>Back home</Button>}
+        description="Units are scoped to a merchant workspace. Super Admin operates at the platform level."
+        action={<Button onClick={() => navigate(homePath(user))}>Back home</Button>}
       />
     )
   }
 
   if (!unit) {
     return (
-      <Result
-        status="404"
+      <PageEmptyState
+        icon={<Smartphone size={22} strokeWidth={2.25} />}
         title="Unit not found"
-        extra={<Button onClick={() => navigate('/products/unit')}>Back to list</Button>}
+        action={<Button onClick={() => navigate('/products/unit')}>Back to list</Button>}
       />
     )
   }

@@ -5,9 +5,11 @@ interface Props {
   icon: React.ReactNode
   title: string
   description?: string
+  // A way out, e.g. "Back to list" — used by PageEmptyState.
+  action?: React.ReactNode
 }
 
-export function TableEmptyState({ icon, title, description }: Props) {
+export function TableEmptyState({ icon, title, description, action }: Props) {
   const { token } = theme.useToken()
   const iconColors = useIconColors()
 
@@ -36,6 +38,7 @@ export function TableEmptyState({ icon, title, description }: Props) {
         <Typography.Title level={5} style={{ margin: 0 }}>{title}</Typography.Title>
         {description && <Typography.Text type="secondary">{description}</Typography.Text>}
       </div>
+      {action}
     </div>
   )
 }

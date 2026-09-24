@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Result, Tabs, message } from 'antd'
+import { Button, Tabs, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_MERCHANTS } from '../../constants/mockMerchants'
 import { canViewMerchantList, canEditMerchant, canManageBankAccounts, homePath } from '../../constants/roles'
@@ -9,6 +9,8 @@ import { BankAccountsTab } from './detail/BankAccountsTab'
 import { BranchesTab } from './detail/BranchesTab'
 import { ContractTemplatesTab } from './detail/ContractTemplatesTab'
 import { EditMerchantModal } from './components/EditMerchantModal'
+import { Building2, Lock } from 'lucide-react'
+import { PageEmptyState } from '../../components/PageEmptyState'
 
 export function MerchantDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -20,11 +22,11 @@ export function MerchantDetailPage() {
 
   if (!canViewMerchantList(actor)) {
     return (
-      <Result
-        status="403"
+      <PageEmptyState
+        icon={<Lock size={22} strokeWidth={2.25} />}
         title="Access denied"
-        subTitle="Merchants is only accessible to Super Admin."
-        extra={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
+        description="Merchants is only accessible to Super Admin."
+        action={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
       />
     )
   }
@@ -33,10 +35,10 @@ export function MerchantDetailPage() {
 
   if (!merchant) {
     return (
-      <Result
-        status="404"
+      <PageEmptyState
+        icon={<Building2 size={22} strokeWidth={2.25} />}
         title="Merchant not found"
-        extra={<Button onClick={() => navigate('/merchants')}>Back to list</Button>}
+        action={<Button onClick={() => navigate('/merchants')}>Back to list</Button>}
       />
     )
   }

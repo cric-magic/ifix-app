@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Steps, Card, Form, Input, Button, Space, Row, Col,
-  Typography, Divider, Alert, Result, DatePicker, message,
+  Typography, Divider, Alert, DatePicker, message,
 } from 'antd'
 import { InputNumber } from '../../components/AppInputNumber'
 import dayjs from 'dayjs'
-import { Check, X } from 'lucide-react'
+import { Check, X, FileText, Lock } from 'lucide-react'
 import { Select } from '../../components/AppSelect'
 import { PhotoUpload } from '../../components/PhotoUpload'
 import { useCurrentUser } from '../../contexts/AuthContext'
@@ -24,6 +24,7 @@ import { submitContractForApproval } from '../../utils/contract'
 import { canEditContractFields, isMerchantAdminOrAbove, scopedContractList, scopedProductList } from '../../constants/roles'
 import type { Customer } from '../../types/customer'
 import type { Contract } from '../../types/contract'
+import { PageEmptyState } from '../../components/PageEmptyState'
 
 // Per the Contract doc's Free Rate terms ("pick a term: 3/6/10/12/18/24
 // months") — a different set from Fixed Rate's own per-template terms.
@@ -76,21 +77,21 @@ export function EditContractPage() {
 
   if (!maybeContract) {
     return (
-      <Result
-        status="404"
+      <PageEmptyState
+        icon={<FileText size={22} strokeWidth={2.25} />}
         title="Contract not found"
-        extra={<Button onClick={() => navigate('/contracts')}>Back to list</Button>}
+        action={<Button onClick={() => navigate('/contracts')}>Back to list</Button>}
       />
     )
   }
 
   if (!canEditContractFields(actor, maybeContract)) {
     return (
-      <Result
-        status="403"
+      <PageEmptyState
+        icon={<Lock size={22} strokeWidth={2.25} />}
         title="You can't edit this contract"
-        subTitle="Only the contract's own creator can edit it, and only while it's Draft, Pending Approval, or Rejected."
-        extra={<Button onClick={() => navigate(`/contracts/${maybeContract.id}`)}>Back to contract</Button>}
+        description="Only the contract's own creator can edit it, and only while it's Draft, Pending Approval, or Rejected."
+        action={<Button onClick={() => navigate(`/contracts/${maybeContract.id}`)}>Back to contract</Button>}
       />
     )
   }

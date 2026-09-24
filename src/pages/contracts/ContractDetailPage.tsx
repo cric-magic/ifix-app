@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Result, Space, Tabs } from 'antd'
-import { Pencil } from 'lucide-react'
+import { Button, Space, Tabs } from 'antd'
+import { Pencil, FileText, Lock } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_CONTRACTS } from '../../constants/mockContracts'
 import { canEditContractFields, canManageContract, canViewContracts, homePath, scopedContractList } from '../../constants/roles'
@@ -13,6 +13,7 @@ import { PaymentHistoryTab } from './detail/PaymentHistoryTab'
 import { PenaltyTab } from './detail/PenaltyTab'
 import { ContractPreviewTab } from './detail/ContractPreviewTab'
 import { LifecycleActions } from './components/LifecycleActions'
+import { PageEmptyState } from '../../components/PageEmptyState'
 
 export function ContractDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -23,11 +24,11 @@ export function ContractDetailPage() {
 
   if (!canViewContracts(actor)) {
     return (
-      <Result
-        status="403"
+      <PageEmptyState
+        icon={<Lock size={22} strokeWidth={2.25} />}
         title="Not applicable"
-        subTitle="Contracts are scoped to a merchant workspace. Super Admin operates at the platform level."
-        extra={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
+        description="Contracts are scoped to a merchant workspace. Super Admin operates at the platform level."
+        action={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
       />
     )
   }
@@ -39,10 +40,10 @@ export function ContractDetailPage() {
 
   if (!contract) {
     return (
-      <Result
-        status="404"
+      <PageEmptyState
+        icon={<FileText size={22} strokeWidth={2.25} />}
         title="Contract not found"
-        extra={<Button onClick={() => navigate('/contracts')}>Back to list</Button>}
+        action={<Button onClick={() => navigate('/contracts')}>Back to list</Button>}
       />
     )
   }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { App, Avatar, Button, Dropdown, Result, Typography, message } from 'antd'
-import { Pencil, Ban, RotateCcw, KeyRound, MoreHorizontal } from 'lucide-react'
+import { App, Avatar, Button, Dropdown, Typography, message } from 'antd'
+import { Pencil, Ban, RotateCcw, KeyRound, MoreHorizontal, Lock, Users } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_USER_ACCOUNTS, generateTempPassword } from '../../constants/mockUsers'
 import { ROLE_LABELS, canManageTargetUser, canViewUserList, homePath, scopedUserList } from '../../constants/roles'
@@ -11,6 +11,7 @@ import { CATEGORY_LABELS } from '../../constants/products'
 import { UserStatusTag } from './components/UserStatusTag'
 import { EditUserModal } from './components/EditUserModal'
 import { TempPasswordModal } from './components/TempPasswordModal'
+import { PageEmptyState } from '../../components/PageEmptyState'
 
 const dateFormatter = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 
@@ -34,11 +35,11 @@ export function UserDetailPage() {
 
   if (!canViewUserList(actor)) {
     return (
-      <Result
-        status="403"
+      <PageEmptyState
+        icon={<Lock size={22} strokeWidth={2.25} />}
         title="Access denied"
-        subTitle="The user list is only accessible to Branch Manager and above."
-        extra={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
+        description="The user list is only accessible to Branch Manager and above."
+        action={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
       />
     )
   }
@@ -49,10 +50,10 @@ export function UserDetailPage() {
 
   if (!account) {
     return (
-      <Result
-        status="404"
+      <PageEmptyState
+        icon={<Users size={22} strokeWidth={2.25} />}
         title="User not found"
-        extra={<Button onClick={() => navigate('/settings/members')}>Back to list</Button>}
+        action={<Button onClick={() => navigate('/settings/members')}>Back to list</Button>}
       />
     )
   }

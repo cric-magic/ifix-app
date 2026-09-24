@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Result, message } from 'antd'
+import { Button, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_CUSTOMERS } from '../../constants/mockCustomers'
 import { MOCK_CONTRACTS } from '../../constants/mockContracts'
@@ -8,6 +8,8 @@ import { canViewCustomers, canManageCustomers, homePath } from '../../constants/
 import { OverviewTab } from './detail/OverviewTab'
 import { ContractHistoryTab } from './detail/ContractHistoryTab'
 import { CustomerModal } from './components/CustomerModal'
+import { Contact, Lock } from 'lucide-react'
+import { PageEmptyState } from '../../components/PageEmptyState'
 
 export function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -19,11 +21,11 @@ export function CustomerDetailPage() {
 
   if (!canViewCustomers(actor)) {
     return (
-      <Result
-        status="403"
+      <PageEmptyState
+        icon={<Lock size={22} strokeWidth={2.25} />}
         title="Not applicable"
-        subTitle="Customers are scoped to a merchant workspace. Super Admin operates at the platform level."
-        extra={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
+        description="Customers are scoped to a merchant workspace. Super Admin operates at the platform level."
+        action={<Button onClick={() => navigate(homePath(actor))}>Back home</Button>}
       />
     )
   }
@@ -32,10 +34,10 @@ export function CustomerDetailPage() {
 
   if (!customer) {
     return (
-      <Result
-        status="404"
+      <PageEmptyState
+        icon={<Contact size={22} strokeWidth={2.25} />}
         title="Customer not found"
-        extra={<Button onClick={() => navigate('/customers')}>Back to list</Button>}
+        action={<Button onClick={() => navigate('/customers')}>Back to list</Button>}
       />
     )
   }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Result, message } from 'antd'
+import { Button, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_BRANCHES } from '../../constants/mockBranches'
 import { MOCK_USER_ACCOUNTS } from '../../constants/mockUsers'
@@ -9,6 +9,8 @@ import { OverviewTab } from './detail/OverviewTab'
 import { BankAccountTab } from './detail/BankAccountTab'
 import { AssignedUsersTab } from './detail/AssignedUsersTab'
 import { EditBranchModal } from './components/EditBranchModal'
+import { Store } from 'lucide-react'
+import { PageEmptyState } from '../../components/PageEmptyState'
 
 export function BranchDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -26,10 +28,10 @@ export function BranchDetailPage() {
 
   if (!branch) {
     return (
-      <Result
-        status="404"
+      <PageEmptyState
+        icon={<Store size={22} strokeWidth={2.25} />}
         title="Branch not found"
-        extra={<Button onClick={() => navigate('/branches')}>Back to list</Button>}
+        action={<Button onClick={() => navigate('/branches')}>Back to list</Button>}
       />
     )
   }
