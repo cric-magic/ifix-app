@@ -403,7 +403,14 @@ function AppThemed() {
   }, [baseToken, seedTokens, panelBg, wrapperBg, wrapperBorder, panelBorder, themeVariant])
 
   return (
-    <ConfigProvider theme={{
+    <ConfigProvider
+      // antd's click "wave" — a glow that spreads out from a clicked button
+      // — rendered just past the button's edge, which inside a toolbar row
+      // that scrolls sideways on narrow screens (every list page's filter
+      // row) flashed a horizontal scrollbar for as long as it animated. The
+      // app's flat, shadowless buttons don't use it otherwise.
+      wave={{ disabled: true }}
+      theme={{
       algorithm,
       token: seedTokens,
       components: {
