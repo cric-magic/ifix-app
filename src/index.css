@@ -86,6 +86,25 @@ body {
   color: var(--ant-color-text-quaternary) !important;
 }
 
+/* The ••• jump buttons: antd swaps in its double chevron in colorPrimary on
+   hover — the one blue control in an otherwise neutral bar. Given the same
+   hover as the page numbers and prev/next arrows instead: fill background,
+   primary text colour. */
+.ant-pagination-jump-prev,
+.ant-pagination-jump-next {
+  border-radius: 6px;
+}
+
+.ant-pagination-jump-prev:hover,
+.ant-pagination-jump-next:hover {
+  background: var(--ant-color-fill-secondary) !important;
+}
+
+.ant-pagination-jump-prev .ant-pagination-item-link-icon,
+.ant-pagination-jump-next .ant-pagination-item-link-icon {
+  color: var(--ant-color-text) !important;
+}
+
 /* SVG chevrons are inline-replaced elements and align to text baseline by
    default (not centered) when there's no button wrapper, e.g. while
    disabled — flex-center the li (and the button, when present) instead. */
