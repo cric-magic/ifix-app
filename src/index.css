@@ -30,7 +30,11 @@ body {
   height: 10px;
 }
 
-*::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  /* The corner is the square where a horizontal and a vertical bar meet
+     (e.g. a table's rows area) — left unstyled, Chrome paints it white,
+     which showed as a stray square in the dark variants. */
   background: transparent;
 }
 
