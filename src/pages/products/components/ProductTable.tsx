@@ -105,15 +105,6 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
     { title: 'RAM', key: 'ram', render: (_, p) => p.ram ?? dash },
     { title: 'Color', dataIndex: 'color', key: 'color' },
     { title: 'Connection', key: 'connection', render: (_, p) => p.connection ?? dash },
-    {
-      // Available Units, not total — counted from the caller's already
-      // branch-scoped unit list, so a Branch Manager sees their own branch's
-      // sellable stock rather than the merchant-wide figure.
-      title: 'Available Units',
-      key: 'availableUnits',
-      align: 'right',
-      render: (_, p) => countAvailableUnits(scopedUnitList(actor, p.id, MOCK_PRODUCT_UNITS)),
-    },
     ...(showCostPrice ? [{
       title: 'Cost Price',
       key: 'costPrice',
@@ -125,6 +116,15 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
       key: 'salesPrice',
       align: 'right',
       render: (_, p) => formatter.format(p.salesPrice),
+    },
+    {
+      // Available Units, not total — counted from the caller's already
+      // branch-scoped unit list, so a Branch Manager sees their own branch's
+      // sellable stock rather than the merchant-wide figure.
+      title: 'Available Units',
+      key: 'availableUnits',
+      align: 'right',
+      render: (_, p) => countAvailableUnits(scopedUnitList(actor, p.id, MOCK_PRODUCT_UNITS)),
     },
     { title: 'Type', key: 'type', render: (_, p) => TYPE_LABELS[p.type] },
     { title: 'Status', key: 'status', fixed: 'right', render: (_, p) => <ProductStatusTag status={p.status} /> },

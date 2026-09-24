@@ -15,8 +15,8 @@ import { UnitAvailabilityTag } from './components/UnitAvailabilityTag'
 import { EditUnitModal } from './components/EditUnitModal'
 import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 import { UnitProductName } from './components/UnitProductName'
+import { UnitPrice } from './components/UnitPrice'
 
-const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 
 export function UnitDetailPage() {
@@ -81,9 +81,9 @@ export function UnitDetailPage() {
     },
     { key: 'tax', label: 'Tax', children: TAX_LABELS[unit.tax] },
     {
-      key: 'customPrice',
-      label: 'Custom Price',
-      children: unit.customPrice ? formatter.format(unit.customPrice) : <span style={{ color: token.colorTextDisabled }}>Default</span>,
+      key: 'price',
+      label: 'Price',
+      children: <UnitPrice unit={unit} product={product} />,
     },
     { key: 'added', label: 'Added', children: dateFormatter.format(new Date(unit.createdAt)) },
   ]

@@ -18,8 +18,7 @@ import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 import { TableEmptyState } from '../../components/TableEmptyState'
 import { UnitProductName } from './components/UnitProductName'
 import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../constants/paginationIcons'
-
-const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
+import { UnitPrice } from './components/UnitPrice'
 
 type AvailabilityFilter = 'all' | UnitAvailability
 
@@ -130,7 +129,7 @@ export function UnitsListPage() {
     { title: 'Grade', key: 'grade', render: (_, u) => u.grade ? GRADE_LABELS[u.grade] : <span style={{ color: token.colorTextDisabled }}>—</span> },
     { title: 'Battery', key: 'battery', align: 'right', render: (_, u) => u.batteryPercentage != null ? `${u.batteryPercentage}%` : <span style={{ color: token.colorTextDisabled }}>—</span> },
     { title: 'Tax', key: 'tax', render: (_, u) => TAX_LABELS[u.tax] },
-    { title: 'Price', key: 'customPrice', align: 'right', render: (_, u) => u.customPrice ? formatter.format(u.customPrice) : <span style={{ color: token.colorTextDisabled }}>—</span> },
+    { title: 'Price', key: 'price', align: 'right', render: (_, u) => <UnitPrice unit={u} product={productById.get(u.productId)} /> },
     { title: 'Availability', key: 'availability', fixed: 'right', render: (_, u) => <UnitAvailabilityTag availability={u.availability} /> },
     {
       title: '',
