@@ -59,7 +59,7 @@ export function ProductsPage() {
   }
 
   return (
-    <div>
+    <div className="ifix-fill-page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Input

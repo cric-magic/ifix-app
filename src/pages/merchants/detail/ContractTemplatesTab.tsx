@@ -144,7 +144,10 @@ export function ContractTemplatesTab({ merchantId, standalone }: Props) {
   )
 
   return (
-    <div>
+    // The settings page is a list view, so it takes the fill-height layout
+    // (see .ifix-fill-page); inside a merchant's detail page it scrolls
+    // with that page instead.
+    <div className={standalone ? 'ifix-fill-page' : undefined}>
       {/* List view keeps its filters and primary action above the panel;
           the detail view hands both to the panel's own header row, so
           nothing belonging to this table sits outside it. See CLAUDE.md's
@@ -161,6 +164,7 @@ export function ContractTemplatesTab({ merchantId, standalone }: Props) {
       )}
 
       <ContractTemplateTable
+        fillHeight={standalone}
         headerTitle={standalone ? undefined : `${filtered.length} Template${filtered.length === 1 ? '' : 's'}`}
         filters={standalone ? undefined : filterControls}
         templates={filtered}

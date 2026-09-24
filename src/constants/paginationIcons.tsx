@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { ChevronsLeft, ChevronsRight, Ellipsis } from 'lucide-react'
+import { ChevronDown, ChevronsLeft, ChevronsRight, Ellipsis } from 'lucide-react'
 
 // Pagination's jump buttons show an ellipsis at rest and a double chevron on
 // hover. Passing a bare icon as `jumpPrevIcon`/`jumpNextIcon` would replace
@@ -37,3 +37,11 @@ function jumpIcon(icon: ReactNode) {
 
 export const JUMP_PREV_ICON = jumpIcon(<ChevronsLeft size={14} strokeWidth={2.25} />)
 export const JUMP_NEXT_ICON = jumpIcon(<ChevronsRight size={14} strokeWidth={2.25} />)
+
+// Rows per page for every list table: 20 by default so a large screen isn't
+// two-thirds empty, with a picker for 10/20/50. The picker is antd's own
+// Select, given the same Lucide chevron as AppSelect so it matches every
+// other dropdown in the app.
+export const DEFAULT_PAGE_SIZE = 20
+export const PAGE_SIZE_OPTIONS = [10, 20, 50]
+export const PAGE_SIZE_CHANGER = { suffixIcon: <ChevronDown size={14} strokeWidth={2.25} /> }

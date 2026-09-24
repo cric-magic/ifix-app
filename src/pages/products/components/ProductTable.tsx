@@ -12,7 +12,9 @@ import { useIconColors } from '../../../constants/iconColors'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { countAvailableUnits } from '../../../utils/product'
 import { ProductStatusTag } from './ProductStatusTag'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
+import { useColumnPicker } from '../../../components/useColumnPicker'
+import { withColumnMinWidths } from '../../../components/tableColumns'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 
@@ -26,6 +28,7 @@ interface Props {
 }
 
 export function ProductTable({ actor, products, isSearching, onEdit, onRemove, onAddUnit }: Props) {
+  const applyColumnPicker = useColumnPicker('products', ['name', 'status'])
   const { token } = theme.useToken()
   const dash = <span style={{ color: token.colorTextDisabled }}>—</span>
   const iconColors = useIconColors()
@@ -64,7 +67,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
     })
   }
 
-  const columns: ColumnsType<Product> = [
+  const allColumns: ColumnsType<Product> = [
     {
       title: <span style={{ color: token.colorText }}>Name</span>,
       dataIndex: 'name',
@@ -159,6 +162,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
       ),
     }] : []),
   ]
+  const columns = applyColumnPicker(withColumnMinWidths(allColumns))
 
   return (
     <div className="ifix-table-panel">
@@ -176,7 +180,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
               rowKey="id"
               columns={columns}
               dataSource={products}
-              scroll={{ x: 'max-content' }}
+              scroll={{ x: 'max-content', y: '100%' }}
               onRow={record => ({
                 onClick: () => navigate(`/products/catalog/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -189,9 +193,10 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
                 ),
               }}
               pagination={{
-                pageSize: 10,
+                defaultPageSize: DEFAULT_PAGE_SIZE,
                 size: 'small',
-                showSizeChanger: false,
+                showSizeChanger: PAGE_SIZE_CHANGER,
+                pageSizeOptions: PAGE_SIZE_OPTIONS,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
                 jumpPrevIcon: JUMP_PREV_ICON,

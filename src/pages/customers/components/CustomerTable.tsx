@@ -6,7 +6,7 @@ import type { Customer } from '../../../types/customer'
 import type { Contract } from '../../../types/contract'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { DotTag } from '../../../components/DotTag'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
 
 interface Props {
   customers: Customer[]
@@ -58,7 +58,7 @@ export function CustomerTable({ customers, contracts, search }: Props) {
               rowKey="id"
               columns={columns}
               dataSource={customers}
-              scroll={customers.length > 0 ? { x: 'max-content' } : undefined}
+              scroll={customers.length > 0 ? { x: 'max-content', y: '100%' } : undefined}
               onRow={record => ({
                 onClick: () => navigate(`/customers/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -71,9 +71,10 @@ export function CustomerTable({ customers, contracts, search }: Props) {
                 ),
               }}
               pagination={{
-                pageSize: 10,
+                defaultPageSize: DEFAULT_PAGE_SIZE,
                 size: 'small',
-                showSizeChanger: false,
+                showSizeChanger: PAGE_SIZE_CHANGER,
+                pageSizeOptions: PAGE_SIZE_OPTIONS,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
                 jumpPrevIcon: JUMP_PREV_ICON,

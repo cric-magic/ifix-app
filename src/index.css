@@ -86,6 +86,19 @@ body {
   color: var(--ant-color-text-quaternary) !important;
 }
 
+/* The rows-per-page picker at pagination's own size and weight — antd
+   renders it at the base 14px in full text colour, which read as oversized
+   next to the 12px page numbers and total. */
+.ant-pagination-options .ant-select {
+  font-size: var(--ant-font-size-sm);
+  color: var(--ant-color-text-secondary);
+  /* Same box as the page buttons beside it — the tables use antd's small
+     pagination, whose buttons are itemSizeSM tall with the 6px corners set
+     above; antd's own small Select came out ~25px with 4px corners. */
+  height: var(--ant-pagination-item-size-sm);
+  border-radius: 6px;
+}
+
 /* The ••• jump buttons: antd swaps in its double chevron in colorPrimary on
    hover — the one blue control in an otherwise neutral bar. Given the same
    hover as the page numbers and prev/next arrows instead: fill background,
@@ -824,6 +837,13 @@ label[for="password"]::after {
   box-shadow: var(--ant-box-shadow);
 }
 
+/* Every Select's suffix chevron sat 1px above the text's centre: the Lucide
+   svg is inline, so it rides the baseline of antd's suffix box instead of
+   filling it. Block-level, it fills the box antd already centres. */
+.ant-select-suffix svg {
+  display: block;
+}
+
 /* A form field's help text (Form.Item `extra`) at the small text size, so
    it reads as a hint under the field rather than competing with the
    options above it at the same 14px. antd has no component token for it,
@@ -1060,11 +1080,24 @@ label[for="password"]::after {
   white-space: nowrap !important;
 }
 
+/* Centred on the label line rather than pinned to the cell's top, so it
+   stays beside the label whatever the row's height — a header row grows
+   when a cell holds something taller than a label, like the column
+   picker's button. The label is vertically centred in the cell's content
+   box, which is the cell minus its 8px bottom padding and 0.5px border. */
 .ant-table-thead > tr > th::before {
-  top: 0 !important;
-  transform: none !important;
+  top: calc(50% - 4.25px) !important;
+  transform: translateY(-50%) !important;
   height: 16px !important;
   width: 0.5px !important;
+}
+
+/* No separator after the last column: neither on the column picker's own
+   header cell (useColumnPicker), nor on the scrollbar-width spacer antd
+   adds after it once the header is fixed (scroll.y). */
+.ant-table-thead > tr > th.ifix-column-picker-cell::before,
+.ant-table-thead > tr > th.ant-table-cell-scrollbar::before {
+  display: none !important;
 }
 
 /* Fixed (sticky) columns: antd's default treatment adds a gradient shadow on
@@ -1137,14 +1170,116 @@ label[for="password"]::after {
   padding-left: 16px !important;
 }
 
-.ifix-panel-table > .ant-table-wrapper .ant-table-thead > tr > th:last-child,
+.ifix-panel-table > .ant-table-wrapper .ant-table-thead > tr > th:last-child:not(.ant-table-cell-scrollbar),
+.ifix-panel-table > .ant-table-wrapper .ant-table-thead > tr > th:has(+ .ant-table-cell-scrollbar),
 .ifix-panel-table > .ant-table-wrapper .ant-table-tbody > tr:not(.ant-table-expanded-row) > td:last-child {
   padding-right: 16px !important;
+}
+
+/* Cell values stay on one line, like the header labels already do. That
+   makes each column's text its minimum width: the name column's width:100%
+   (withColumnMinWidths) takes whatever space is spare, but can't squeeze
+   another column into wrapping its value — the table scrolls sideways
+   instead, as it already does when columns don't fit. */
+.ifix-panel-table > .ant-table-wrapper .ant-table-tbody > tr > td {
+  white-space: nowrap;
+}
+
+/* With a fixed header (scroll.y), antd ends the header row with a spacer
+   cell as wide as the rows' scrollbar. It's the header's :last-child then,
+   so the rule above would pad it out past the bar's width and push the
+   header's pinned-right columns out of line with the rows below — the
+   padding belongs to the real last column before it instead. */
+.ifix-panel-table > .ant-table-wrapper .ant-table-thead > tr > th.ant-table-cell-scrollbar {
+  padding: 0 !important;
 }
 
 .ifix-panel-table > .ant-table-wrapper .ant-table-pagination {
   padding: 0 16px !important;
   margin-bottom: 0 !important;
+}
+
+/* List pages (.ifix-fill-page): the table panel fills whatever height the
+   main area has left under the filter row, with the column headers pinned
+   at the top of the panel, the pagination pinned at the bottom, and only
+   the rows scrolling between them. Each table opts in with `scroll.y` —
+   that's what makes antd split the header into its own table above a
+   scrolling body — and everything from the page down to that body is a
+   flex column so the body takes the leftover height instead of antd's
+   max-height. min-height keeps a short window from squeezing the rows to
+   nothing; below it the page itself scrolls as before. */
+.ifix-fill-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 480px;
+}
+
+/* Tabs wrapping list views (Attributes): the tab area itself has to fill
+   the main area too, so the active tab's .ifix-fill-page has a height to
+   fill. */
+.ifix-fill-tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ifix-fill-tabs > .ant-tabs-content-holder {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ifix-fill-tabs > .ant-tabs-content-holder > .ant-tabs-content,
+.ifix-fill-tabs > .ant-tabs-content-holder > .ant-tabs-content > .ant-tabs-tabpane-active {
+  height: 100%;
+}
+
+.ifix-fill-page > .ifix-table-panel,
+.ifix-fill-page .ifix-table-panel > div:has(> .ifix-panel-table),
+.ifix-fill-page .ifix-panel-table,
+.ifix-fill-page .ifix-panel-table > .ant-table-wrapper,
+.ifix-fill-page .ifix-panel-table > .ant-table-wrapper > *,
+.ifix-fill-page .ifix-panel-table .ant-spin-container,
+.ifix-fill-page .ifix-panel-table .ant-table,
+.ifix-fill-page .ifix-panel-table .ant-table-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.ifix-fill-page .ifix-panel-table .ant-table-body,
+.ifix-fill-page .ifix-panel-table .ant-table-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none !important;
+  /* The rows scroll both ways here, and macOS's native "thin" overlay
+     scrollbar draws the horizontal bar visibly fatter than the vertical
+     one. In Chromium any scrollbar-width/-color value switches the custom
+     ::-webkit-scrollbar rules at the top of this file off, so resetting
+     them to auto hands this element to those rules instead — the same
+     6px thumb (10px bar, 2px inset) on both axes. Firefox, which has no
+     ::-webkit-scrollbar, falls back to its own native bars either way. */
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+  /* antd's own overflow-y: scroll stays: it measures the bar once and pads
+     the header by its width, so the bar has to be there even when the rows
+     fit — or the header's pinned-right columns drift out of line. The
+     track is transparent, so an always-on bar only shows a thumb when
+     there's something to scroll. */
+}
+
+/* Only the rows give up height. Everything else in the column keeps its
+   natural size — left to flex's default shrink, the filter row above the
+   panel and antd's separate header strip were squeezed when space ran
+   short, clipping the filter row's borders and the line under the column
+   headers. */
+.ifix-fill-page > :not(.ifix-table-panel),
+.ifix-fill-page .ifix-panel-table .ant-table-header,
+.ifix-fill-page .ifix-panel-table .ant-table-pagination {
+  flex: none;
 }
 
 /* Compact Descriptions: antd's own `size="small"` prop only tightens

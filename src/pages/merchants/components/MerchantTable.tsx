@@ -9,7 +9,7 @@ import { merchantUserCount, merchantBranchCount } from '../../../constants/roles
 import { getWorkspaceAvatarUrl } from '../../../utils/avatar'
 import { MerchantStatusTag } from './MerchantStatusTag'
 import { TableEmptyState } from '../../../components/TableEmptyState'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
 
 interface Props {
   merchants: Merchant[]
@@ -111,7 +111,7 @@ export function MerchantTable({ merchants, search, onToggleSuspend }: Props) {
               rowKey="id"
               columns={columns}
               dataSource={merchants}
-              scroll={{ x: 'max-content' }}
+              scroll={{ x: 'max-content', y: '100%' }}
               onRow={record => ({
                 onClick: () => navigate(`/merchants/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -124,9 +124,10 @@ export function MerchantTable({ merchants, search, onToggleSuspend }: Props) {
                 ),
               }}
               pagination={{
-                pageSize: 10,
+                defaultPageSize: DEFAULT_PAGE_SIZE,
                 size: 'small',
-                showSizeChanger: false,
+                showSizeChanger: PAGE_SIZE_CHANGER,
+                pageSizeOptions: PAGE_SIZE_OPTIONS,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
                 jumpPrevIcon: JUMP_PREV_ICON,

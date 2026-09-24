@@ -6,7 +6,7 @@ import type { Branch } from '../../../types/branch'
 import { MOCK_USER_ACCOUNTS } from '../../../constants/mockUsers'
 import { BranchStatusTag } from './BranchStatusTag'
 import { TableEmptyState } from '../../../components/TableEmptyState'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
 
 interface Props {
   branches: Branch[]
@@ -20,13 +20,17 @@ interface Props {
   // their own row above a header-less panel, per the list-view convention —
   // see CLAUDE.md's "Panel header actions: list views vs. detail views."
   headerAction?: React.ReactNode
+  // The list route's fill-height layout: rows scroll inside the panel under
+  // a pinned header and pagination (see .ifix-fill-page in index.css). Off
+  // in the detail tab, which sits in a normally scrolling page.
+  fillHeight?: boolean
 }
 
 function staffCount(branch: Branch): number {
   return MOCK_USER_ACCOUNTS.filter(u => u.merchantId === branch.merchantId && u.branch === branch.name).length
 }
 
-export function BranchTable({ branches, search, canManage, onToggleArchive, headerAction }: Props) {
+export function BranchTable({ branches, search, canManage, onToggleArchive, headerAction, fillHeight }: Props) {
   const { token } = theme.useToken()
   const { modal } = App.useApp()
   const navigate = useNavigate()
@@ -141,7 +145,7 @@ export function BranchTable({ branches, search, canManage, onToggleArchive, head
               // than the container (the shadow reserved for
               // .ant-table-cell-fix-start/-end), which otherwise triggers a
               // pointless horizontal scrollbar with nothing to scroll to.
-              scroll={branches.length > 0 ? { x: 'max-content' } : undefined}
+              scroll={branches.length > 0 ? { x: 'max-content', ...(fillHeight ? { y: '100%' } : {}) } : undefined}
               onRow={record => ({
                 onClick: () => navigate(`/branches/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -154,9 +158,10 @@ export function BranchTable({ branches, search, canManage, onToggleArchive, head
                 ),
               }}
               pagination={{
-                pageSize: 10,
+                defaultPageSize: DEFAULT_PAGE_SIZE,
                 size: 'small',
-                showSizeChanger: false,
+                showSizeChanger: PAGE_SIZE_CHANGER,
+                pageSizeOptions: PAGE_SIZE_OPTIONS,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
                 jumpPrevIcon: JUMP_PREV_ICON,

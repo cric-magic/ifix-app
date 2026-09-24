@@ -12,12 +12,15 @@ import { TableEmptyState } from '../../components/TableEmptyState'
 import { ProductTypeTabs, type TypeFilter } from './components/ProductTypeTabs'
 import type { CatalogProduct } from '../../types/catalogProduct'
 import { CatalogProductModal } from './components/CatalogProductModal'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../constants/paginationIcons'
+import { useColumnPicker } from '../../components/useColumnPicker'
+import { withColumnMinWidths } from '../../components/tableColumns'
 
 // The platform's standard SKU definitions — what merchants adopt from rather
 // than defining common devices themselves. Super Admin only; merchants see
 // their own catalog at this same route (see ProductsCatalogRoute).
 export function GlobalCatalogPage() {
+  const applyColumnPicker = useColumnPicker('standard-catalog', ['name'])
   const actor = useCurrentUser()
   const navigate = useNavigate()
   const { token } = theme.useToken()
@@ -143,7 +146,7 @@ export function GlobalCatalogPage() {
   ]
 
   return (
-    <div>
+    <div className="ifix-fill-page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Input
@@ -167,9 +170,9 @@ export function GlobalCatalogPage() {
             <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
               <Table
                 rowKey="id"
-                columns={columns}
+                columns={applyColumnPicker(withColumnMinWidths(columns))}
                 dataSource={products}
-                scroll={{ x: 'max-content' }}
+                scroll={{ x: 'max-content', y: '100%' }}
                 onRow={record => ({
                   onClick: () => navigate(`/products/catalog/${record.id}`),
                   style: { cursor: 'pointer' },
@@ -182,9 +185,10 @@ export function GlobalCatalogPage() {
                   ),
                 }}
                 pagination={{
-                  pageSize: 10,
+                  defaultPageSize: DEFAULT_PAGE_SIZE,
                   size: 'small',
-                  showSizeChanger: false,
+                  showSizeChanger: PAGE_SIZE_CHANGER,
+                  pageSizeOptions: PAGE_SIZE_OPTIONS,
                   prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                   nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
                   jumpPrevIcon: JUMP_PREV_ICON,

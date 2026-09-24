@@ -17,8 +17,10 @@ import { CreateUnitModal } from './components/CreateUnitModal'
 import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 import { TableEmptyState } from '../../components/TableEmptyState'
 import { UnitProductName } from './components/UnitProductName'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../constants/paginationIcons'
 import { UnitPrice } from './components/UnitPrice'
+import { useColumnPicker } from '../../components/useColumnPicker'
+import { withColumnMinWidths } from '../../components/tableColumns'
 
 type AvailabilityFilter = 'all' | UnitAvailability
 
@@ -30,6 +32,7 @@ const AVAILABILITY_OPTIONS: { value: AvailabilityFilter; label: string }[] = [
 ]
 
 export function UnitsListPage() {
+  const applyColumnPicker = useColumnPicker('units', ['serialNumber', 'availability'])
   const user = useCurrentUser()
   const navigate = useNavigate()
   const { token } = theme.useToken()
@@ -175,7 +178,7 @@ export function UnitsListPage() {
   ]
 
   return (
-    <div>
+    <div className="ifix-fill-page">
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Input
@@ -212,9 +215,9 @@ export function UnitsListPage() {
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
           <Table
             rowKey="id"
-            columns={columns}
+            columns={applyColumnPicker(withColumnMinWidths(columns, 'serialNumber'))}
             dataSource={units}
-            scroll={{ x: 'max-content' }}
+            scroll={{ x: 'max-content', y: '100%' }}
             locale={{
               emptyText: hasActiveFilter ? (
                 <TableEmptyState icon={<Smartphone size={22} strokeWidth={2.25} />} title="No units found" description="Try a different serial number, IMEI, or status." />
@@ -223,9 +226,10 @@ export function UnitsListPage() {
               ),
             }}
             pagination={{
-              pageSize: 10,
+              defaultPageSize: DEFAULT_PAGE_SIZE,
               size: 'small',
-              showSizeChanger: false,
+              showSizeChanger: PAGE_SIZE_CHANGER,
+              pageSizeOptions: PAGE_SIZE_OPTIONS,
               prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
               nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
               jumpPrevIcon: JUMP_PREV_ICON,

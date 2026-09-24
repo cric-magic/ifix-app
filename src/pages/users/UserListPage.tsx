@@ -82,7 +82,7 @@ export function UserListPage() {
   }
 
   return (
-    <div>
+    <div className="ifix-fill-page">
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <Input
           placeholder="Search by name, email, or staff ID"

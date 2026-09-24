@@ -28,7 +28,10 @@ export function AttributesPage() {
   const active = (type && attributeType(type)) ? type : ATTRIBUTE_TYPES[0].key
 
   return (
+    // Each tab is a list view, so the tabs pass the fill-height layout down
+    // to it (see .ifix-fill-tabs / .ifix-fill-page in index.css).
     <Tabs
+      className="ifix-fill-tabs"
       activeKey={active}
       onChange={key => navigate(`/products/attributes/${key}`)}
       items={ATTRIBUTE_TYPES.map(meta => ({

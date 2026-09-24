@@ -58,7 +58,7 @@ export function BranchesPage() {
   }
 
   return (
-    <div>
+    <div className="ifix-fill-page">
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <Input
           placeholder="Search by name or branch code"
@@ -76,6 +76,7 @@ export function BranchesPage() {
       </div>
 
       <BranchTable
+        fillHeight
         branches={branches}
         search={search}
         canManage={branch => canManageBranch(user, branch)}

@@ -10,7 +10,9 @@ import { getAvatarUrl } from '../../../utils/avatar'
 import { UserStatusTag } from './UserStatusTag'
 import { mockCreatedContracts, mockMonthlyCollection } from '../mockStats'
 import { TableEmptyState } from '../../../components/TableEmptyState'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
+import { useColumnPicker } from '../../../components/useColumnPicker'
+import { withColumnMinWidths } from '../../../components/tableColumns'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 
@@ -24,6 +26,7 @@ interface Props {
 }
 
 export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, onForceReset }: Props) {
+  const applyColumnPicker = useColumnPicker('users', ['name', 'status'])
   const { token } = theme.useToken()
   const { modal } = App.useApp()
   const navigate = useNavigate()
@@ -150,14 +153,14 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
-              columns={columns}
+              columns={applyColumnPicker(withColumnMinWidths(columns))}
               dataSource={accounts}
               // Only when there's real data to scroll through — an empty
               // table still computes a fixed-column width slightly wider
               // than the container (the shadow reserved for
               // .ant-table-cell-fix-start/-end), which otherwise triggers a
               // pointless horizontal scrollbar with nothing to scroll to.
-              scroll={accounts.length > 0 ? { x: 'max-content' } : undefined}
+              scroll={accounts.length > 0 ? { x: 'max-content', y: '100%' } : undefined}
               onRow={record => ({
                 onClick: () => navigate(`/settings/members/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -170,9 +173,10 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
                 ),
               }}
               pagination={{
-                pageSize: 10,
+                defaultPageSize: DEFAULT_PAGE_SIZE,
                 size: 'small',
-                showSizeChanger: false,
+                showSizeChanger: PAGE_SIZE_CHANGER,
+                pageSizeOptions: PAGE_SIZE_OPTIONS,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
                 jumpPrevIcon: JUMP_PREV_ICON,

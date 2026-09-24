@@ -10,7 +10,7 @@ import { useIconColors } from '../../../constants/iconColors'
 import { DotTag } from '../../../components/DotTag'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
 
 interface Props {
   meta: AttributeTypeMeta
@@ -133,7 +133,7 @@ export function AttributeValuesTab({ meta }: Props) {
   ]
 
   return (
-    <div>
+    <div className="ifix-fill-page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8 }}>
         <Input
           placeholder={`Search ${meta.noun} values`}
@@ -158,6 +158,7 @@ export function AttributeValuesTab({ meta }: Props) {
                 rowKey={r => r.id ?? r.value}
                 columns={columns}
                 dataSource={rows}
+                scroll={rows.length > 0 ? { y: '100%' } : undefined}
                 locale={{
                   emptyText: query ? (
                     <TableEmptyState icon={<Shapes size={22} strokeWidth={2.25} />} title="No values found" description={`Try a different ${meta.noun} value.`} />
@@ -166,9 +167,10 @@ export function AttributeValuesTab({ meta }: Props) {
                   ),
                 }}
                 pagination={{
-                  pageSize: 10,
+                  defaultPageSize: DEFAULT_PAGE_SIZE,
                   size: 'small',
-                  showSizeChanger: false,
+                  showSizeChanger: PAGE_SIZE_CHANGER,
+                  pageSizeOptions: PAGE_SIZE_OPTIONS,
                   prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                   nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
                   jumpPrevIcon: JUMP_PREV_ICON,

@@ -8,7 +8,9 @@ import { TableEmptyState } from '../../../../components/TableEmptyState'
 import { DotTag } from '../../../../components/DotTag'
 import { MOCK_USER_ACCOUNTS } from '../../../../constants/mockUsers'
 import { ContractTemplatePreviewDrawer } from './ContractTemplatePreviewDrawer'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../../constants/paginationIcons'
+import { useColumnPicker } from '../../../../components/useColumnPicker'
+import { withColumnMinWidths } from '../../../../components/tableColumns'
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
@@ -27,6 +29,10 @@ interface Props {
   // header row; list views leave both out and render them above the panel
   // instead (see CLAUDE.md's "Panel header actions"). Set on the former.
   headerTitle?: string
+  // The settings list's fill-height layout: rows scroll inside the panel
+  // under a pinned header and pagination (see .ifix-fill-page in
+  // index.css). Off in the merchant detail tab.
+  fillHeight?: boolean
   headerAction?: React.ReactNode
   // Detail views hand their filters to the panel as well, sharing the
   // header row with the action button rather than taking a second row —
@@ -39,7 +45,8 @@ interface Props {
   onSetStatus: (template: ContractTemplate, status: ContractTemplate['status']) => void
 }
 
-export function ContractTemplateTable({ templates, contracts, canManage, hasActiveFilter, headerTitle, headerAction, filters, onEdit, onDuplicate, onSetDefault, onSetStatus }: Props) {
+export function ContractTemplateTable({ templates, contracts, canManage, hasActiveFilter, fillHeight, headerTitle, headerAction, filters, onEdit, onDuplicate, onSetDefault, onSetStatus }: Props) {
+  const applyColumnPicker = useColumnPicker('contract-templates', ['name', 'status'])
   const { token } = theme.useToken()
   const { modal } = App.useApp()
   const [previewTemplate, setPreviewTemplate] = useState<ContractTemplate | null>(null)
@@ -199,9 +206,9 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
-              columns={columns}
+              columns={applyColumnPicker(withColumnMinWidths(columns))}
               dataSource={templates}
-              scroll={templates.length > 0 ? { x: 'max-content' } : undefined}
+              scroll={templates.length > 0 ? { x: 'max-content', ...(fillHeight ? { y: '100%' } : {}) } : undefined}
               locale={{
                 emptyText: hasActiveFilter ? (
                   <TableEmptyState icon={<FileStack size={22} strokeWidth={2.25} />} title="No templates found" description="Try a different name, status, or type." />
@@ -210,9 +217,10 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
                 ),
               }}
               pagination={{
-                pageSize: 10,
+                defaultPageSize: DEFAULT_PAGE_SIZE,
                 size: 'small',
-                showSizeChanger: false,
+                showSizeChanger: PAGE_SIZE_CHANGER,
+                pageSizeOptions: PAGE_SIZE_OPTIONS,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
                 jumpPrevIcon: JUMP_PREV_ICON,

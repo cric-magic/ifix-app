@@ -14,6 +14,8 @@ import { EditUnitModal } from '../components/EditUnitModal'
 import { PrintUnitLabelModal } from '../components/PrintUnitLabelModal'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { UnitPrice } from '../components/UnitPrice'
+import { useColumnPicker } from '../../../components/useColumnPicker'
+import { withColumnMinWidths } from '../../../components/tableColumns'
 
 interface Props {
   actor: AuthUser
@@ -21,6 +23,7 @@ interface Props {
 }
 
 export function UnitsTab({ actor, product }: Props) {
+  const applyColumnPicker = useColumnPicker('product-units', ['serialNumber', 'availability'])
   const { token } = theme.useToken()
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
@@ -148,7 +151,7 @@ export function UnitsTab({ actor, product }: Props) {
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
           <Table
             rowKey="id"
-            columns={columns}
+            columns={applyColumnPicker(withColumnMinWidths(columns, 'serialNumber'))}
             dataSource={units}
             size="small"
             pagination={false}

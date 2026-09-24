@@ -8,7 +8,9 @@ import { CurrencyDisplay } from '../../../components/CurrencyDisplay'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { getOutstandingBalance, getNextDue, getOverdueDays, getNetPosition } from '../../../utils/contract'
 import { ContractStatusTag } from './ContractStatusTag'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
+import { useColumnPicker } from '../../../components/useColumnPicker'
+import { withColumnMinWidths } from '../../../components/tableColumns'
 
 interface Props {
   contracts: Contract[]
@@ -18,6 +20,7 @@ interface Props {
 }
 
 export function ContractTable({ contracts, products, showBranchColumns, search }: Props) {
+  const applyColumnPicker = useColumnPicker('contracts', ['contractNumber', 'status'])
   const { token } = theme.useToken()
   const navigate = useNavigate()
 
@@ -89,9 +92,9 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
-              columns={columns}
+              columns={applyColumnPicker(withColumnMinWidths(columns, 'contractNumber'))}
               dataSource={contracts}
-              scroll={contracts.length > 0 ? { x: 'max-content' } : undefined}
+              scroll={contracts.length > 0 ? { x: 'max-content', y: '100%' } : undefined}
               onRow={record => ({
                 onClick: () => navigate(`/contracts/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -104,9 +107,10 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
                 ),
               }}
               pagination={{
-                pageSize: 10,
+                defaultPageSize: DEFAULT_PAGE_SIZE,
                 size: 'small',
-                showSizeChanger: false,
+                showSizeChanger: PAGE_SIZE_CHANGER,
+                pageSizeOptions: PAGE_SIZE_OPTIONS,
                 prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
                 nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
                 jumpPrevIcon: JUMP_PREV_ICON,

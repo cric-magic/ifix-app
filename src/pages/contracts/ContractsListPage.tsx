@@ -51,7 +51,7 @@ export function ContractsListPage() {
   })
 
   return (
-    <div>
+    <div className="ifix-fill-page">
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <ContractFilters
           search={search}
