@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Alert, Button, Input, message } from 'antd'
-import { Plus, Search } from 'lucide-react'
+import { Alert, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
-import { useIconColors } from '../../constants/iconColors'
+import { ListToolbar } from '../../components/ListToolbar'
+import { ListSearch } from '../../components/ListSearch'
 import { MOCK_CUSTOMERS } from '../../constants/mockCustomers'
 import { MOCK_CONTRACTS } from '../../constants/mockContracts'
 import { canViewCustomers, canManageCustomers, scopedCustomerList } from '../../constants/roles'
@@ -17,7 +17,6 @@ import { CustomerModal } from './components/CustomerModal'
 // deferred at the time the Contracts module was rewritten.
 export function CustomersPage() {
   const user = useCurrentUser()
-  const iconColors = useIconColors()
   const [version, setVersion] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -50,21 +49,10 @@ export function CustomersPage() {
 
   return (
     <div className="ifix-fill-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <Input
-          placeholder="Search by name, National ID, or phone"
-          prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
-          allowClear
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ maxWidth: 320 }}
-        />
-        {canManageCustomers(user) && (
-          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
-            Add Customer
-          </Button>
-        )}
-      </div>
+      <ListToolbar
+        search={<ListSearch value={search} onChange={setSearch} placeholder="Search by name, National ID, or phone" mobilePlaceholder="Search customers" />}
+        action={canManageCustomers(user) ? { label: 'Add Customer', onClick: () => setCreateOpen(true) } : undefined}
+      />
 
       <CustomerTable customers={filtered} contracts={MOCK_CONTRACTS} search={search} />
 

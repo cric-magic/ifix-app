@@ -9,7 +9,10 @@ import { merchantUserCount, merchantBranchCount } from '../../../constants/roles
 import { getWorkspaceAvatarUrl } from '../../../utils/avatar'
 import { MerchantStatusTag } from './MerchantStatusTag'
 import { TableEmptyState } from '../../../components/TableEmptyState'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 
 interface Props {
   merchants: Merchant[]
@@ -19,8 +22,44 @@ interface Props {
 
 export function MerchantTable({ merchants, search, onToggleSuspend }: Props) {
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const { modal } = App.useApp()
   const navigate = useNavigate()
+
+  function actionsMenu(m: Merchant) {
+    const isSuspended = m.status === 'suspended'
+    return (
+      <div onClick={e => e.stopPropagation()}>
+        <Dropdown
+          trigger={['click']}
+          placement="bottomRight"
+          menu={{
+            items: [
+              {
+                key: 'suspend',
+                danger: !isSuspended,
+                icon: isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />,
+                label: isSuspended ? 'Reactivate' : 'Suspend',
+              },
+            ],
+            onClick: ({ key }) => {
+              if (key === 'suspend') {
+                modal.confirm({
+                  title: isSuspended ? 'Reactivate this merchant?' : 'Suspend this merchant?',
+                  content: isSuspended ? undefined : 'This merchant loses access to the platform until reactivated.',
+                  okText: isSuspended ? 'Reactivate' : 'Suspend',
+                  okButtonProps: { danger: !isSuspended },
+                  onOk: () => onToggleSuspend(m),
+                })
+              }
+            },
+          }}
+        >
+          <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
+        </Dropdown>
+      </div>
+    )
+  }
 
   const columns: ColumnsType<Merchant> = [
     {
@@ -58,42 +97,21 @@ export function MerchantTable({ merchants, search, onToggleSuspend }: Props) {
       width: 56,
       fixed: 'right',
       align: 'right',
-      render: (_, m) => {
-        const isSuspended = m.status === 'suspended'
-        return (
-          <div onClick={e => e.stopPropagation()}>
-            <Dropdown
-              trigger={['click']}
-              placement="bottomRight"
-              menu={{
-                items: [
-                  {
-                    key: 'suspend',
-                    danger: !isSuspended,
-                    icon: isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />,
-                    label: isSuspended ? 'Reactivate' : 'Suspend',
-                  },
-                ],
-                onClick: ({ key }) => {
-                  if (key === 'suspend') {
-                    modal.confirm({
-                      title: isSuspended ? 'Reactivate this merchant?' : 'Suspend this merchant?',
-                      content: isSuspended ? undefined : 'This merchant loses access to the platform until reactivated.',
-                      okText: isSuspended ? 'Reactivate' : 'Suspend',
-                      okButtonProps: { danger: !isSuspended },
-                      onOk: () => onToggleSuspend(m),
-                    })
-                  }
-                },
-              }}
-            >
-              <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
-            </Dropdown>
-          </div>
-        )
-      },
+      render: (_, m) => actionsMenu(m),
     },
   ]
+
+  // Mobile: logo, name and status on top; legal name below, with branch
+  // and user counts.
+  const mobileRows = mobileColumns<Merchant>(m => (
+    <MobileTableRow
+      leading={<Avatar shape="square" src={m.logoUrl ?? getWorkspaceAvatarUrl(m.id)} size={44} />}
+      primary={m.name}
+      trailing={<MerchantStatusTag status={m.status} />}
+      secondary={m.legalName}
+      trailingSecondary={`${merchantBranchCount(m.id, MOCK_BRANCHES)} branches · ${merchantUserCount(m.id, MOCK_USER_ACCOUNTS)} users`}
+    />
+  ))
 
   return (
     <ConfigProvider theme={{
@@ -105,13 +123,14 @@ export function MerchantTable({ merchants, search, onToggleSuspend }: Props) {
       },
     }}>
       <div className="ifix-table-panel">
-        <div style={{ padding: 16 }}>
+        <div style={{ padding: tablePanelPadding(isMobile) }}>
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
-              columns={columns}
+              columns={isMobile ? mobileRows : columns}
+              {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               dataSource={merchants}
-              scroll={{ x: 'max-content', y: '100%' }}
+              scroll={(isMobile ? { y: '100%' } : { x: 'max-content', y: '100%' })}
               onRow={record => ({
                 onClick: () => navigate(`/merchants/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -137,6 +156,7 @@ export function MerchantTable({ merchants, search, onToggleSuspend }: Props) {
                     {range[0]}–{range[1]} of {total}
                   </span>
                 ),
+                ...(isMobile ? MOBILE_PAGINATION : {}),
               }}
             />
           </div>

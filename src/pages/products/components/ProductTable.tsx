@@ -12,7 +12,10 @@ import { useIconColors } from '../../../constants/iconColors'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { countAvailableUnits } from '../../../utils/product'
 import { ProductStatusTag } from './ProductStatusTag'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 import { useColumnPicker } from '../../../components/useColumnPicker'
 import { withColumnMinWidths } from '../../../components/tableColumns'
 
@@ -30,6 +33,7 @@ interface Props {
 export function ProductTable({ actor, products, isSearching, onEdit, onRemove, onAddUnit }: Props) {
   const applyColumnPicker = useColumnPicker('products', ['name', 'status'])
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const dash = <span style={{ color: token.colorTextDisabled }}>—</span>
   const iconColors = useIconColors()
   const { modal } = App.useApp()
@@ -67,6 +71,40 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
     })
   }
 
+  function actionsMenu(p: Product) {
+    return (
+      <Dropdown
+        trigger={['click']}
+        placement="bottomRight"
+        menu={{
+          items: [
+            { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
+            ...(canAddUnit ? [{ key: 'add-unit', icon: <Boxes size={16} strokeWidth={2.25} />, label: 'Add Unit' }] : []),
+            { type: 'divider' as const },
+            { key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' },
+          ],
+          onClick: ({ key }) => {
+            if (key === 'edit') onEdit(p)
+            if (key === 'add-unit') onAddUnit(p)
+            if (key === 'remove') confirmRemove(p)
+          },
+        }}
+      >
+        <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
+      </Dropdown>
+    )
+  }
+
+  const thumbnail = (p: Product, size: number) => (
+    <Avatar
+      shape="square"
+      size={size}
+      src={p.photos?.[0]}
+      icon={<ImageOff size={size === 28 ? 14 : 16} strokeWidth={2.25} />}
+      style={{ backgroundColor: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}
+    />
+  )
+
   const allColumns: ColumnsType<Product> = [
     {
       title: <span style={{ color: token.colorText }}>Name</span>,
@@ -88,13 +126,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
       ),
       render: (name: string, p: Product) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Avatar
-            shape="square"
-            size={28}
-            src={p.photos?.[0]}
-            icon={<ImageOff size={14} strokeWidth={2.25} />}
-            style={{ backgroundColor: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}
-          />
+          {thumbnail(p, 28)}
           <span style={{ color: token.colorText }}>{name}</span>
         </div>
       ),
@@ -138,31 +170,23 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
       fixed: 'right' as const,
       align: 'right' as const,
       render: (_: unknown, p: Product) => (
-        <div onClick={e => e.stopPropagation()}>
-          <Dropdown
-            trigger={['click']}
-            placement="bottomRight"
-            menu={{
-              items: [
-                { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
-                ...(canAddUnit ? [{ key: 'add-unit', icon: <Boxes size={16} strokeWidth={2.25} />, label: 'Add Unit' }] : []),
-                { type: 'divider' as const },
-                { key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' },
-              ],
-              onClick: ({ key }) => {
-                if (key === 'edit') onEdit(p)
-                if (key === 'add-unit') onAddUnit(p)
-                if (key === 'remove') confirmRemove(p)
-              },
-            }}
-          >
-            <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
-          </Dropdown>
-        </div>
+        <div onClick={e => e.stopPropagation()}>{actionsMenu(p)}</div>
       ),
     }] : []),
   ]
-  const columns = applyColumnPicker(withColumnMinWidths(allColumns))
+  const columns = isMobile
+    // Mobile: name and status on top; type (New/Used — what clients look
+    // for first) and SKU below, with the sales price.
+    ? mobileColumns<Product>(p => (
+        <MobileTableRow
+          leading={thumbnail(p, 44)}
+          primary={p.name}
+          trailing={<ProductStatusTag status={p.status} />}
+          secondary={`${TYPE_LABELS[p.type]} · ${p.sku}`}
+          trailingSecondary={formatter.format(p.salesPrice)}
+        />
+      ))
+    : applyColumnPicker(withColumnMinWidths(allColumns))
 
   return (
     <div className="ifix-table-panel">
@@ -174,13 +198,14 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
           },
         },
       }}>
-        <div style={{ padding: 16 }}>
+        <div style={{ padding: tablePanelPadding(isMobile) }}>
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
               columns={columns}
+              {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               dataSource={products}
-              scroll={{ x: 'max-content', y: '100%' }}
+              scroll={isMobile ? { y: '100%' } : { x: 'max-content', y: '100%' }}
               onRow={record => ({
                 onClick: () => navigate(`/products/catalog/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -206,6 +231,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
                     {range[0]}–{range[1]} of {total}
                   </span>
                 ),
+                ...(isMobile ? MOBILE_PAGINATION : {}),
               }}
             />
           </div>

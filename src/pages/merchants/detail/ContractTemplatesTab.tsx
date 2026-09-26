@@ -9,6 +9,8 @@ import { MOCK_CONTRACTS } from '../../../constants/mockContracts'
 import { canManageContractTemplates, scopedContractTemplateList } from '../../../constants/roles'
 import type { ContractTemplate } from '../../../types/contractTemplate'
 import { ContractTemplateTable } from '../../settings/contractTemplates/components/ContractTemplateTable'
+import { ListToolbar } from '../../../components/ListToolbar'
+import { ListSearch } from '../../../components/ListSearch'
 import { ContractTemplateModal } from '../../settings/contractTemplates/components/ContractTemplateModal'
 
 type StatusFilter = 'all' | ContractTemplate['status']
@@ -115,30 +117,30 @@ export function ContractTemplatesTab({ merchantId, standalone }: Props) {
     message.success(status === 'active' ? 'Template activated' : 'Template archived')
   }
 
-  // Sized differently per variant: a list view gives the filters a full row
-  // of their own, while the detail view shares a 56px header with the title
-  // and the action button, so the search shrinks rather than pushing them.
+  // The detail view's filters, sharing a 56px header with the title and the
+  // action button, so the search shrinks rather than pushing them. The list
+  // view (standalone) uses ListToolbar above the panel instead.
   const filterControls = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
       <Input
-        placeholder={standalone ? 'Search by name or type' : 'Search'}
+        placeholder="Search"
         prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
         allowClear
         value={search}
         onChange={e => setSearch(e.target.value)}
-        style={standalone ? { maxWidth: 320 } : { flex: '1 1 120px', minWidth: 0, maxWidth: 200 }}
+        style={{ flex: '1 1 120px', minWidth: 0, maxWidth: 200 }}
       />
       <Select
         value={statusFilter}
         onChange={setStatusFilter}
         options={STATUS_OPTIONS}
-        style={{ width: standalone ? 150 : 130, flexShrink: 0 }}
+        style={{ width: 130, flexShrink: 0 }}
       />
       <Select
         value={typeFilter}
         onChange={setTypeFilter}
         options={TYPE_OPTIONS}
-        style={{ width: standalone ? 150 : 130, flexShrink: 0 }}
+        style={{ width: 130, flexShrink: 0 }}
       />
     </div>
   )
@@ -153,14 +155,16 @@ export function ContractTemplatesTab({ merchantId, standalone }: Props) {
           nothing belonging to this table sits outside it. See CLAUDE.md's
           "Panel header actions". */}
       {standalone && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-          {filterControls}
-          {canManage && (
-            <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => { setEditingTemplate(null); setModalOpen(true) }}>
-              Create Template
-            </Button>
-          )}
-        </div>
+        <ListToolbar
+          search={<ListSearch value={search} onChange={setSearch} placeholder="Search by name or type" mobilePlaceholder="Search templates" />}
+          filters={[
+            { key: 'status', label: 'Status', control: <Select value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} style={{ width: 150 }} /> },
+            { key: 'type', label: 'Type', control: <Select value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} style={{ width: 150 }} /> },
+          ]}
+          activeFilterCount={(statusFilter !== 'all' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0)}
+          onClearFilters={() => { setStatusFilter('all'); setTypeFilter('all') }}
+          action={canManage ? { label: 'Create Template', onClick: () => { setEditingTemplate(null); setModalOpen(true) } } : undefined}
+        />
       )}
 
       <ContractTemplateTable

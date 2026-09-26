@@ -10,9 +10,12 @@ import { getAvatarUrl } from '../../../utils/avatar'
 import { UserStatusTag } from './UserStatusTag'
 import { mockCreatedContracts, mockMonthlyCollection } from '../mockStats'
 import { TableEmptyState } from '../../../components/TableEmptyState'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
 import { useColumnPicker } from '../../../components/useColumnPicker'
 import { withColumnMinWidths } from '../../../components/tableColumns'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 
@@ -28,8 +31,49 @@ interface Props {
 export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, onForceReset }: Props) {
   const applyColumnPicker = useColumnPicker('users', ['name', 'status'])
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const { modal } = App.useApp()
   const navigate = useNavigate()
+
+  function actionsMenu(r: UserAccount) {
+    if (!canManageTargetUser(actor, r)) return null
+    const isSuspended = r.status === 'suspended'
+    return (
+      <div onClick={e => e.stopPropagation()}>
+        <Dropdown
+          trigger={['click']}
+          placement="bottomRight"
+          menu={{
+            items: [
+              { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
+              { key: 'reset', icon: <KeyRound size={16} strokeWidth={2.25} />, label: 'Reset password' },
+              { type: 'divider' },
+              {
+                key: 'suspend',
+                danger: !isSuspended,
+                icon: isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />,
+                label: isSuspended ? 'Reactivate' : 'Suspend',
+              },
+            ],
+            onClick: ({ key }) => {
+              if (key === 'edit') onEdit(r)
+              if (key === 'reset') onForceReset(r)
+              if (key === 'suspend') {
+                modal.confirm({
+                  title: isSuspended ? 'Reactivate this user?' : 'Suspend this user?',
+                  okText: isSuspended ? 'Reactivate' : 'Suspend',
+                  okButtonProps: { danger: !isSuspended },
+                  onOk: () => onToggleSuspend(r),
+                })
+              }
+            },
+          }}
+        >
+          <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
+        </Dropdown>
+      </div>
+    )
+  }
 
   const columns: ColumnsType<UserAccount> = [
     {
@@ -97,47 +141,26 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
       width: 56,
       fixed: 'right',
       align: 'right',
-      render: (_, r) => {
-        if (!canManageTargetUser(actor, r)) return null
-        const isSuspended = r.status === 'suspended'
-        return (
-          <div onClick={e => e.stopPropagation()}>
-            <Dropdown
-              trigger={['click']}
-              placement="bottomRight"
-              menu={{
-                items: [
-                  { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
-                  { key: 'reset', icon: <KeyRound size={16} strokeWidth={2.25} />, label: 'Reset password' },
-                  { type: 'divider' },
-                  {
-                    key: 'suspend',
-                    danger: !isSuspended,
-                    icon: isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />,
-                    label: isSuspended ? 'Reactivate' : 'Suspend',
-                  },
-                ],
-                onClick: ({ key }) => {
-                  if (key === 'edit') onEdit(r)
-                  if (key === 'reset') onForceReset(r)
-                  if (key === 'suspend') {
-                    modal.confirm({
-                      title: isSuspended ? 'Reactivate this user?' : 'Suspend this user?',
-                      okText: isSuspended ? 'Reactivate' : 'Suspend',
-                      okButtonProps: { danger: !isSuspended },
-                      onOk: () => onToggleSuspend(r),
-                    })
-                  }
-                },
-              }}
-            >
-              <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
-            </Dropdown>
-          </div>
-        )
-      },
+      render: (_, r) => actionsMenu(r),
     },
   ]
+
+  // Mobile: avatar, name and status on top; role and branch (merchant, for
+  // Super Admin) below, with the staff ID.
+  const mobileRows = mobileColumns<UserAccount>(r => {
+    const place = actor.role === 'super_admin'
+      ? (r.merchantId ? MOCK_MERCHANTS.find(m => m.id === r.merchantId)?.name : undefined)
+      : r.branch
+    return (
+      <MobileTableRow
+        leading={<Avatar src={getAvatarUrl(r.id)} size={44} />}
+        primary={r.name}
+        trailing={<UserStatusTag status={r.status} />}
+        secondary={place ? `${ROLE_LABELS[r.role]} · ${place}` : ROLE_LABELS[r.role]}
+        trailingSecondary={r.staffId}
+      />
+    )
+  })
 
   return (
     <ConfigProvider theme={{
@@ -149,18 +172,19 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
       },
     }}>
       <div className="ifix-table-panel">
-        <div style={{ padding: 16 }}>
+        <div style={{ padding: tablePanelPadding(isMobile) }}>
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
-              columns={applyColumnPicker(withColumnMinWidths(columns))}
+              columns={isMobile ? mobileRows : applyColumnPicker(withColumnMinWidths(columns))}
+              {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               dataSource={accounts}
               // Only when there's real data to scroll through — an empty
               // table still computes a fixed-column width slightly wider
               // than the container (the shadow reserved for
               // .ant-table-cell-fix-start/-end), which otherwise triggers a
               // pointless horizontal scrollbar with nothing to scroll to.
-              scroll={accounts.length > 0 ? { x: 'max-content', y: '100%' } : undefined}
+              scroll={accounts.length > 0 ? (isMobile ? { y: '100%' } : { x: 'max-content', y: '100%' }) : undefined}
               onRow={record => ({
                 onClick: () => navigate(`/settings/members/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -186,6 +210,7 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
                     {range[0]}–{range[1]} of {total}
                   </span>
                 ),
+                ...(isMobile ? MOBILE_PAGINATION : {}),
               }}
             />
           </div>

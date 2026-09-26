@@ -28,10 +28,15 @@ export function SettingsRow({ label, children }: { label: string; children: Reac
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
+      // A long value (an address) keeps a gap from its label instead of
+      // running into it, and wraps right-aligned like every short value.
+      // Either side can wrap when space runs out, so a value that mustn't
+      // break (a code) can keep itself on one line and let its label wrap.
+      gap: 16,
       padding: '8px 0',
     }}>
       <span style={{ fontSize: 14, color: token.colorTextSecondary }}>{label}</span>
-      <span style={{ fontSize: 14, color: token.colorText, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span style={{ fontSize: 14, color: token.colorText, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, minWidth: 0, textAlign: 'right' }}>
         {children}
       </span>
     </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { App, Avatar, Button, ConfigProvider, Dropdown, Input, Table, message, theme } from 'antd'
-import { Plus, Pencil, Trash2, MoreHorizontal, ImageOff, Package, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { App, Avatar, Button, ConfigProvider, Dropdown, Table, message, theme } from 'antd'
+import { Pencil, Trash2, MoreHorizontal, ImageOff, Package, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { canManageCatalogProducts } from '../../constants/roles'
@@ -12,9 +12,14 @@ import { TableEmptyState } from '../../components/TableEmptyState'
 import { ProductTypeTabs, type TypeFilter } from './components/ProductTypeTabs'
 import type { CatalogProduct } from '../../types/catalogProduct'
 import { CatalogProductModal } from './components/CatalogProductModal'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../constants/paginationIcons'
 import { useColumnPicker } from '../../components/useColumnPicker'
 import { withColumnMinWidths } from '../../components/tableColumns'
+import { ListToolbar } from '../../components/ListToolbar'
+import { ListSearch } from '../../components/ListSearch'
+import { useIsMobile } from '../../components/useIsMobile'
+import { MobileTableRow } from '../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../components/mobileTable'
 
 // The platform's standard SKU definitions — what merchants adopt from rather
 // than defining common devices themselves. Super Admin only; merchants see
@@ -24,6 +29,7 @@ export function GlobalCatalogPage() {
   const actor = useCurrentUser()
   const navigate = useNavigate()
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const iconColors = useIconColors()
   const { modal } = App.useApp()
   const [version, setVersion] = useState(0)
@@ -78,43 +84,8 @@ export function GlobalCatalogPage() {
     refresh()
   }
 
-  const columns: ColumnsType<CatalogProduct> = [
-    {
-      title: <span style={{ color: token.colorText }}>Name</span>,
-      dataIndex: 'name',
-      key: 'name',
-      fixed: 'left',
-      render: (name: string, c) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Avatar
-            shape="square"
-            size={28}
-            src={c.photos?.[0]}
-            icon={<ImageOff size={14} strokeWidth={2.25} />}
-            style={{ backgroundColor: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}
-          />
-          <span style={{ color: token.colorText }}>{name}</span>
-        </div>
-      ),
-    },
-    { title: 'SKU Code', dataIndex: 'skuCode', key: 'skuCode' },
-    { title: 'Brand', dataIndex: 'brand', key: 'brand' },
-    { title: 'Category', key: 'category', render: (_, c) => CATEGORY_LABELS[c.category] },
-    { title: 'Model', dataIndex: 'model', key: 'model' },
-    { title: 'Model Number', dataIndex: 'modelNumber', key: 'modelNumber' },
-    { title: 'Storage', key: 'storage', render: (_, c) => c.storage ?? dash },
-    { title: 'RAM', key: 'ram', render: (_, c) => c.ram ?? dash },
-    { title: 'Color', dataIndex: 'color', key: 'color' },
-    { title: 'Connection', key: 'connection', render: (_, c) => c.connection ?? dash },
-    { title: 'Type', key: 'type', fixed: 'right', render: (_, c) => TYPE_LABELS[c.type] },
-    {
-      title: '',
-      key: 'actions',
-      width: 56,
-      fixed: 'right',
-      align: 'right',
-      render: (_, c) => (
-        <div onClick={e => e.stopPropagation()}>
+  function actionsMenu(c: CatalogProduct) {
+    return (
           <Dropdown
             trigger={['click']}
             placement="bottomRight"
@@ -140,39 +111,80 @@ export function GlobalCatalogPage() {
           >
             <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
           </Dropdown>
+    )
+  }
+
+  const thumbnail = (c: CatalogProduct, size: number) => (
+    <Avatar
+      shape="square"
+      size={size}
+      src={c.photos?.[0]}
+      icon={<ImageOff size={size === 28 ? 14 : 16} strokeWidth={2.25} />}
+      style={{ backgroundColor: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}
+    />
+  )
+
+  const columns: ColumnsType<CatalogProduct> = [
+    {
+      title: <span style={{ color: token.colorText }}>Name</span>,
+      dataIndex: 'name',
+      key: 'name',
+      fixed: 'left',
+      render: (name: string, c) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {thumbnail(c, 28)}
+          <span style={{ color: token.colorText }}>{name}</span>
         </div>
       ),
     },
+    { title: 'SKU Code', dataIndex: 'skuCode', key: 'skuCode' },
+    { title: 'Brand', dataIndex: 'brand', key: 'brand' },
+    { title: 'Category', key: 'category', render: (_, c) => CATEGORY_LABELS[c.category] },
+    { title: 'Model', dataIndex: 'model', key: 'model' },
+    { title: 'Model Number', dataIndex: 'modelNumber', key: 'modelNumber' },
+    { title: 'Storage', key: 'storage', render: (_, c) => c.storage ?? dash },
+    { title: 'RAM', key: 'ram', render: (_, c) => c.ram ?? dash },
+    { title: 'Color', dataIndex: 'color', key: 'color' },
+    { title: 'Connection', key: 'connection', render: (_, c) => c.connection ?? dash },
+    { title: 'Type', key: 'type', fixed: 'right', render: (_, c) => TYPE_LABELS[c.type] },
+    {
+      title: '',
+      key: 'actions',
+      width: 56,
+      fixed: 'right',
+      align: 'right',
+      render: (_, c) => <div onClick={e => e.stopPropagation()}>{actionsMenu(c)}</div>,
+    },
   ]
+
+  // Mobile: name on top with its type (New/Used); SKU code and brand below.
+  const mobileRows = mobileColumns<CatalogProduct>(c => (
+    <MobileTableRow
+      leading={thumbnail(c, 44)}
+      primary={c.name}
+      trailing={<span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>{TYPE_LABELS[c.type]}</span>}
+      secondary={`${c.skuCode} · ${c.brand}`}
+    />
+  ))
 
   return (
     <div className="ifix-fill-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Input
-            placeholder="Search by name, brand, or SKU code"
-            prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
-            allowClear
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ maxWidth: 320 }}
-          />
-          <ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />
-        </div>
-        <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => { setEditing(null); setModalOpen(true) }}>
-          Create Product
-        </Button>
-      </div>
+      <ListToolbar
+        leading={<ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />}
+        search={<ListSearch value={search} onChange={setSearch} placeholder="Search by name, brand, or SKU code" mobilePlaceholder="Search catalog" />}
+        action={{ label: 'Create Product', onClick: () => { setEditing(null); setModalOpen(true) } }}
+      />
 
       <div className="ifix-table-panel">
         <ConfigProvider theme={{ components: { Table: { colorText: token.colorTextTertiary, headerColor: token.colorTextTertiary } } }}>
-          <div style={{ padding: 16 }}>
+          <div style={{ padding: tablePanelPadding(isMobile) }}>
             <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
               <Table
                 rowKey="id"
-                columns={applyColumnPicker(withColumnMinWidths(columns))}
+                columns={isMobile ? mobileRows : applyColumnPicker(withColumnMinWidths(columns))}
+                {...(isMobile ? MOBILE_TABLE_PROPS : {})}
                 dataSource={products}
-                scroll={{ x: 'max-content', y: '100%' }}
+                scroll={(isMobile ? { y: '100%' } : { x: 'max-content', y: '100%' })}
                 onRow={record => ({
                   onClick: () => navigate(`/products/catalog/${record.id}`),
                   style: { cursor: 'pointer' },
@@ -194,8 +206,11 @@ export function GlobalCatalogPage() {
                   jumpPrevIcon: JUMP_PREV_ICON,
                   jumpNextIcon: JUMP_NEXT_ICON,
                   showTotal: (total, range) => (
-                    <span style={{ color: token.colorTextTertiary }}>{range[0]}–{range[1]} of {total}</span>
+                    <span style={{ color: token.colorTextTertiary }}>
+                      {range[0]}–{range[1]} of {total}
+                    </span>
                   ),
+                  ...(isMobile ? MOBILE_PAGINATION : {}),
                 }}
               />
             </div>

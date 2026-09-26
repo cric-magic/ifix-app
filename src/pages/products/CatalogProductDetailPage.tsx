@@ -72,8 +72,8 @@ export function CatalogProductDetailPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', gap: 12 }}>
           <ProductPhotoThumbnail photos={product.photos} alt={product.name} />
           <Typography.Title level={4} style={{ margin: 0 }}>{product.name}</Typography.Title>
           <Tag style={{ margin: 0, background: token.colorFillSecondary, color: token.colorTextSecondary, fontSize: token.fontSizeSM, border: 'none' }}>

@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { Alert, Button } from 'antd'
-import { Plus } from 'lucide-react'
+import { Alert } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_CONTRACTS } from '../../constants/mockContracts'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { canCreateContract, canViewBranchFilter, canViewContracts, scopedContractList } from '../../constants/roles'
 import { ContractTable } from './components/ContractTable'
-import { ContractFilters, type ContractStatusFilter } from './components/ContractFilters'
+import { ContractSearch, type ContractStatusFilter } from './components/ContractFilters'
+import { contractFilterFields } from './components/contractFilterFields'
+import { ListToolbar } from '../../components/ListToolbar'
 
 // Real Contracts list, replacing the old "coming soon" placeholder — per
 // the Contract doc's "List Contract" section: search by contract number/
@@ -52,22 +53,19 @@ export function ContractsListPage() {
 
   return (
     <div className="ifix-fill-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <ContractFilters
-          search={search}
-          onSearchChange={setSearch}
-          status={status}
-          onStatusChange={setStatus}
-          showBranchFilter={isAdmin}
-          branch={branch}
-          onBranchChange={setBranch}
-        />
-        {canCreateContract(user) && (
-          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => navigate('/contracts/new')}>
-            Create Contract
-          </Button>
-        )}
-      </div>
+      <ListToolbar
+        search={<ContractSearch value={search} onChange={setSearch} />}
+        filters={contractFilterFields({
+          status,
+          onStatusChange: setStatus,
+          showBranchFilter: isAdmin,
+          branch,
+          onBranchChange: setBranch,
+        })}
+        activeFilterCount={(status !== 'all' ? 1 : 0) + (branch ? 1 : 0)}
+        onClearFilters={() => { setStatus('all'); setBranch(undefined) }}
+        action={canCreateContract(user) ? { label: 'Create Contract', onClick: () => navigate('/contracts/new') } : undefined}
+      />
 
       <ContractTable
         contracts={filtered}

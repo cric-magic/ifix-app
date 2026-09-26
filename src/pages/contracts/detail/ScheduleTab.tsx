@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { App, Button, ConfigProvider, DatePicker, Drawer, Form, Input, Space, Table, Typography, theme } from 'antd'
+import { App, Button, ConfigProvider, Drawer, Form, Input, Space, Table, Typography, theme } from 'antd'
+import { DatePicker } from '../../../components/AppDatePicker'
 import { InputNumber } from '../../../components/AppInputNumber'
 import dayjs from 'dayjs'
 import { CalendarClock, Wallet } from 'lucide-react'
@@ -153,7 +154,7 @@ export function ScheduleTab({ contract, actor, onChanged }: Props) {
             <Select options={[{ value: 'cash', label: 'Cash' }, { value: 'transfer', label: 'Bank Transfer' }]} />
           </Form.Item>
           <Form.Item label="Date Paid" name="paymentDate" rules={[{ required: true, message: 'Required' }]}>
-            <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+            <DatePicker style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Payment Slip Photo" name="slipPhotos" rules={[{ required: true, message: 'Required' }]}>
             <PhotoUpload />

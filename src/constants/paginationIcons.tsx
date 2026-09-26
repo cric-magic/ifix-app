@@ -45,3 +45,14 @@ export const JUMP_NEXT_ICON = jumpIcon(<ChevronsRight size={14} strokeWidth={2.2
 export const DEFAULT_PAGE_SIZE = 20
 export const PAGE_SIZE_OPTIONS = [10, 20, 50]
 export const PAGE_SIZE_CHANGER = { suffixIcon: <ChevronDown size={14} strokeWidth={2.25} /> }
+
+// Spread over a table's pagination on mobile (see useIsMobile): antd's
+// compact "‹ 2 / 7 ›" pager in place of the row of page numbers, no
+// rows-per-page picker (20 rows suits a phone), and — via the class, see
+// .ifix-pagination-mobile in index.css — 40px tap targets instead of the
+// desktop's 28px. The "21–40 of 136" count stays.
+export const MOBILE_PAGINATION = {
+  simple: true,
+  showSizeChanger: false,
+  className: 'ifix-pagination-mobile',
+}

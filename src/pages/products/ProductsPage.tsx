@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Alert, Button, Input, message } from 'antd'
-import { Plus, Search } from 'lucide-react'
+import { Alert, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
-import { useIconColors } from '../../constants/iconColors'
+import { ListToolbar } from '../../components/ListToolbar'
+import { ListSearch } from '../../components/ListSearch'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
 import { canManageProducts, canViewProducts, scopedProductList } from '../../constants/roles'
@@ -15,7 +15,6 @@ import { CreateUnitModal } from './components/CreateUnitModal'
 
 export function ProductsPage() {
   const user = useCurrentUser()
-  const iconColors = useIconColors()
   const [version, setVersion] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -60,24 +59,11 @@ export function ProductsPage() {
 
   return (
     <div className="ifix-fill-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Input
-            placeholder="Search by name, brand, or SKU"
-            prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
-            allowClear
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ maxWidth: 320 }}
-          />
-          <ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />
-        </div>
-        {canManageProducts(user) && (
-          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
-            Create Product
-          </Button>
-        )}
-      </div>
+      <ListToolbar
+        leading={<ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />}
+        search={<ListSearch value={search} onChange={setSearch} placeholder="Search by name, brand, or SKU" mobilePlaceholder="Search products" />}
+        action={canManageProducts(user) ? { label: 'Create Product', onClick: () => setCreateOpen(true) } : undefined}
+      />
 
       <ProductTable
         actor={user}

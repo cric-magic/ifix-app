@@ -1,11 +1,11 @@
-import { Select } from '../../../components/AppSelect'
+import { Segmented } from 'antd'
 import type { ProductType } from '../../../types/product'
 import { TYPE_LABELS } from '../../../constants/products'
 
 export type TypeFilter = 'all' | ProductType
 
 const OPTIONS: { value: TypeFilter; label: string }[] = [
-  { value: 'all', label: 'All types' },
+  { value: 'all', label: 'All' },
   { value: 'new', label: TYPE_LABELS.new },
   { value: 'used', label: TYPE_LABELS.used },
 ]
@@ -15,16 +15,18 @@ interface Props {
   onChange: (type: TypeFilter) => void
 }
 
-// Dropdown, not Segmented — matches every other list page's filter row
-// (ContractFilters' status/branch Selects, search-then-filter order), which
-// this one used to be the sole exception to.
+// New vs Used splits the whole catalog in two, and for the client it's the
+// first thing they narrow by — so it's a Segmented control showing all
+// three options at once, placed first in the filter row ahead of search,
+// rather than a dropdown that hides them. (Other list pages keep the
+// search-then-dropdowns order; their filters are narrower cuts.)
 export function ProductTypeTabs({ activeType, onChange }: Props) {
   return (
-    <Select
+    <Segmented<TypeFilter>
       value={activeType}
       onChange={onChange}
       options={OPTIONS}
-      style={{ width: 140 }}
+      style={{ flexShrink: 0 }}
     />
   )
 }

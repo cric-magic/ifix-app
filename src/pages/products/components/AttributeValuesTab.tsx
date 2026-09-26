@@ -1,16 +1,20 @@
 import { useState } from 'react'
 import { App, Button, ConfigProvider, Drawer, Dropdown, Form, Input, Space, Table, theme } from 'antd'
-import { Plus, MoreHorizontal, Ban, RotateCcw, Shapes, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { MoreHorizontal, Ban, RotateCcw, Shapes, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import { attributeValues, type AttributeTypeMeta, type AttributeValueRow } from '../../../constants/products'
 import { MOCK_PRODUCT_ATTRIBUTES } from '../../../constants/mockProductAttributes'
 import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
 import { countProductsUsingAttribute } from '../../../utils/product'
-import { useIconColors } from '../../../constants/iconColors'
 import { DotTag } from '../../../components/DotTag'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
+import { ListToolbar } from '../../../components/ListToolbar'
+import { ListSearch } from '../../../components/ListSearch'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 
 interface Props {
   meta: AttributeTypeMeta
@@ -21,7 +25,7 @@ interface Props {
 // single list grows, it's this table's problem rather than the navigation's.
 export function AttributeValuesTab({ meta }: Props) {
   const { token } = theme.useToken()
-  const iconColors = useIconColors()
+  const isMobile = useIsMobile()
   const { modal, message } = App.useApp()
   const [version, setVersion] = useState(0)
   const [search, setSearch] = useState('')
@@ -76,6 +80,34 @@ export function AttributeValuesTab({ meta }: Props) {
   const query = search.trim().toLowerCase()
   const rows = attributeValues(meta).filter(r => !query || r.value.toLowerCase().includes(query))
 
+  function actionsMenu(r: AttributeValueRow) {
+    return (
+      <Dropdown
+        trigger={['click']}
+        placement="bottomRight"
+        menu={{
+          items: [{
+            key: 'toggle',
+            danger: r.enabled,
+            icon: r.enabled
+              ? <Ban size={16} strokeWidth={2.25} />
+              : <RotateCcw size={16} strokeWidth={2.25} />,
+            label: r.enabled ? 'Disable' : 'Enable',
+          }],
+          onClick: () => handleToggle(r),
+        }}
+      >
+        <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
+      </Dropdown>
+    )
+  }
+
+  const statusTag = (r: AttributeValueRow) => (
+    <DotTag dotColor={r.enabled ? token.colorSuccess : token.colorTextTertiary}>
+      {r.enabled ? 'Enabled' : 'Disabled'}
+    </DotTag>
+  )
+
   const columns: ColumnsType<AttributeValueRow> = [
     {
       title: <span style={{ color: token.colorText }}>Value</span>,
@@ -98,65 +130,46 @@ export function AttributeValuesTab({ meta }: Props) {
       {
         title: 'Status',
         key: 'status',
-        render: (_: unknown, r: AttributeValueRow) => (
-          <DotTag dotColor={r.enabled ? token.colorSuccess : token.colorTextTertiary}>
-            {r.enabled ? 'Enabled' : 'Disabled'}
-          </DotTag>
-        ),
+        render: (_: unknown, r: AttributeValueRow) => statusTag(r),
       },
       {
         title: '',
         key: 'actions',
         width: 56,
         align: 'right' as const,
-        render: (_: unknown, r: AttributeValueRow) => (
-          <Dropdown
-            trigger={['click']}
-            placement="bottomRight"
-            menu={{
-              items: [{
-                key: 'toggle',
-                danger: r.enabled,
-                icon: r.enabled
-                  ? <Ban size={16} strokeWidth={2.25} />
-                  : <RotateCcw size={16} strokeWidth={2.25} />,
-                label: r.enabled ? 'Disable' : 'Enable',
-              }],
-              onClick: () => handleToggle(r),
-            }}
-          >
-            <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
-          </Dropdown>
-        ),
+        render: (_: unknown, r: AttributeValueRow) => actionsMenu(r),
       },
     ] : []),
   ]
 
+  // Mobile: the value and (for managed types) its status on top; how many
+  // products use it below.
+  const mobileRows = mobileColumns<AttributeValueRow>(r => {
+    const count = countProductsUsingAttribute(meta.field, r.value, MOCK_PRODUCTS)
+    return (
+      <MobileTableRow
+        primary={r.value}
+        trailing={meta.managed ? statusTag(r) : undefined}
+        secondary={count > 0 ? `Used by ${count} product${count === 1 ? '' : 's'}` : 'Not in use'}
+      />
+    )
+  })
+
   return (
     <div className="ifix-fill-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8 }}>
-        <Input
-          placeholder={`Search ${meta.noun} values`}
-          prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
-          allowClear
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ maxWidth: 320 }}
-        />
-        {meta.managed && (
-          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setAddOpen(true)}>
-            Add {meta.noun}
-          </Button>
-        )}
-      </div>
+      <ListToolbar
+        search={<ListSearch value={search} onChange={setSearch} placeholder={`Search ${meta.noun} values`} mobilePlaceholder={`Search ${meta.noun} values`} />}
+        action={meta.managed ? { label: `Add ${meta.noun}`, onClick: () => setAddOpen(true) } : undefined}
+      />
 
       <div className="ifix-table-panel">
         <ConfigProvider theme={{ components: { Table: { colorText: token.colorTextTertiary, headerColor: token.colorTextTertiary } } }}>
-          <div style={{ padding: 16 }}>
+          <div style={{ padding: tablePanelPadding(isMobile) }}>
             <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
               <Table
                 rowKey={r => r.id ?? r.value}
-                columns={columns}
+                columns={isMobile ? mobileRows : columns}
+                {...(isMobile ? MOBILE_TABLE_PROPS : {})}
                 dataSource={rows}
                 scroll={rows.length > 0 ? { y: '100%' } : undefined}
                 locale={{
@@ -176,8 +189,11 @@ export function AttributeValuesTab({ meta }: Props) {
                   jumpPrevIcon: JUMP_PREV_ICON,
                   jumpNextIcon: JUMP_NEXT_ICON,
                   showTotal: (total, range) => (
-                    <span style={{ color: token.colorTextTertiary }}>{range[0]}–{range[1]} of {total}</span>
+                    <span style={{ color: token.colorTextTertiary }}>
+                      {range[0]}–{range[1]} of {total}
+                    </span>
                   ),
+                  ...(isMobile ? MOBILE_PAGINATION : {}),
                 }}
               />
             </div>

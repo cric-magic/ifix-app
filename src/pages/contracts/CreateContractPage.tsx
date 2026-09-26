@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Steps, Card, Form, Input, Button, Space, Row, Col,
-  Typography, Divider, Alert, DatePicker, message,
+  Card, Form, Input, Button, Space, Row, Col,
+  Typography, Divider, Alert, message,
 } from 'antd'
+import { DatePicker } from '../../components/AppDatePicker'
 import { InputNumber } from '../../components/AppInputNumber'
 import dayjs from 'dayjs'
 import { Check, X } from 'lucide-react'
 import { Select } from '../../components/AppSelect'
 import { PhotoUpload } from '../../components/PhotoUpload'
+import { HeaderSteps } from '../../components/HeaderSteps'
+import { useIsMobile } from '../../components/useIsMobile'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { useSetHeaderContent } from '../../contexts/HeaderContentContext'
 import { CurrencyDisplay } from '../../components/CurrencyDisplay'
@@ -56,6 +59,7 @@ interface CustomerValues {
 
 export function CreateContractPage() {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const actor = useCurrentUser()
   const merchant = MOCK_MERCHANTS.find(m => m.id === actor.merchantId)
   const canUseFreeRate = isMerchantAdminOrAbove(actor)
@@ -126,7 +130,7 @@ export function CreateContractPage() {
     // now (used below the heading in the main content, not the compact
     // header bar), which antd's Steps would otherwise render as its own
     // sub-label under every item.
-    center: <Steps current={step} items={steps.map(s => ({ title: s.title }))} size="small" className="ifix-header-steps" style={{ fontSize: 14 }} />,
+    center: <HeaderSteps current={step} titles={steps.map(s => s.title)} />,
     right: (
       <Button
         type="text"
@@ -361,8 +365,8 @@ export function CreateContractPage() {
   }
 
   return (
-    <div>
-      <Card style={{ marginBottom: 24 }}>
+    <div className={isMobile ? 'ifix-wizard-page' : undefined}>
+      <Card className={isMobile ? 'ifix-wizard-mobile' : undefined} style={{ marginBottom: isMobile ? 0 : 24 }}>
         {/* Now that the header's own Steps bar only spells out the active
             step's title (see index.css) and abbreviates/hides the rest,
             the step you're on needs a clear marker somewhere in the
@@ -414,7 +418,9 @@ export function CreateContractPage() {
             {selectedProductId && availableUnits.length === 0 && (
               <Alert type="warning" showIcon message="No available units for this product at this branch." style={{ marginBottom: 16 }} />
             )}
-            <Button type="primary" onClick={handleDeviceNext}>Next: Template & Terms</Button>
+            <div className="ifix-wizard-actions">
+              <Button type="primary" onClick={handleDeviceNext}>Next: Template & Terms</Button>
+            </div>
           </Form>
         )}
 
@@ -485,7 +491,7 @@ export function CreateContractPage() {
               </Row>
             )}
 
-            <Space>
+            <Space className="ifix-wizard-actions">
               <Button onClick={() => setStep(0)}>Back</Button>
               <Button type="primary" onClick={handleTemplateNext} disabled={!selectedTemplate}>Next: Device Info</Button>
             </Space>
@@ -535,7 +541,7 @@ export function CreateContractPage() {
                 </Form.Item>
               </Col>
             </Row>
-            <Space>
+            <Space className="ifix-wizard-actions">
               <Button onClick={() => setStep(1)}>Back</Button>
               <Button type="primary" onClick={handleDeviceInfoNext}>Next: Customer</Button>
             </Space>
@@ -546,12 +552,18 @@ export function CreateContractPage() {
           <Form form={customerForm} layout="vertical">
             <Row gutter={16}>
               <Col span={16}>
-                <Form.Item label="National ID / Passport" name="nationalId" rules={[{ required: true, message: 'Required' }]}>
-                  <Input placeholder="X-XXXX-XXXXX-XX-X" />
+                {/* Look Up attached to the field's right end (Space.Compact)
+                    rather than a separate column — a column pushed down to
+                    the input's line by a fixed margin, which broke loose
+                    onto its own row once columns stack on mobile. */}
+                <Form.Item label="National ID / Passport" required>
+                  <Space.Compact style={{ width: '100%' }}>
+                    <Form.Item name="nationalId" noStyle rules={[{ required: true, message: 'Required' }]}>
+                      <Input placeholder="X-XXXX-XXXXX-XX-X" />
+                    </Form.Item>
+                    <Button onClick={handleLookupCustomer}>Look Up</Button>
+                  </Space.Compact>
                 </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Button style={{ marginTop: 30 }} onClick={handleLookupCustomer}>Look Up</Button>
               </Col>
             </Row>
             {matchedCustomer?.blacklisted && (
@@ -584,7 +596,7 @@ export function CreateContractPage() {
                   getValueProps={value => ({ value: value ? dayjs(value) : undefined })}
                   normalize={value => (value ? value.format('YYYY-MM-DD') : value)}
                 >
-                  <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+                  <DatePicker style={{ width: '100%' }} />
                 </Form.Item>
               </Col>
               <Col span={12}>
@@ -614,7 +626,7 @@ export function CreateContractPage() {
                 </Form.Item>
               </Col>
             </Row>
-            <Space>
+            <Space className="ifix-wizard-actions">
               <Button onClick={() => setStep(2)}>Back</Button>
               <Button type="primary" onClick={handleCustomerNext}>Next: Preview</Button>
             </Space>
@@ -664,7 +676,7 @@ export function CreateContractPage() {
 
               <Divider />
 
-              <Space>
+              <Space className="ifix-wizard-actions">
                 <Button onClick={() => setStep(3)}>Back</Button>
                 <Button type="primary" icon={<Check size={16} strokeWidth={2.25} />} onClick={handleSubmit}>
                   {actor.role === 'staff' ? 'Submit for Approval' : 'Create Contract'}

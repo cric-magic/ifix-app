@@ -23,7 +23,7 @@ export function OverviewTab({ contract, actions }: Props) {
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', gap: 12 }}>
           <Typography.Title level={4} style={{ margin: 0 }}>{contract.contractNumber}</Typography.Title>
           <ContractStatusTag status={contract.status} />
         </div>

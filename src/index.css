@@ -103,6 +103,57 @@ body {
   border-radius: 6px;
 }
 
+/* Mobile pagination (MOBILE_PAGINATION): antd's compact "‹ 2 / 7 ›" pager,
+   sized to match desktop — arrows and page field are the same itemSizeSM
+   box as the desktop page buttons (antd's simple pager otherwise draws a
+   taller, wider input), with the same 6px corners and 12px text. */
+.ifix-pagination-mobile.ant-pagination .ant-pagination-simple-pager {
+  display: flex !important;
+  align-items: center;
+  height: var(--ant-pagination-item-size-sm) !important;
+  font-size: var(--ant-font-size-sm);
+}
+
+.ifix-pagination-mobile.ant-pagination .ant-pagination-simple-pager input {
+  box-sizing: border-box;
+  width: var(--ant-pagination-item-size-sm) !important;
+  min-width: var(--ant-pagination-item-size-sm);
+  height: var(--ant-pagination-item-size-sm) !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  font-size: var(--ant-font-size-sm);
+  text-align: center;
+}
+
+/* Two-line mobile rows (MobileTableRow): a 0.5px hairline between items so
+   each reads as its own block — desktop's single-line rows don't need one,
+   and the app's tables otherwise have no body-row borders. None under the
+   last row; the panel's own edge closes the list. */
+.ifix-mobile-rows .ant-table-tbody > tr.ant-table-row:not(:last-child) > td {
+  border-bottom: 0.5px solid var(--ant-color-border-secondary) !important;
+}
+
+/* …and 12px (Spacing 3) above and below instead of desktop's 8px. */
+.ifix-mobile-rows .ant-table-tbody > tr:not(.ant-table-measure-row) > td {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+}
+
+/* Mobile list toolbar (ListToolbar): the search field takes the row's spare
+   width instead of its desktop 320px cap, and filters in the bottom sheet
+   run full width instead of their desktop dropdown widths. */
+.ifix-toolbar-search .ant-input-affix-wrapper {
+  max-width: none !important;
+  width: 100%;
+}
+
+.ifix-filter-sheet .ant-select,
+.ifix-filter-sheet .ant-input-affix-wrapper,
+.ifix-filter-sheet .ant-segmented {
+  width: 100% !important;
+  max-width: none !important;
+}
+
 /* The ••• jump buttons: antd swaps in its double chevron in colorPrimary on
    hover — the one blue control in an otherwise neutral bar. Given the same
    hover as the page numbers and prev/next arrows instead: fill background,
@@ -991,6 +1042,19 @@ label[for="password"]::after {
   left: 8px !important;
 }
 
+/* A bottom sheet (e.g. ListToolbar's mobile filters) floats 16px in from
+   the sides and bottom — the page's own mobile gutter, so the sheet lines
+   up with the content under it — and sizes to its content instead of
+   inheriting the full-height top/bottom pin above, capped so a long list
+   of filters scrolls inside it rather than covering the page. */
+.ant-drawer-bottom .ant-drawer-content-wrapper {
+  top: auto !important;
+  bottom: 16px !important;
+  left: 16px !important;
+  right: 16px !important;
+  max-height: calc(100% - 64px);
+}
+
 .ant-drawer-section {
   border: 0.5px solid var(--ant-color-split);
   border-radius: 12px;
@@ -1684,4 +1748,153 @@ label[for="password"]::after {
   body:has(.ifix-print-copy) .ifix-contract-page:not(.ifix-print-copy .ifix-contract-page) {
     display: none !important;
   }
+}
+
+/* Create/Edit Contract wizard on mobile (.ifix-wizard-page/-mobile, set via
+   useIsMobile): the form sits straight on the page instead of in a card —
+   no card padding, border, background or shadow, so fields get the full
+   width inside the page's 16px gutter. Multi-column rows stack, and the
+   step's actions (.ifix-wizard-actions) drop to the bottom of the screen as
+   full-width buttons stacked Next over Back — the forward action on top,
+   nearest the form. On a step taller than the screen they follow the last
+   field.
+
+   AppLayout's page wrapper is a fixed height: 100% (so list pages can fill
+   it), which a tall step overflows — and a scroll container's bottom
+   padding only follows its own children, not their overflow, so the
+   buttons ended flush with the screen edge. Here the wrapper grows with
+   the page instead (min-height, still filling a short step), which keeps
+   Content's 16px under the buttons. */
+.ant-layout-content > div:has(> .ifix-wizard-page) {
+  height: auto !important;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ifix-wizard-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ifix-wizard-mobile.ant-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.ifix-wizard-mobile > .ant-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.ifix-wizard-mobile > .ant-card-body > :last-child {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ifix-wizard-mobile .ant-row > .ant-col {
+  flex: 0 0 100% !important;
+  max-width: 100% !important;
+}
+
+.ifix-wizard-mobile .ifix-wizard-actions {
+  display: flex !important;
+  flex-direction: column-reverse;
+  align-items: stretch !important;
+  gap: 8px;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.ifix-wizard-mobile .ifix-wizard-actions .ant-btn {
+  width: 100%;
+}
+
+/* ListToolbar's always-visible filter on mobile (e.g. Products' New/Used
+   Segmented) spans the row, its options sharing the width equally. */
+.ifix-toolbar-leading .ant-segmented {
+  display: flex;
+  width: 100%;
+}
+
+.ifix-toolbar-leading .ant-segmented-item {
+  flex: 1;
+}
+
+/* Side drawers (every Create/Edit form, Record Payment, etc.) on mobile —
+   the same treatment as the Create/Edit Contract wizard. .ifix-mobile is set
+   on the app window at phone width (DesktopStageLayout), so this reaches
+   every drawer portaled into it without each one opting in.
+
+   - Full screen instead of a 420px panel floating 8px in: at 390px wide the
+     panel overran the screen, and there's no page beside it worth keeping
+     in view.
+   - Multi-column form rows stack, so each field gets the full width.
+   - The footer's buttons (every drawer's footer is Cancel then the primary
+     action, in a Space) stack full width, primary on top — nearest the form,
+     and under the thumb.
+
+   Bottom sheets (ListToolbar's filters) keep their own placement rules
+   above; only right-placed drawers are affected. */
+.ifix-mobile .ant-drawer-right .ant-drawer-content-wrapper {
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: auto !important;
+  border-radius: 0;
+  box-shadow: none !important;
+}
+
+.ifix-mobile .ant-drawer-right .ant-drawer-section {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.ifix-mobile .ant-drawer-right .ant-drawer-body .ant-row > .ant-col {
+  flex: 0 0 100% !important;
+  max-width: 100% !important;
+}
+
+.ifix-mobile .ant-drawer-right .ant-drawer-footer .ant-space {
+  display: flex !important;
+  flex-direction: column-reverse;
+  align-items: stretch !important;
+  gap: 8px !important;
+  width: 100%;
+}
+
+.ifix-mobile .ant-drawer-right .ant-drawer-footer .ant-btn {
+  width: 100%;
+}
+
+/* A drawer's header `extra` slot (e.g. the filter sheet's "Clear filters")
+   is a plain block around an inline-flex button, which leaves the button
+   sitting on a text baseline with a sliver of descender space under it —
+   enough to make the header grow when the slot fills. Flex drops that. */
+.ant-drawer-extra {
+  display: flex;
+  align-items: center;
+}
+
+/* Mobile rows (.ifix-mobile-rows) scroll only when there's something to
+   scroll. antd sets the rows area to overflow-y: scroll so its scrollbar
+   is always there, keeping the header's columns lined up with the rows —
+   but wherever the browser draws classic (space-taking) scrollbars, that
+   reserves an ~11px strip even when every row fits, stopping the rows and
+   their dividers short of the panel's right edge. Mobile rows have no
+   header to line up with, so auto is safe here. */
+.ifix-mobile-rows .ant-table-body {
+  overflow-y: auto !important;
 }

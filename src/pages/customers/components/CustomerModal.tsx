@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { Drawer, Button, Space, Form, Input, DatePicker } from 'antd'
+import { Drawer, Button, Space, Form, Input } from 'antd'
+import { DatePicker } from '../../../components/AppDatePicker'
 import dayjs from 'dayjs'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { Customer } from '../../../types/customer'
@@ -99,7 +100,7 @@ export function CustomerModal({ open, customer, onClose, onSaved }: Props) {
           getValueProps={value => ({ value: value ? dayjs(value) : undefined })}
           normalize={value => (value ? value.format('YYYY-MM-DD') : value)}
         >
-          <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+          <DatePicker style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item label="Email" name="email">
           <Input placeholder="email@example.com" />

@@ -6,9 +6,11 @@ import type { Contract } from '../../../types/contract'
 import type { Product } from '../../../types/product'
 import { CurrencyDisplay } from '../../../components/CurrencyDisplay'
 import { TableEmptyState } from '../../../components/TableEmptyState'
+import { MobileTableRow } from '../../../components/MobileTableRow'
 import { getOutstandingBalance, getNextDue, getOverdueDays, getNetPosition } from '../../../utils/contract'
 import { ContractStatusTag } from './ContractStatusTag'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
+import { useIsMobile } from '../../../components/useIsMobile'
 import { useColumnPicker } from '../../../components/useColumnPicker'
 import { withColumnMinWidths } from '../../../components/tableColumns'
 
@@ -20,6 +22,7 @@ interface Props {
 }
 
 export function ContractTable({ contracts, products, showBranchColumns, search }: Props) {
+  const isMobile = useIsMobile()
   const applyColumnPicker = useColumnPicker('contracts', ['contractNumber', 'status'])
   const { token } = theme.useToken()
   const navigate = useNavigate()
@@ -78,6 +81,30 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
     { title: 'Status', key: 'status', fixed: 'right', render: (_, c) => <ContractStatusTag status={c.status} /> },
   ]
 
+  // Mobile: the same table, but one column laying each contract out as a
+  // two-line row (see MobileTableRow) — the number and status on top, the
+  // customer and device below with the outstanding balance, and overdue
+  // days in red when there are any. No header row or column picker there;
+  // the layout is fixed.
+  const mobileColumns: ColumnsType<Contract> = [{
+    key: 'mobile',
+    render: (_, c) => {
+      const overdueDays = getOverdueDays(c)
+      const device = `${c.device.brand} ${c.device.model}`
+      return (
+        <MobileTableRow
+          primary={c.contractNumber}
+          trailing={<ContractStatusTag status={c.status} />}
+          secondary={<>
+            {c.customer.fullName} · {device}
+            {overdueDays > 0 && <span style={{ color: token.colorError }}> · {overdueDays}d overdue</span>}
+          </>}
+          trailingSecondary={<CurrencyDisplay amount={getOutstandingBalance(c)} />}
+        />
+      )
+    },
+  }]
+
   return (
     <ConfigProvider theme={{
       components: {
@@ -88,13 +115,21 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
       },
     }}>
       <div className="ifix-table-panel">
-        <div style={{ padding: 16 }}>
+        {/* No top padding on mobile: it sits above the column header on
+            desktop, but mobile has no header row, so it only left an empty
+            strip above the first item. */}
+        <div style={{ padding: isMobile ? '0 16px 16px' : 16 }}>
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
-              columns={applyColumnPicker(withColumnMinWidths(columns, 'contractNumber'))}
+              columns={isMobile ? mobileColumns : applyColumnPicker(withColumnMinWidths(columns, 'contractNumber'))}
+              showHeader={!isMobile}
+              className={isMobile ? 'ifix-mobile-rows' : undefined}
+              // Fixed layout on mobile so the single column is the panel's
+              // width and long values truncate instead of widening the row.
+              tableLayout={isMobile ? 'fixed' : undefined}
               dataSource={contracts}
-              scroll={contracts.length > 0 ? { x: 'max-content', y: '100%' } : undefined}
+              scroll={contracts.length > 0 ? (isMobile ? { y: '100%' } : { x: 'max-content', y: '100%' }) : undefined}
               onRow={record => ({
                 onClick: () => navigate(`/contracts/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -120,6 +155,7 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
                     {range[0]}–{range[1]} of {total}
                   </span>
                 ),
+                ...(isMobile ? MOBILE_PAGINATION : {}),
               }}
             />
           </div>

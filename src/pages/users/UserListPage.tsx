@@ -1,20 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Alert, Button, Input, message } from 'antd'
-import { Plus, Search } from 'lucide-react'
+import { Alert, message } from 'antd'
 import { useSearchParams } from 'react-router-dom'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_USER_ACCOUNTS, generateTempPassword } from '../../constants/mockUsers'
 import { canManageUsers, canViewUserList, scopedUserList } from '../../constants/roles'
-import { useIconColors } from '../../constants/iconColors'
 import type { UserAccount } from '../../types/user'
 import { UserTable } from './components/UserTable'
 import { CreateUserModal } from './components/CreateUserModal'
 import { EditUserModal } from './components/EditUserModal'
 import { TempPasswordModal } from './components/TempPasswordModal'
+import { ListToolbar } from '../../components/ListToolbar'
+import { ListSearch } from '../../components/ListSearch'
 
 export function UserListPage() {
   const user = useCurrentUser()
-  const iconColors = useIconColors()
   const [searchParams, setSearchParams] = useSearchParams()
   const [version, setVersion] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
@@ -83,21 +82,10 @@ export function UserListPage() {
 
   return (
     <div className="ifix-fill-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <Input
-          placeholder="Search by name, email, or staff ID"
-          prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
-          allowClear
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ maxWidth: 320 }}
-        />
-        {canManageUsers(user) && (
-          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
-            Create User
-          </Button>
-        )}
-      </div>
+      <ListToolbar
+        search={<ListSearch value={search} onChange={setSearch} placeholder="Search by name, email, or staff ID" mobilePlaceholder="Search users" />}
+        action={canManageUsers(user) ? { label: 'Create User', onClick: () => setCreateOpen(true) } : undefined}
+      />
 
       <UserTable
         actor={user}

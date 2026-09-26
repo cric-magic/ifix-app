@@ -486,6 +486,11 @@ function AppThemed() {
           // outer radius outright.
           borderRadiusSM: baseToken.borderRadius - 1,
           trackPadding: 1,
+          // The 1px outline (see .ant-segmented in index.css) sits outside
+          // antd's own height, so the control came out 38px beside 36px
+          // inputs and buttons — its height is taken in by exactly that
+          // outline, top and bottom.
+          controlHeight: baseToken.controlHeight - 2,
           trackBg: baseToken.colorFillTertiary,
           // The raised-surface colour (white in the light variant) rather
           // than colorBgLayout, which is the page's own grey — the thumb
@@ -579,7 +584,11 @@ function AppThemed() {
           // the table body actually renders on), so the hover made rows
           // silently vanish instead of highlighting. colorFillSecondary is
           // the tier that's actually distinguishable from colorBgElevated.
-          rowHoverBg: baseToken.colorFillSecondary,
+          // That's a dark-variant problem only: on light's white panel every
+          // fill tier is visible, and Secondary (#e6e6e6) read heavy — the
+          // same grey as the status tags, which lost their pill on a hovered
+          // row. Light uses the lightest tier, Quaternary (#f0f0f0), instead.
+          rowHoverBg: VARIANT_SEEDS[themeVariant].algorithm === 'light' ? baseToken.colorFillQuaternary : baseToken.colorFillSecondary,
           bodySortBg: baseToken.colorBgElevated,
           headerSortActiveBg: baseToken.colorBgElevated,
           headerSortHoverBg: baseToken.colorBgElevated,

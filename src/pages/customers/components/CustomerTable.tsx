@@ -6,7 +6,10 @@ import type { Customer } from '../../../types/customer'
 import type { Contract } from '../../../types/contract'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { DotTag } from '../../../components/DotTag'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 
 interface Props {
   customers: Customer[]
@@ -16,6 +19,7 @@ interface Props {
 
 export function CustomerTable({ customers, contracts, search }: Props) {
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const navigate = useNavigate()
 
   function activeContractCount(customerId: string) {
@@ -42,6 +46,22 @@ export function CustomerTable({ customers, contracts, search }: Props) {
     },
   ]
 
+  // Mobile: name and standing on top; phone and ID below, with the number
+  // of active contracts.
+  const mobileRows = mobileColumns<Customer>(c => {
+    const active = activeContractCount(c.id)
+    return (
+      <MobileTableRow
+        primary={c.fullName}
+        trailing={c.blacklisted
+          ? <DotTag dotColor={token.colorError}>Blacklisted</DotTag>
+          : <DotTag dotColor={token.colorSuccess}>Good Standing</DotTag>}
+        secondary={`${c.phone} · ${c.nationalId}`}
+        trailingSecondary={`${active} active`}
+      />
+    )
+  })
+
   return (
     <ConfigProvider theme={{
       components: {
@@ -52,13 +72,14 @@ export function CustomerTable({ customers, contracts, search }: Props) {
       },
     }}>
       <div className="ifix-table-panel">
-        <div style={{ padding: 16 }}>
+        <div style={{ padding: tablePanelPadding(isMobile) }}>
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
-              columns={columns}
+              columns={isMobile ? mobileRows : columns}
+              {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               dataSource={customers}
-              scroll={customers.length > 0 ? { x: 'max-content', y: '100%' } : undefined}
+              scroll={customers.length > 0 ? (isMobile ? { y: '100%' } : { x: 'max-content', y: '100%' }) : undefined}
               onRow={record => ({
                 onClick: () => navigate(`/customers/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -84,6 +105,7 @@ export function CustomerTable({ customers, contracts, search }: Props) {
                     {range[0]}–{range[1]} of {total}
                   </span>
                 ),
+                ...(isMobile ? MOBILE_PAGINATION : {}),
               }}
             />
           </div>

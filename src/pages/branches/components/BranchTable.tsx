@@ -6,7 +6,10 @@ import type { Branch } from '../../../types/branch'
 import { MOCK_USER_ACCOUNTS } from '../../../constants/mockUsers'
 import { BranchStatusTag } from './BranchStatusTag'
 import { TableEmptyState } from '../../../components/TableEmptyState'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 
 interface Props {
   branches: Branch[]
@@ -32,8 +35,45 @@ function staffCount(branch: Branch): number {
 
 export function BranchTable({ branches, search, canManage, onToggleArchive, headerAction, fillHeight }: Props) {
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const { modal } = App.useApp()
   const navigate = useNavigate()
+
+  function actionsMenu(b: Branch) {
+    if (!canManage(b)) return null
+    const isArchived = b.status === 'archived'
+    return (
+      <div onClick={e => e.stopPropagation()}>
+        <Dropdown
+          trigger={['click']}
+          placement="bottomRight"
+          menu={{
+            items: [
+              {
+                key: 'archive',
+                danger: !isArchived,
+                icon: isArchived ? <ArchiveRestore size={16} strokeWidth={2.25} /> : <Archive size={16} strokeWidth={2.25} />,
+                label: isArchived ? 'Unarchive' : 'Archive',
+              },
+            ],
+            onClick: ({ key }) => {
+              if (key === 'archive') {
+                modal.confirm({
+                  title: isArchived ? 'Unarchive this branch?' : 'Archive this branch?',
+                  content: isArchived ? undefined : 'All staff and branch managers at this branch will be suspended.',
+                  okText: isArchived ? 'Unarchive' : 'Archive',
+                  okButtonProps: { danger: !isArchived },
+                  onOk: () => onToggleArchive(b),
+                })
+              }
+            },
+          }}
+        >
+          <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
+        </Dropdown>
+      </div>
+    )
+  }
 
   const columns: ColumnsType<Branch> = [
     {
@@ -65,43 +105,22 @@ export function BranchTable({ branches, search, canManage, onToggleArchive, head
       width: 56,
       fixed: 'right',
       align: 'right',
-      render: (_, b) => {
-        if (!canManage(b)) return null
-        const isArchived = b.status === 'archived'
-        return (
-          <div onClick={e => e.stopPropagation()}>
-            <Dropdown
-              trigger={['click']}
-              placement="bottomRight"
-              menu={{
-                items: [
-                  {
-                    key: 'archive',
-                    danger: !isArchived,
-                    icon: isArchived ? <ArchiveRestore size={16} strokeWidth={2.25} /> : <Archive size={16} strokeWidth={2.25} />,
-                    label: isArchived ? 'Unarchive' : 'Archive',
-                  },
-                ],
-                onClick: ({ key }) => {
-                  if (key === 'archive') {
-                    modal.confirm({
-                      title: isArchived ? 'Unarchive this branch?' : 'Archive this branch?',
-                      content: isArchived ? undefined : 'All staff and branch managers at this branch will be suspended.',
-                      okText: isArchived ? 'Unarchive' : 'Archive',
-                      okButtonProps: { danger: !isArchived },
-                      onOk: () => onToggleArchive(b),
-                    })
-                  }
-                },
-              }}
-            >
-              <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
-            </Dropdown>
-          </div>
-        )
-      },
+      render: (_, b) => actionsMenu(b),
     },
   ]
+
+  // Mobile: name and status on top; branch code below, with the staff count.
+  const mobileRows = mobileColumns<Branch>(b => {
+    const staff = staffCount(b)
+    return (
+      <MobileTableRow
+        primary={b.name}
+        trailing={<BranchStatusTag status={b.status} />}
+        secondary={b.code}
+        trailingSecondary={`${staff} staff`}
+      />
+    )
+  })
 
   return (
     <ConfigProvider theme={{
@@ -134,18 +153,19 @@ export function BranchTable({ branches, search, canManage, onToggleArchive, head
             <div style={{ paddingRight: 2 }}>{headerAction}</div>
           </div>
         )}
-        <div style={{ padding: 16 }}>
+        <div style={{ padding: tablePanelPadding(isMobile) }}>
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
-              columns={columns}
+              columns={isMobile ? mobileRows : columns}
+              {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               dataSource={branches}
               // Only when there's real data to scroll through — an empty
               // table still computes a fixed-column width slightly wider
               // than the container (the shadow reserved for
               // .ant-table-cell-fix-start/-end), which otherwise triggers a
               // pointless horizontal scrollbar with nothing to scroll to.
-              scroll={branches.length > 0 ? { x: 'max-content', ...(fillHeight ? { y: '100%' } : {}) } : undefined}
+              scroll={branches.length > 0 ? (isMobile ? (fillHeight ? { y: '100%' } : undefined) : { x: 'max-content', ...(fillHeight ? { y: '100%' } : {}) }) : undefined}
               onRow={record => ({
                 onClick: () => navigate(`/branches/${record.id}`),
                 style: { cursor: 'pointer' },
@@ -171,6 +191,7 @@ export function BranchTable({ branches, search, canManage, onToggleArchive, head
                     {range[0]}–{range[1]} of {total}
                   </span>
                 ),
+                ...(isMobile ? MOBILE_PAGINATION : {}),
               }}
             />
           </div>

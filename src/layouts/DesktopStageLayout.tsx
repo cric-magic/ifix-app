@@ -3,6 +3,7 @@ import { theme } from 'antd'
 import { Outlet } from 'react-router-dom'
 import { useDevTools } from '../contexts/DevToolsContext'
 import { AppWindowProvider } from '../contexts/AppWindowContext'
+import { MOBILE_MAX_WIDTH } from '../components/useIsMobile'
 import desktopWallpaper from '../assets/desktop-wallpaper.jpg'
 
 type ResizeDir = 'right' | 'bottom' | 'corner'
@@ -148,7 +149,10 @@ export function DesktopStageLayout() {
           boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.5), 0 18px 36px -18px rgba(0, 0, 0, 0.4)',
           overflow: 'hidden',
         }}>
-          <div ref={setContentEl} style={{
+          {/* ifix-mobile: at phone width, index.css gives every overlay
+              portaled in here (drawers) its mobile layout — see the
+              ".ifix-mobile .ant-drawer" rules. */}
+          <div ref={setContentEl} className={windowSize.width <= MOBILE_MAX_WIDTH ? 'ifix-mobile' : undefined} style={{
             position: 'relative',
             width: '100%',
             height: '100%',

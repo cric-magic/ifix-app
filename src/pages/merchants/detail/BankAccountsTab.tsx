@@ -5,6 +5,10 @@ import type { ColumnsType } from 'antd/es/table'
 import type { BankAccountProfile, Merchant } from '../../../types/merchant'
 import { BankAccountModal } from '../components/BankAccountModal'
 import { TableEmptyState } from '../../../components/TableEmptyState'
+import { withColumnMinWidths } from '../../../components/tableColumns'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 
 interface Props {
   merchant: Merchant
@@ -25,6 +29,7 @@ interface Props {
 
 export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: Props) {
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const { modal, message } = App.useApp()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<BankAccountProfile | null>(null)
@@ -117,10 +122,31 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
     }] : []),
   ]
 
+  // Mobile: bank (and Default) on top; account name and branch below, with
+  // the account number. No "…" menu — there's no detail page to send the
+  // row to, so tapping it opens the edit drawer instead, which also holds
+  // the default toggle.
+  const mobileRows = mobileColumns<BankAccountProfile>(a => (
+    <MobileTableRow
+      primary={a.bank}
+      trailing={a.isDefault ? (
+        <Tag style={{ margin: 0, background: token.colorFillSecondary, color: token.colorTextSecondary, fontSize: token.fontSizeSM, border: 'none' }}>
+          Default
+        </Tag>
+      ) : undefined}
+      secondary={a.branch ? `${a.accountName} · ${a.branch}` : a.accountName}
+      trailingSecondary={a.accountNumber}
+    />
+  ))
+
   const table = (
     <Table
       rowKey="id"
-      columns={columns}
+      // The primary column takes the spare width and every other column
+      // gets a floor, like the app's other tables (see withColumnMinWidths).
+      columns={isMobile ? mobileRows : withColumnMinWidths(columns, 'bank')}
+      {...(isMobile ? MOBILE_TABLE_PROPS : {})}
+      onRow={isMobile && canManage ? a => ({ onClick: () => { setEditingAccount(a); setModalOpen(true) }, style: { cursor: 'pointer' } }) : undefined}
       dataSource={merchant.bankAccounts}
       size="small"
       pagination={false}
@@ -129,7 +155,7 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
       // fixed-column width slightly wider than the container (the shadow
       // reserved for .ant-table-cell-fix-start/-end), which otherwise
       // triggers a pointless horizontal scrollbar with nothing to scroll to.
-      scroll={merchant.bankAccounts.length > 0 ? { x: 'max-content' } : undefined}
+      scroll={merchant.bankAccounts.length > 0 && !isMobile ? { x: 'max-content' } : undefined}
       locale={{
         emptyText: (
           <TableEmptyState
@@ -190,7 +216,7 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
             </div>
           )}
 
-          <div style={{ padding: 16 }}>
+          <div style={{ padding: tablePanelPadding(isMobile) }}>
             <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
               {table}
             </div>

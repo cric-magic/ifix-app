@@ -40,7 +40,7 @@ export function OverviewTab({ branch, canEdit, onEdit, onToggleArchive }: Props)
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', gap: 12 }}>
           <Typography.Title level={4} style={{ margin: 0 }}>{branch.name}</Typography.Title>
           <BranchStatusTag status={branch.status} />
         </div>

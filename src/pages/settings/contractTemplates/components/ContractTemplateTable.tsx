@@ -8,9 +8,12 @@ import { TableEmptyState } from '../../../../components/TableEmptyState'
 import { DotTag } from '../../../../components/DotTag'
 import { MOCK_USER_ACCOUNTS } from '../../../../constants/mockUsers'
 import { ContractTemplatePreviewDrawer } from './ContractTemplatePreviewDrawer'
-import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER } from '../../../../constants/paginationIcons'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../../constants/paginationIcons'
 import { useColumnPicker } from '../../../../components/useColumnPicker'
 import { withColumnMinWidths } from '../../../../components/tableColumns'
+import { useIsMobile } from '../../../../components/useIsMobile'
+import { MobileTableRow } from '../../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../../components/mobileTable'
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
@@ -48,6 +51,7 @@ interface Props {
 export function ContractTemplateTable({ templates, contracts, canManage, hasActiveFilter, fillHeight, headerTitle, headerAction, filters, onEdit, onDuplicate, onSetDefault, onSetStatus }: Props) {
   const applyColumnPicker = useColumnPicker('contract-templates', ['name', 'status'])
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const { modal } = App.useApp()
   const [previewTemplate, setPreviewTemplate] = useState<ContractTemplate | null>(null)
 
@@ -57,6 +61,59 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
 
   function contractCount(templateId: string) {
     return contracts.filter(c => c.template.templateId === templateId).length
+  }
+
+  function actionsMenu(t: ContractTemplate) {
+    return (
+          <Dropdown
+            trigger={['click']}
+            placement="bottomRight"
+            menu={{
+              items: [
+                // Preview is ❌ for Staff and Branch Manager in the doc's
+                // permission table — they select an active template during
+                // contract creation rather than inspecting the document here.
+                ...(canManage ? [
+                  { key: 'preview', icon: <Eye size={16} strokeWidth={2.25} />, label: 'Preview' },
+                  // Archived templates are locked outright — the doc's
+                  // permission table gives "Edit Archived Template" a ❌ for
+                  // every role, Super Admin included. Duplicate stays: it
+                  // produces a new Draft rather than touching this record,
+                  // which is the documented way to revive an archived one.
+                  ...(t.status !== 'archived' ? [{ key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' }] : []),
+                  { key: 'duplicate', icon: <Copy size={16} strokeWidth={2.25} />, label: 'Duplicate' },
+                  ...(t.status === 'active' && !t.isDefault ? [{ key: 'default', icon: <Star size={16} strokeWidth={2.25} />, label: 'Set as default' }] : []),
+                  { type: 'divider' as const },
+                  ...(t.status === 'draft' ? [{ key: 'activate', icon: <Power size={16} strokeWidth={2.25} />, label: 'Activate' }] : []),
+                  ...(t.status === 'active' ? [{ key: 'archive', danger: true, icon: <Archive size={16} strokeWidth={2.25} />, label: 'Archive' }] : []),
+                ] : []),
+              ],
+              onClick: ({ key }) => {
+                if (key === 'preview') setPreviewTemplate(t)
+                if (key === 'edit') onEdit(t)
+                if (key === 'duplicate') onDuplicate(t)
+                if (key === 'default') onSetDefault(t)
+                if (key === 'activate') onSetStatus(t, 'active')
+                if (key === 'archive') {
+                  modal.confirm({
+                    title: 'Archive this template?',
+                    content: 'Archived templates can no longer be edited or selected for new contracts.',
+                    okText: 'Archive',
+                    okButtonProps: { danger: true },
+                    onOk: () => onSetStatus(t, 'archived'),
+                  })
+                }
+              },
+            }}
+          >
+            <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
+          </Dropdown>
+    )
+  }
+
+  const statusTag = (t: ContractTemplate) => {
+    const dotColor = t.status === 'active' ? token.colorSuccess : t.status === 'archived' ? token.colorTextTertiary : token.colorWarning
+    return <DotTag dotColor={dotColor}>{STATUS_LABELS[t.status]}</DotTag>
   }
 
   const columns: ColumnsType<ContractTemplate> = [
@@ -113,10 +170,7 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
       title: 'Status',
       key: 'status',
       fixed: 'right',
-      render: (_, t) => {
-        const dotColor = t.status === 'active' ? token.colorSuccess : t.status === 'archived' ? token.colorTextTertiary : token.colorWarning
-        return <DotTag dotColor={dotColor}>{STATUS_LABELS[t.status]}</DotTag>
-      },
+      render: (_, t) => statusTag(t),
     },
     {
       title: '',
@@ -126,55 +180,20 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
       align: 'right',
       // Every action in this menu is Admin/Owner-only, so Staff and Branch
       // Manager get no trigger at all rather than an empty dropdown.
-      render: (_, t) => !canManage ? null : (
-        <div onClick={e => e.stopPropagation()}>
-          <Dropdown
-            trigger={['click']}
-            placement="bottomRight"
-            menu={{
-              items: [
-                // Preview is ❌ for Staff and Branch Manager in the doc's
-                // permission table — they select an active template during
-                // contract creation rather than inspecting the document here.
-                ...(canManage ? [
-                  { key: 'preview', icon: <Eye size={16} strokeWidth={2.25} />, label: 'Preview' },
-                  // Archived templates are locked outright — the doc's
-                  // permission table gives "Edit Archived Template" a ❌ for
-                  // every role, Super Admin included. Duplicate stays: it
-                  // produces a new Draft rather than touching this record,
-                  // which is the documented way to revive an archived one.
-                  ...(t.status !== 'archived' ? [{ key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' }] : []),
-                  { key: 'duplicate', icon: <Copy size={16} strokeWidth={2.25} />, label: 'Duplicate' },
-                  ...(t.status === 'active' && !t.isDefault ? [{ key: 'default', icon: <Star size={16} strokeWidth={2.25} />, label: 'Set as default' }] : []),
-                  { type: 'divider' as const },
-                  ...(t.status === 'draft' ? [{ key: 'activate', icon: <Power size={16} strokeWidth={2.25} />, label: 'Activate' }] : []),
-                  ...(t.status === 'active' ? [{ key: 'archive', danger: true, icon: <Archive size={16} strokeWidth={2.25} />, label: 'Archive' }] : []),
-                ] : []),
-              ],
-              onClick: ({ key }) => {
-                if (key === 'preview') setPreviewTemplate(t)
-                if (key === 'edit') onEdit(t)
-                if (key === 'duplicate') onDuplicate(t)
-                if (key === 'default') onSetDefault(t)
-                if (key === 'activate') onSetStatus(t, 'active')
-                if (key === 'archive') {
-                  modal.confirm({
-                    title: 'Archive this template?',
-                    content: 'Archived templates can no longer be edited or selected for new contracts.',
-                    okText: 'Archive',
-                    okButtonProps: { danger: true },
-                    onOk: () => onSetStatus(t, 'archived'),
-                  })
-                }
-              },
-            }}
-          >
-            <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
-          </Dropdown>
-        </div>
-      ),
+      render: (_, t) => !canManage ? null : <div onClick={e => e.stopPropagation()}>{actionsMenu(t)}</div>,
     },
   ]
+
+  // Mobile: name (and Default) and status on top; type and contract count
+  // below, with the maximum loan.
+  const mobileRows = mobileColumns<ContractTemplate>(t => (
+    <MobileTableRow
+      primary={t.isDefault ? `${t.name} · Default` : t.name}
+      trailing={statusTag(t)}
+      secondary={`${t.type === 'fixed_rate' ? 'Fixed Rate' : 'Free Rate'} · ${contractCount(t.id)} contracts`}
+      trailingSecondary={`฿${t.maxLoanAmount.toLocaleString()}`}
+    />
+  ))
 
   return (
     <ConfigProvider theme={{
@@ -202,13 +221,14 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
             </div>
           </div>
         )}
-        <div style={{ padding: 16 }}>
+        <div style={{ padding: tablePanelPadding(isMobile) }}>
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
-              columns={applyColumnPicker(withColumnMinWidths(columns))}
+              columns={isMobile ? mobileRows : applyColumnPicker(withColumnMinWidths(columns))}
+              {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               dataSource={templates}
-              scroll={templates.length > 0 ? { x: 'max-content', ...(fillHeight ? { y: '100%' } : {}) } : undefined}
+              scroll={templates.length > 0 ? (isMobile ? (fillHeight ? { y: '100%' } : undefined) : { x: 'max-content', ...(fillHeight ? { y: '100%' } : {}) }) : undefined}
               locale={{
                 emptyText: hasActiveFilter ? (
                   <TableEmptyState icon={<FileStack size={22} strokeWidth={2.25} />} title="No templates found" description="Try a different name, status, or type." />
@@ -230,6 +250,7 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
                     {range[0]}–{range[1]} of {total}
                   </span>
                 ),
+                ...(isMobile ? MOBILE_PAGINATION : {}),
               }}
             />
           </div>

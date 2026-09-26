@@ -112,7 +112,7 @@ export function UnitDetailPage() {
           overlay standing in for the full grid this panel used to show. */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', gap: 12 }}>
             <div
               style={{ position: 'relative', width: 40, height: 40, flexShrink: 0 }}
               onMouseEnter={() => setThumbnailHovered(true)}

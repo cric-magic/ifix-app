@@ -85,13 +85,15 @@ export function WorkspaceAccountPage() {
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+      {/* Wraps on narrow screens so Edit drops to its own row instead of
+          squeezing the name block — same as UserDetailPage's header. */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 16, rowGap: 12, marginBottom: 16 }}>
         <img
           src={merchant.logoUrl ?? getWorkspaceAvatarUrl(merchant.id)}
           alt=""
           style={{ width: 48, height: 48, borderRadius: 8, background: token.colorFillSecondary, flexShrink: 0, objectFit: 'cover' }}
         />
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: '1 1 240px', minWidth: 0 }}>
           <Typography.Text strong style={{ fontSize: 18, display: 'block' }} ellipsis>
             {merchant.name}
           </Typography.Text>
@@ -116,7 +118,8 @@ export function WorkspaceAccountPage() {
         <SettingsRow label="Format">{CONTRACT_FORMAT_LABELS[merchant.contractFormat]}</SettingsRow>
         <SettingsRow label="Prefix">{merchant.contractPrefix}</SettingsRow>
         <SettingsRow label="Next contract number">
-          <span style={{ fontFamily: token.fontFamilyCode }}>{previewContractNumber(merchant)}</span>
+          {/* A code — kept whole; the label wraps instead on narrow screens. */}
+          <span style={{ fontFamily: token.fontFamilyCode, whiteSpace: 'nowrap' }}>{previewContractNumber(merchant)}</span>
         </SettingsRow>
       </SettingsCard>
 

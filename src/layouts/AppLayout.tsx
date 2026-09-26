@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Avatar, Button, Drawer, Dropdown, Layout, Menu, Typography, theme } from 'antd'
+import { Avatar, Button, Drawer, Dropdown, Layout, Menu, Typography, theme, Divider } from 'antd'
 import {
   User, Package, FileText, Contact, Building2, Store,
   MoreHorizontal, LogOut, ChevronsUpDown, UserPlus,
@@ -280,6 +280,15 @@ export function AppLayout() {
     setMobileNavOpen(false)
   }
 
+  // For moving *within* the sidebar rather than leaving it: drilling into a
+  // section that has its own sub-menu (Products, workspace Settings,
+  // Account Settings) or backing out of one. The page underneath still
+  // changes, but on mobile the drawer stays open — closing it there hid the
+  // very menu the tap had just opened, before anything in it could be picked.
+  function openSection(path: string) {
+    navigate(path)
+  }
+
   const sidebarContent = (
     <>
           <Dropdown
@@ -323,7 +332,7 @@ export function AppLayout() {
                   : []),
               ],
               onClick: ({ key }) => {
-                if (key === 'settings') go('/settings/account')
+                if (key === 'settings') openSection('/settings/account')
                 if (key === 'invite') go('/settings/members?invite=1')
               },
             }}
@@ -390,7 +399,7 @@ export function AppLayout() {
                           <span />
                         </div>
                       ),
-                      onClick: () => go(homePath(user)),
+                      onClick: () => openSection(homePath(user)),
                     },
                   ]}
                 />
@@ -436,7 +445,7 @@ export function AppLayout() {
                           <span />
                         </div>
                       ),
-                      onClick: () => go(homePath(user)),
+                      onClick: () => openSection(homePath(user)),
                     },
                   ]}
                 />
@@ -476,7 +485,7 @@ export function AppLayout() {
                           <span />
                         </div>
                       ),
-                      onClick: () => go(homePath(user)),
+                      onClick: () => openSection(homePath(user)),
                     },
                   ]}
                 />
@@ -533,7 +542,7 @@ export function AppLayout() {
                           />
                         </div>
                       ),
-                      onClick: () => go('/products/catalog'),
+                      onClick: () => openSection('/products/catalog'),
                     },
                     // Same exclusion as Contracts above — Customers is also
                     // merchant-scoped, per canViewCustomers.
@@ -578,7 +587,7 @@ export function AppLayout() {
               ],
               onClick: ({ key }) => {
                 if (key === 'logout') handleLogout()
-                if (key === 'settings') go('/account/general')
+                if (key === 'settings') openSection('/account/general')
               },
             }}
           >
@@ -689,66 +698,97 @@ export function AppLayout() {
 
       <Layout style={{
         background: 'transparent',
-        margin: 8,
+        // On mobile the main panel runs edge to edge instead of floating as
+        // a rounded card: no side margin, square corners, no border or
+        // shadow, and (on the Header/Content below) no background of its
+        // own — a phone screen has no room to spare for the frame.
+        margin: isMobile ? '0' : 8,
         // 100% of this layout's own box (which now comes from the resizable
         // desktop window in App.tsx, not the true browser viewport) minus the
         // 8px top + 8px bottom margin above, so the rounded box always
         // reaches the bottom of that box and the margin actually reads as
         // bottom padding instead of just shrinking to fit whatever content
         // happens to render.
-        height: 'calc(100% - 16px)',
-        border: '0.5px solid var(--ifix-wrapper-border)',
-        borderRadius: 12,
+        height: isMobile ? '100%' : 'calc(100% - 16px)',
+        border: isMobile ? 'none' : '0.5px solid var(--ifix-wrapper-border)',
+        borderRadius: isMobile ? 0 : 12,
         overflow: 'hidden',
-        boxShadow: 'var(--ant-box-shadow)',
+        boxShadow: isMobile ? 'none' : 'var(--ant-box-shadow)',
       }}>
         <Header style={{
-          background: 'var(--ifix-wrapper-bg)',
+          background: isMobile ? 'transparent' : 'var(--ifix-wrapper-bg)',
           borderBottom: `0.5px solid ${token.colorSplit}`,
           padding: '0 16px',
           height: 56,
           lineHeight: '56px',
           display: 'grid',
-          gridTemplateColumns: '1fr auto 1fr',
+          // minmax(0, …) so a long breadcrumb in the left column truncates
+          // instead of pushing the right column out. The equal side columns
+          // only exist to keep centre content (Create/Edit Contract's steps)
+          // truly centred — without any, the breadcrumb takes all the room
+          // the right-hand actions don't need, rather than stopping at half.
+          gridTemplateColumns: headerContent?.center ? 'minmax(0, 1fr) auto minmax(0, 1fr)' : 'minmax(0, 1fr) auto',
+          columnGap: 16,
           alignItems: 'center',
           position: 'sticky',
           top: 0,
           zIndex: 100,
         }}>
-          <div style={{ justifySelf: 'start' }}>
+          {/* Collapse button, a separator, then the breadcrumb — left-aligned
+              rather than centred, so the way back sits where people reach
+              for it. With the breadcrumb centred, the collapse button was the
+              only thing top-left and kept getting tapped as "back". A page
+              that supplies its own centre content (Create/Edit Contract's
+              step indicator) still gets the centre column. */}
+          <div style={{ justifySelf: 'start', display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, maxWidth: '100%' }}>
             <Button
               type="text"
               size="small"
-              style={{ borderRadius: 6 }}
+              style={{ borderRadius: 6, flexShrink: 0 }}
+              aria-label={sidebarVisible ? 'Hide sidebar' : 'Show sidebar'}
               icon={sidebarVisible ? <PanelLeftClose size={16} strokeWidth={2.25} /> : <PanelLeftOpen size={16} strokeWidth={2.25} />}
               onClick={toggleSidebar}
             />
-          </div>
-          <div style={{ justifySelf: 'center', display: 'flex', alignItems: 'center', gap: 4 }}>
-            {headerContent?.center ?? breadcrumbParts.map((part, i) => {
-              const isLast = i === breadcrumbParts.length - 1
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  {i > 0 && <ChevronRight size={14} strokeWidth={2.25} style={{ color: token.colorTextQuaternary }} />}
-                  <Typography.Text
-                    strong={isLast}
-                    onClick={isLast ? undefined : () => navigate(breadcrumbBackUrl)}
-                    style={{
-                      fontSize: 14,
-                      color: isLast ? token.colorText : token.colorTextTertiary,
-                      cursor: isLast ? 'default' : 'pointer',
-                    }}
-                  >
-                    {part}
-                  </Typography.Text>
+            {!headerContent?.center && (
+              <>
+                <Divider vertical style={{ margin: 0, height: 16, borderColor: token.colorSplit }} />
+                {/* 16px (Spacing 4) from the line to the title — the row's
+                    8px gap plus this 8px — against 8px on the button side. */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, lineHeight: 'normal', marginLeft: 8 }}>
+                  {breadcrumbParts.map((part, i) => {
+                    const isLast = i === breadcrumbParts.length - 1
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flexShrink: isLast ? 1 : 0 }}>
+                        {i > 0 && <ChevronRight size={14} strokeWidth={2.25} style={{ color: token.colorTextQuaternary, flexShrink: 0 }} />}
+                        <Typography.Text
+                          strong={isLast}
+                          ellipsis={isLast}
+                          onClick={isLast ? undefined : () => navigate(breadcrumbBackUrl)}
+                          style={{
+                            fontSize: 14,
+                            color: isLast ? token.colorText : token.colorTextTertiary,
+                            cursor: isLast ? 'default' : 'pointer',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {part}
+                        </Typography.Text>
+                      </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
+              </>
+            )}
           </div>
+          {headerContent?.center && (
+            <div style={{ justifySelf: 'center', display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, maxWidth: '100%' }}>
+              {headerContent.center}
+            </div>
+          )}
           <div style={{ justifySelf: 'end' }}>{headerContent?.right}</div>
         </Header>
 
-        <Content style={{ padding: 16, overflow: 'auto', background: 'var(--ifix-wrapper-bg)' }}>
+        <Content style={{ padding: 16, overflow: 'auto', background: isMobile ? 'transparent' : 'var(--ifix-wrapper-bg)' }}>
           {/* height: 100% (not the default shrink-wrap) so a short page like
               PlaceholderPage can size itself against the Content area's own
               real height instead of an arbitrary vh guess — a real page's

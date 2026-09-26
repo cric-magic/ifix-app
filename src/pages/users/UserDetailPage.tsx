@@ -93,14 +93,17 @@ export function UserDetailPage() {
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+      {/* Wraps on narrow screens: the Edit / "…" buttons drop to their own
+          row rather than squeezing the name block (which broke the role
+          label onto two lines) — same idea as the entity detail headers. */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 16, rowGap: 12, marginBottom: 16 }}>
         <Avatar src={getAvatarUrl(account.id)} size={48} style={{ flexShrink: 0 }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: '1 1 240px', minWidth: 0 }}>
           <Typography.Text strong style={{ fontSize: 18, display: 'block' }} ellipsis>
             {account.name}
           </Typography.Text>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-            <Typography.Text type="secondary" style={{ fontSize: 13 }}>{ROLE_LABELS[account.role]}</Typography.Text>
+            <Typography.Text type="secondary" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{ROLE_LABELS[account.role]}</Typography.Text>
             <UserStatusTag status={account.status} />
           </div>
         </div>

@@ -1,18 +1,17 @@
 import { useState } from 'react'
-import { Alert, Button, Input, message } from 'antd'
-import { Plus, Search } from 'lucide-react'
+import { Alert, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
-import { useIconColors } from '../../constants/iconColors'
 import { MOCK_MERCHANTS } from '../../constants/mockMerchants'
 import { MOCK_CONTRACT_TEMPLATES, createStarterTemplates } from '../../constants/mockContractTemplates'
 import { canViewMerchantList, canManageMerchants } from '../../constants/roles'
 import type { Merchant } from '../../types/merchant'
 import { MerchantTable } from './components/MerchantTable'
 import { CreateMerchantModal } from './components/CreateMerchantModal'
+import { ListToolbar } from '../../components/ListToolbar'
+import { ListSearch } from '../../components/ListSearch'
 
 export function MerchantsPage() {
   const user = useCurrentUser()
-  const iconColors = useIconColors()
   const [version, setVersion] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -58,21 +57,10 @@ export function MerchantsPage() {
 
   return (
     <div className="ifix-fill-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
-        <Input
-          placeholder="Search by name or legal name"
-          prefix={<Search size={16} strokeWidth={2.25} color={iconColors.secondary} />}
-          allowClear
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ maxWidth: 320 }}
-        />
-        {canManageMerchants(user) && (
-          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => setCreateOpen(true)}>
-            Create Merchant
-          </Button>
-        )}
-      </div>
+      <ListToolbar
+        search={<ListSearch value={search} onChange={setSearch} placeholder="Search by name or legal name" mobilePlaceholder="Search merchants" />}
+        action={canManageMerchants(user) ? { label: 'Create Merchant', onClick: () => setCreateOpen(true) } : undefined}
+      />
 
       <MerchantTable
         merchants={merchants}
