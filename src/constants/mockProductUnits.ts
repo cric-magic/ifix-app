@@ -13,15 +13,24 @@ const BRANCHES: [name: string, code: string][] = [
 
 // Used stock is scarcer than new — two branches rather than all four — and
 // each unit carries the grade, battery and notes the Used type requires.
-const USED_STOCK: Record<string, { branch: string; grade: 'A' | 'B'; battery: number; notes: string }[]> = {
+// Bangkok HQ's used units are photographed from every side (`views`), so
+// there's always a unit with several condition photos to check the photo
+// stack and preview against; the rest have the single placeholder.
+const USED_STOCK: Record<string, { branch: string; grade: 'A' | 'B'; battery: number; notes: string; views?: string[] }[]> = {
   'iPhone 17 Pro': [
-    { branch: 'Bangkok HQ', grade: 'A', battery: 96, notes: 'Like new, original box' },
+    { branch: 'Bangkok HQ', grade: 'A', battery: 96, notes: 'Like new, original box', views: ['Front', 'Back', 'Left side', 'Right side'] },
     { branch: 'Chiang Mai', grade: 'B', battery: 89, notes: 'Light scratches on frame' },
   ],
   'Galaxy S25': [
-    { branch: 'Bangkok HQ', grade: 'B', battery: 91, notes: 'Small scuff on back panel' },
+    { branch: 'Bangkok HQ', grade: 'B', battery: 91, notes: 'Small scuff on back panel', views: ['Front', 'Back', 'Scuff close-up'] },
     { branch: 'Chiang Mai', grade: 'A', battery: 95, notes: 'Screen protector fitted' },
   ],
+}
+
+function conditionPhoto(sku: string, view?: string): string {
+  // placehold.co breaks lines on a literal backslash-n.
+  const text = view ? `${sku}\\n${view}` : sku
+  return `https://placehold.co/400x400/1a1a1a/999999?text=${encodeURIComponent(text)}`
 }
 
 function codeFor(branch: string): string {
@@ -78,7 +87,9 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = LINEUP_VARIANTS.flatMap(v => {
       grade: u.grade,
       batteryPercentage: u.battery,
       notes: u.notes,
-      conditionPhotos: [`https://placehold.co/400x400/1a1a1a/999999?text=${encodeURIComponent(v.skuCode)}`],
+      conditionPhotos: u.views
+        ? u.views.map(view => conditionPhoto(v.skuCode, view))
+        : [conditionPhoto(v.skuCode)],
     }))
   }
   return BRANCHES.map(([branch]) => base(branch))

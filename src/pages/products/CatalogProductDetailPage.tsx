@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Button, Tag, Typography, message, theme } from 'antd'
+import { Button, Tag, message, theme } from 'antd'
 import { Pencil, Lock, Package } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { canManageCatalogProducts, homePath } from '../../constants/roles'
 import { MOCK_CATALOG_PRODUCTS } from '../../constants/mockCatalogProducts'
 import { CATEGORY_LABELS, TYPE_LABELS } from '../../constants/products'
 import { DetailDescriptions } from '../../components/DetailDescriptions'
+import { DetailHeader } from '../../components/DetailHeader'
 import type { CatalogProduct } from '../../types/catalogProduct'
 import { CatalogProductModal } from './components/CatalogProductModal'
 import { ProductPhotoThumbnail } from './components/ProductPhotoThumbnail'
 import { PageEmptyState } from '../../components/PageEmptyState'
+import { MobileActionBar } from '../../components/MobileActionBar'
+import { useIsMobile } from '../../components/useIsMobile'
 
 // Super Admin's view of one standard catalog entry. Mirrors the header of a
 // merchant's product detail (detail/OverviewTab) — photo, name and Type tag
@@ -22,6 +25,7 @@ export function CatalogProductDetailPage() {
   const actor = useCurrentUser()
   const navigate = useNavigate()
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const [editOpen, setEditOpen] = useState(false)
   const [version, setVersion] = useState(0)
   void version // re-render after the mock record is replaced in place
@@ -72,18 +76,24 @@ export function CatalogProductDetailPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', gap: 12 }}>
-          <ProductPhotoThumbnail photos={product.photos} alt={product.name} />
-          <Typography.Title level={4} style={{ margin: 0 }}>{product.name}</Typography.Title>
+      <DetailHeader
+        leading={<ProductPhotoThumbnail photos={product.photos} alt={product.name} />}
+        title={product.name}
+        tags={(
           <Tag style={{ margin: 0, background: token.colorFillSecondary, color: token.colorTextSecondary, fontSize: token.fontSizeSM, border: 'none' }}>
             {TYPE_LABELS[product.type]}
           </Tag>
-        </div>
-        <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
-      </div>
+        )}
+        actions={<Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>}
+      />
 
       <DetailDescriptions items={items} />
+
+      {isMobile && (
+        <MobileActionBar>
+          <Button type="primary" icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+        </MobileActionBar>
+      )}
 
       <CatalogProductModal
         open={editOpen}

@@ -11,12 +11,15 @@ import { GRADE_LABELS, TAX_LABELS } from '../../constants/products'
 import { useIconColors } from '../../constants/iconColors'
 import { IMAGE_PREVIEW_CLOSE_ICON } from '../../constants/imagePreviewIcons'
 import { DetailDescriptions } from '../../components/DetailDescriptions'
+import { DetailHeader } from '../../components/DetailHeader'
 import { UnitAvailabilityTag } from './components/UnitAvailabilityTag'
 import { EditUnitModal } from './components/EditUnitModal'
 import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 import { UnitProductName } from './components/UnitProductName'
 import { UnitPrice } from './components/UnitPrice'
 import { PageEmptyState } from '../../components/PageEmptyState'
+import { MobileActionBar } from '../../components/MobileActionBar'
+import { useIsMobile } from '../../components/useIsMobile'
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -26,6 +29,7 @@ export function UnitDetailPage() {
   const navigate = useNavigate()
   const { token } = theme.useToken()
   const iconColors = useIconColors()
+  const isMobile = useIsMobile()
   const [editOpen, setEditOpen] = useState(false)
   const [printOpen, setPrintOpen] = useState(false)
   const [version, setVersion] = useState(0)
@@ -58,6 +62,7 @@ export function UnitDetailPage() {
   const product = MOCK_PRODUCTS.find(p => p.id === unit.productId)
   const canEdit = canManageUnits(user)
   const canPrint = canPrintUnitCodes(user)
+  const canEditUnit = canEdit && unit.availability !== 'sold'
   const soldByUser = unit.soldAt ? MOCK_USER_ACCOUNTS.find(a => a.id === unit.soldBy) : undefined
 
   const allPhotos = (unit.conditionPhotos ?? []).map((src, i) => ({ src, label: `Condition ${i + 1}` }))
@@ -104,15 +109,12 @@ export function UnitDetailPage() {
 
   return (
     <div>
-      {/* Same page-header pattern as Products' catalog OverviewTab:
-          title/tags on the left, actions on the right, no card chrome (see
-          that file for why — antd dropped PageHeader from core in v5+, so
-          this reproduces its layout by hand). The photo gallery shrinks to
-          the same 40px thumbnail beside the title, with a hover "+N"
-          overlay standing in for the full grid this panel used to show. */}
+      {/* The photo gallery shrinks to the same 40px thumbnail beside the
+          title, with a hover "+N" overlay standing in for the full grid this
+          panel used to show. On mobile the actions move to the bottom bar. */}
       <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', gap: 12 }}>
+        <DetailHeader
+          leading={(
             <div
               style={{ position: 'relative', width: 40, height: 40, flexShrink: 0 }}
               onMouseEnter={() => setThumbnailHovered(true)}
@@ -176,21 +178,22 @@ export function UnitDetailPage() {
                 </div>
               )}
             </div>
-
-            {/* Serial Number, not IMEI — it's the required primary identifier
-                now that IMEI is optional and absent on laptops/accessories. */}
-            <Typography.Title level={4} style={{ margin: 0 }}>{unit.serialNumber}</Typography.Title>
-            <UnitAvailabilityTag availability={unit.availability} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {canPrint && (
-              <Button icon={<Printer size={16} strokeWidth={2.25} />} onClick={() => setPrintOpen(true)}>Print label</Button>
-            )}
-            {canEdit && unit.availability !== 'sold' && (
-              <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
-            )}
-          </div>
-        </div>
+          )}
+          // Serial Number, not IMEI — it's the required primary identifier
+          // now that IMEI is optional and absent on laptops/accessories.
+          title={unit.serialNumber}
+          tags={<UnitAvailabilityTag availability={unit.availability} />}
+          actions={(canPrint || canEditUnit) && (
+            <>
+              {canPrint && (
+                <Button icon={<Printer size={16} strokeWidth={2.25} />} onClick={() => setPrintOpen(true)}>Print label</Button>
+              )}
+              {canEditUnit && (
+                <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+              )}
+            </>
+          )}
+        />
 
         <DetailDescriptions items={detailItems} />
       </div>
@@ -224,6 +227,22 @@ export function UnitDetailPage() {
           {unit.notes || <span style={{ color: token.colorTextDisabled }}>No notes</span>}
         </div>
       </div>
+
+      {/* Mobile: Edit in the bottom bar, Print label behind "…" — or Print
+          label itself for someone who can't edit (or once it's sold). */}
+      {isMobile && (canPrint || canEditUnit) && (
+        <MobileActionBar
+          more={canEditUnit && canPrint
+            ? [{ key: 'print', label: 'Print label', icon: <Printer size={16} strokeWidth={2.25} />, onClick: () => setPrintOpen(true) }]
+            : []}
+        >
+          {canEditUnit ? (
+            <Button type="primary" icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+          ) : (
+            <Button type="primary" icon={<Printer size={16} strokeWidth={2.25} />} onClick={() => setPrintOpen(true)}>Print label</Button>
+          )}
+        </MobileActionBar>
+      )}
 
       <EditUnitModal
         open={editOpen}

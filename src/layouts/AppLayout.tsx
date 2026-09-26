@@ -23,6 +23,7 @@ import { MOCK_CUSTOMERS } from '../constants/mockCustomers'
 import { getAvatarUrl, getWorkspaceAvatarUrl } from '../utils/avatar'
 import ifixLogoDark from '../assets/logo.png'
 import ifixLogoLight from '../assets/logo-light.png'
+import { TableScrollbars } from '../components/TableScrollbars'
 
 const { Header, Sider, Content } = Layout
 
@@ -629,6 +630,7 @@ export function AppLayout() {
 
   return (
     <Layout style={{ height: '100%', background: 'transparent' }}>
+      <TableScrollbars />
       {!isMobile && (
         <Sider width={220} collapsedWidth={220} collapsed={false} trigger={null} style={{
           background: 'transparent',

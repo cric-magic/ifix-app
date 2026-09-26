@@ -11,6 +11,9 @@ import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import { canAdjustPenalty, canManageCollectionFee } from '../../../constants/roles'
 import { addCollectionFee, addPenaltyDiscount, voidCollectionFee, voidPenaltyDiscount, waiveCollectionFee } from '../../../utils/contract'
 import { MOCK_MERCHANTS } from '../../../constants/mockMerchants'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns } from '../../../components/mobileTable'
 
 interface Props {
   contract: Contract
@@ -25,6 +28,7 @@ interface Props {
 // as the Payment module's Record/Void.
 export function PenaltyTab({ contract, actor, onChanged }: Props) {
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const { message } = App.useApp()
   const appWindow = useAppWindowContainer()
   const merchant = MOCK_MERCHANTS.find(m => m.id === contract.merchantId)
@@ -140,6 +144,37 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
     }] : []),
   ]
 
+  // Mobile rows: the reason and the amount (struck through once voided or
+  // waived) on top; date and who added it below, or what undid it. Void and
+  // Waive stay on desktop, like other row actions.
+  const struck = { textDecoration: 'line-through', color: token.colorTextDisabled }
+  const discountRows = mobileColumns<PenaltyAdjustment>(r => (
+    <MobileTableRow
+      primary={r.reason}
+      trailing={<span style={r.voided ? struck : { color: token.colorText }}><CurrencyDisplay amount={r.amount} /></span>}
+      secondary={r.voided
+        ? <span style={{ color: token.colorError }}>Voided — {r.voidReason}</span>
+        : `${r.createdAt.slice(0, 10)} · ${r.createdBy}`}
+    />
+  ))
+  const feeRows = mobileColumns<CollectionFeeRecord>(r => (
+    <MobileTableRow
+      primary={r.reason || 'Collection fee'}
+      trailing={<span style={r.voided || r.waived ? struck : { color: token.colorText }}><CurrencyDisplay amount={r.amount} /></span>}
+      secondary={r.voided
+        ? <span style={{ color: token.colorError }}>Voided — {r.voidReason}</span>
+        : r.waived
+          ? `Waived — ${r.waiveReason}`
+          : `${r.addedAt.slice(0, 10)} · ${r.addedBy}`}
+    />
+  ))
+
+  // The summary figures: a row of up to three on desktop; on mobile an even
+  // three-column grid so they share the width instead of running past it.
+  const statsStyle = isMobile
+    ? { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 16, marginBottom: 16 }
+    : { display: 'flex', alignItems: 'center', gap: 32, marginBottom: 16 }
+
   return (
     <div style={{ marginBottom: 16 }}>
       <div className="ifix-table-panel" style={{ marginBottom: 16 }}>
@@ -152,7 +187,7 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
           {canAdjust && <Button icon={<AlertTriangle size={16} strokeWidth={2.25} />} onClick={openDiscountModal}>Add Discount</Button>}
         </div>
         <div style={{ padding: 16 }}>
-          <Space size={32} style={{ marginBottom: 16 }}>
+          <div style={statsStyle}>
             <div>
               <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Charged to date</Typography.Text>
               <Typography.Text strong style={{ fontSize: 18 }}><CurrencyDisplay amount={contract.penaltyChargedTotal} /></Typography.Text>
@@ -167,10 +202,11 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
               <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Max cap</Typography.Text>
               <Typography.Text style={{ fontSize: 18 }}><CurrencyDisplay amount={contract.template.penalty.maxCap} /></Typography.Text>
             </div>
-          </Space>
+          </div>
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
-              rowKey="id" columns={discountColumns} dataSource={contract.penaltyAdjustments} size="small" pagination={false}
+              rowKey="id" columns={isMobile ? discountRows : discountColumns} dataSource={contract.penaltyAdjustments} size="small" pagination={false}
+              {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               locale={{ emptyText: <TableEmptyState icon={<AlertTriangle size={22} strokeWidth={2.25} />} title="No discounts yet" description="Penalty discounts applied to this contract will show up here." /> }}
             />
           </div>
@@ -187,14 +223,14 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
           {canManageFee && merchant?.collectionFeeEnabled && <Button icon={<Receipt size={16} strokeWidth={2.25} />} onClick={openFeeModal}>Add Fee</Button>}
         </div>
         <div style={{ padding: 16 }}>
-          <Space size={32} style={{ marginBottom: 16 }}>
+          <div style={statsStyle}>
             <div>
               <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Balance owed</Typography.Text>
               <Typography.Text strong style={{ fontSize: 18, color: contract.collectionFeeBalance > 0 ? token.colorError : undefined }}>
                 <CurrencyDisplay amount={contract.collectionFeeBalance} />
               </Typography.Text>
             </div>
-          </Space>
+          </div>
           {!merchant?.collectionFeeEnabled && (
             <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 16, fontSize: 13 }}>
               Collection Fees are disabled for this merchant — see Settings → Account.
@@ -202,7 +238,8 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
           )}
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
-              rowKey="id" columns={feeColumns} dataSource={contract.collectionFees} size="small" pagination={false}
+              rowKey="id" columns={isMobile ? feeRows : feeColumns} dataSource={contract.collectionFees} size="small" pagination={false}
+              {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               locale={{ emptyText: <TableEmptyState icon={<Receipt size={22} strokeWidth={2.25} />} title="No collection fees yet" description="Collection fees added to this contract will show up here." /> }}
             />
           </div>

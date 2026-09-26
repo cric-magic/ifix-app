@@ -21,6 +21,11 @@ export function TableEmptyState({ icon, title, description, action }: Props) {
       alignItems: 'center',
       justifyContent: 'center',
       gap: 16,
+      // Table cells are nowrap (see .ifix-panel-table in index.css) — the
+      // description has to wrap anyway, or on a phone it runs off both
+      // sides of the panel.
+      whiteSpace: 'normal',
+      padding: '0 16px',
     }}>
       <div style={{
         width: 56,

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { App, Button, ConfigProvider, Dropdown, Table, Typography, theme } from 'antd'
-import { Plus, Pencil, Printer, Trash2, MoreHorizontal, Smartphone } from 'lucide-react'
+import { App, Avatar, Button, ConfigProvider, Dropdown, Table, Typography, theme } from 'antd'
+import { Plus, Pencil, Printer, Trash2, MoreHorizontal, Smartphone, ImageOff } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import type { AuthUser } from '../../../types/installment'
 import type { Product, ProductUnit } from '../../../types/product'
@@ -16,6 +16,12 @@ import { TableEmptyState } from '../../../components/TableEmptyState'
 import { UnitPrice } from '../components/UnitPrice'
 import { useColumnPicker } from '../../../components/useColumnPicker'
 import { withColumnMinWidths } from '../../../components/tableColumns'
+import { useIconColors } from '../../../constants/iconColors'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
+
+const priceFormatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 
 interface Props {
   actor: AuthUser
@@ -25,6 +31,8 @@ interface Props {
 export function UnitsTab({ actor, product }: Props) {
   const applyColumnPicker = useColumnPicker('product-units', ['serialNumber', 'availability'])
   const { token } = theme.useToken()
+  const iconColors = useIconColors()
+  const isMobile = useIsMobile()
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
   const [version, setVersion] = useState(0)
@@ -110,6 +118,30 @@ export function UnitsTab({ actor, product }: Props) {
     },
   ]
 
+  // Mobile: the Units list's row (UnitsListPage), with branch and grade
+  // where that one has the product — the product is this page. The whole
+  // row opens the unit; printing and editing happen there.
+  const mobileRows = mobileColumns<ProductUnit>(u => {
+    const price = u.customPrice ?? product.salesPrice
+    return (
+      <MobileTableRow
+        leading={(
+          <Avatar
+            shape="square"
+            size={44}
+            src={u.conditionPhotos?.[0] ?? product.photos?.[0]}
+            icon={<ImageOff size={16} strokeWidth={2.25} />}
+            style={{ backgroundColor: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}
+          />
+        )}
+        primary={u.serialNumber}
+        trailing={<UnitAvailabilityTag availability={u.availability} />}
+        secondary={u.grade ? `${u.branch} · ${GRADE_LABELS[u.grade]}` : u.branch}
+        trailingSecondary={price != null ? priceFormatter.format(price) : undefined}
+      />
+    )
+  })
+
   return (
     <div>
       <ConfigProvider theme={{
@@ -147,15 +179,17 @@ export function UnitsTab({ actor, product }: Props) {
           )}
         </div>
 
-        <div style={{ padding: 16 }}>
+        <div style={{ padding: tablePanelPadding(isMobile) }}>
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
           <Table
             rowKey="id"
-            columns={applyColumnPicker(withColumnMinWidths(columns, 'serialNumber'))}
+            columns={isMobile ? mobileRows : applyColumnPicker(withColumnMinWidths(columns, 'serialNumber'))}
+            {...(isMobile ? MOBILE_TABLE_PROPS : {})}
             dataSource={units}
             size="small"
             pagination={false}
-            scroll={{ x: 'max-content' }}
+            scroll={isMobile ? undefined : { x: 'max-content' }}
+            onRow={isMobile ? record => ({ onClick: () => navigate(`/products/unit/${record.id}`), style: { cursor: 'pointer' } }) : undefined}
             locale={{
               emptyText: <TableEmptyState icon={<Smartphone size={22} strokeWidth={2.25} />} title="No units yet" description="Units added to this product will show up here." />,
             }}

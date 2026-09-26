@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, ConfigProvider, Segmented, Space, Typography, message, theme } from 'antd'
-import { Printer, Download } from 'lucide-react'
+import { Button, ConfigProvider, Drawer, Dropdown, Segmented, Space, Typography, message, theme } from 'antd'
+import { Printer, Download, MoreHorizontal } from 'lucide-react'
 import type { Contract, SignedContractFile } from '../../../types/contract'
 import { MOCK_MERCHANTS } from '../../../constants/mockMerchants'
 import { MOCK_BRANCHES } from '../../../constants/mockBranches'
 import { MOCK_USER_ACCOUNTS } from '../../../constants/mockUsers'
-import { ContractDocument } from '../../../components/ContractDocument'
+import { CONTRACT_DESK_WIDTH, ContractDocument } from '../../../components/ContractDocument'
+import { FitToWidth } from '../../../components/FitToWidth'
 import { PAPER_THEME } from '../../../constants/paperTheme'
 import { buildContractDocument } from '../../../utils/contractDocument'
 import { downloadContractPdf } from '../../../utils/contractPdf'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 
 interface Props {
   contract: Contract
@@ -35,24 +38,31 @@ export function ContractPreviewTab({ contract }: Props) {
   const branch = MOCK_BRANCHES.find(b => b.merchantId === contract.merchantId && b.name === contract.branch)
 
   const data = buildContractDocument(contract, merchant, branch)
-  const pageRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
+  const appWindow = useAppWindowContainer()
+  const [fullSize, setFullSize] = useState(false)
+  const exportRef = useRef<HTMLDivElement>(null)
   const [exporting, setExporting] = useState(false)
   const signed = contract.signedContract
   const [view, setView] = useState<View>('generated')
   const showingSigned = view === 'signed' && !!signed
 
-  async function handleDownload() {
-    const page = pageRef.current?.querySelector<HTMLElement>('.ifix-contract-page')
-    if (!page) return
+  // Download PDF captures a separate, off-screen copy of the page held at
+  // its true width (rendered only while exporting, below) rather than the
+  // one on screen — that one is scaled to fit a narrow panel, and would
+  // come out as a shrunken page.
+  function handleDownload() {
     setExporting(true)
-    try {
-      await downloadContractPdf(page, `${contract.contractNumber}.pdf`)
-    } catch {
-      message.error('Could not generate the PDF')
-    } finally {
-      setExporting(false)
-    }
   }
+
+  useEffect(() => {
+    if (!exporting) return
+    const page = exportRef.current?.querySelector<HTMLElement>('.ifix-contract-page')
+    if (!page) return
+    downloadContractPdf(page, `${contract.contractNumber}.pdf`)
+      .catch(() => message.error('Could not generate the PDF'))
+      .finally(() => setExporting(false))
+  }, [exporting, contract.contractNumber])
 
   function handleDownloadSigned() {
     signed?.files.forEach(file => {
@@ -64,6 +74,18 @@ export function ContractPreviewTab({ contract }: Props) {
   }
 
   const uploader = signed ? MOCK_USER_ACCOUNTS.find(a => a.id === signed.uploadedBy)?.name : undefined
+
+  const viewSwitch = signed && (
+    <Segmented<View>
+      value={view}
+      onChange={setView}
+      block={isMobile}
+      options={[
+        { value: 'generated', label: 'Generated' },
+        { value: 'signed', label: 'Signed copy' },
+      ]}
+    />
+  )
 
   return (
     <div className="ifix-table-panel" style={{ marginBottom: 16 }}>
@@ -77,35 +99,58 @@ export function ContractPreviewTab({ contract }: Props) {
         boxShadow: `inset 0 -0.5px 0 0 ${token.colorBorderSecondary}`,
       }}>
         <Typography.Text strong style={{ fontSize: 15 }}>Contract Preview</Typography.Text>
-        <Space size={8} style={{ paddingRight: 2 }}>
-          {signed && (
-            <Segmented<View>
-              value={view}
-              onChange={setView}
-              options={[
-                { value: 'generated', label: 'Generated' },
-                { value: 'signed', label: 'Signed copy' },
-              ]}
-            />
-          )}
-          {showingSigned ? (
-            <Button icon={<Download size={16} strokeWidth={2.25} />} onClick={handleDownloadSigned}>
-              Download
-            </Button>
-          ) : (
-            <Space size={4}>
-              <Button icon={<Printer size={16} strokeWidth={2.25} />} onClick={() => window.print()}>Print</Button>
-              <Button
-                icon={<Download size={16} strokeWidth={2.25} />}
-                loading={exporting}
-                onClick={handleDownload}
-              >
-                Download PDF
+        {isMobile ? (
+          // Mobile: the header keeps its actions (per the panel-header
+          // rule) but folds them behind "…" — Print and Download PDF plus
+          // the view switch don't fit beside the title at phone width. The
+          // switch gets its own row below instead.
+          <div style={{ paddingRight: 2 }}>
+            <Dropdown
+              trigger={['click']}
+              placement="bottomRight"
+              menu={{
+                items: showingSigned
+                  ? [{ key: 'download-signed', icon: <Download size={16} strokeWidth={2.25} />, label: 'Download' }]
+                  : [
+                    { key: 'print', icon: <Printer size={16} strokeWidth={2.25} />, label: 'Print' },
+                    { key: 'download', icon: <Download size={16} strokeWidth={2.25} />, label: 'Download PDF', disabled: exporting },
+                  ],
+                onClick: ({ key }) => {
+                  if (key === 'print') window.print()
+                  if (key === 'download') handleDownload()
+                  if (key === 'download-signed') handleDownloadSigned()
+                },
+              }}
+            >
+              <Button aria-label="Contract actions" loading={exporting} icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
+            </Dropdown>
+          </div>
+        ) : (
+          <Space size={8} style={{ paddingRight: 2 }}>
+            {viewSwitch}
+            {showingSigned ? (
+              <Button icon={<Download size={16} strokeWidth={2.25} />} onClick={handleDownloadSigned}>
+                Download
               </Button>
-            </Space>
-          )}
-        </Space>
+            ) : (
+              <Space size={4}>
+                <Button icon={<Printer size={16} strokeWidth={2.25} />} onClick={() => window.print()}>Print</Button>
+                <Button
+                  icon={<Download size={16} strokeWidth={2.25} />}
+                  loading={exporting}
+                  onClick={handleDownload}
+                >
+                  Download PDF
+                </Button>
+              </Space>
+            )}
+          </Space>
+        )}
       </div>
+
+      {isMobile && viewSwitch && (
+        <div style={{ padding: 16, boxShadow: `inset 0 -0.5px 0 0 ${token.colorBorderSecondary}` }}>{viewSwitch}</div>
+      )}
 
       {showingSigned ? (
         <ConfigProvider theme={PAPER_THEME}>
@@ -115,8 +160,42 @@ export function ContractPreviewTab({ contract }: Props) {
           />
         </ConfigProvider>
       ) : (
-        <div ref={pageRef}>
-          <ContractDocument data={data} />
+        // On mobile the fitted page is an overview — its text is far too
+        // small to read at phone width — so tapping it opens the page at
+        // full size, scrolling both ways, like opening an attachment.
+        <div
+          role={isMobile ? 'button' : undefined}
+          aria-label={isMobile ? 'View contract full size' : undefined}
+          onClick={isMobile ? () => setFullSize(true) : undefined}
+          style={isMobile ? { cursor: 'zoom-in' } : undefined}
+        >
+          <FitToWidth width={CONTRACT_DESK_WIDTH}>
+            <ContractDocument data={data} fixedWidth />
+          </FitToWidth>
+          {isMobile && (
+            <Typography.Text type="secondary" style={{ display: 'block', textAlign: 'center', fontSize: token.fontSizeSM, padding: '12px 16px' }}>
+              Tap the page to view it full size
+            </Typography.Text>
+          )}
+        </div>
+      )}
+
+      <Drawer
+        title={contract.contractNumber}
+        open={fullSize}
+        onClose={() => setFullSize(false)}
+        getContainer={appWindow ?? undefined}
+        destroyOnHidden
+        styles={{ body: { padding: 0, overflow: 'auto' } }}
+      >
+        <div style={{ width: CONTRACT_DESK_WIDTH }}>
+          <ContractDocument data={data} fixedWidth />
+        </div>
+      </Drawer>
+
+      {exporting && (
+        <div ref={exportRef} style={{ position: 'fixed', left: -10000, top: 0, width: CONTRACT_DESK_WIDTH }} aria-hidden>
+          <ContractDocument data={data} fixedWidth />
         </div>
       )}
     </div>

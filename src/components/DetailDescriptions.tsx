@@ -20,6 +20,18 @@ import type { DescriptionsProps } from 'antd'
 // them, one full-width (vertical, label-above-value) column otherwise.
 // This is what "responds to the viewport" has to mean here — not the
 // window, but the space this component actually has.
+//
+// The narrow layout is one item per row, label on the left and value on
+// the right (like SettingsRow) — not label-above-value, which spent two
+// lines on every field and made a phone scroll twice as far. The exception
+// is a field the page marks as long with `className:
+// 'ifix-descriptions-stacked'` (an address, a UUID): long text squeezed
+// into the right half and right-aligned reads badly, so those keep
+// label-above-value. The class does nothing on the two-column grid.
+//
+// Items render in the same order at every width — a page puts its long,
+// stacked fields last so the narrow list doesn't switch layout back and
+// forth.
 const TWO_COLUMN_MIN_WIDTH = 480
 
 export function DetailDescriptions(props: DescriptionsProps) {
@@ -37,17 +49,18 @@ export function DetailDescriptions(props: DescriptionsProps) {
   }, [])
 
   // Two columns only once measured wide enough to fit them — null (not
-  // measured yet, first paint) also stacks, so there's never a flash of
-  // cramped columns before the real width is known.
+  // measured yet, first paint) also gets the single column, so there's
+  // never a flash of cramped columns before the real width is known.
   const twoColumn = width !== null && width >= TWO_COLUMN_MIN_WIDTH
 
   return (
     <div ref={containerRef}>
       <Descriptions
-        className="ifix-compact-descriptions"
+        className={twoColumn ? 'ifix-compact-descriptions' : 'ifix-compact-descriptions ifix-descriptions-split'}
         bordered={false}
-        layout={twoColumn ? 'horizontal' : 'vertical'}
+        layout="horizontal"
         column={twoColumn ? 2 : 1}
+        colon={twoColumn}
         labelStyle={{ fontSize: 14 }}
         contentStyle={{ fontSize: 14 }}
         {...props}

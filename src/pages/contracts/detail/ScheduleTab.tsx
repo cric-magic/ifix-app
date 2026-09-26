@@ -15,6 +15,9 @@ import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import { ScheduleStatusTag } from '../components/ScheduleStatusTag'
 import { canRecordPayment } from '../../../constants/roles'
 import { getNextDue, recordPayment } from '../../../utils/contract'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 
 interface Props {
   contract: Contract
@@ -39,6 +42,7 @@ interface PaymentFormValues {
 // this component.
 export function ScheduleTab({ contract, actor, onChanged }: Props) {
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const { message } = App.useApp()
   const appWindow = useAppWindowContainer()
   const [form] = Form.useForm<PaymentFormValues>()
@@ -81,6 +85,17 @@ export function ScheduleTab({ contract, actor, onChanged }: Props) {
     { title: 'Status', key: 'status', fixed: 'right', render: (_, s) => <ScheduleStatusTag status={s.status} /> },
   ]
 
+  // Mobile: the item and its status on top; due date (and paid date, once
+  // paid) below, with the amount.
+  const mobileRows = mobileColumns<ScheduleItem>(item => (
+    <MobileTableRow
+      primary={item.label}
+      trailing={<ScheduleStatusTag status={item.status} />}
+      secondary={item.paidDate ? `Due ${item.dueDate} · Paid ${item.paidDate}` : `Due ${item.dueDate}`}
+      trailingSecondary={<CurrencyDisplay amount={item.amount} />}
+    />
+  ))
+
   return (
     <div className="ifix-table-panel" style={{ marginBottom: 16 }}>
       <div style={{
@@ -98,16 +113,17 @@ export function ScheduleTab({ contract, actor, onChanged }: Props) {
         )}
       </div>
 
-      <div style={{ padding: 16 }}>
+      <div style={{ padding: tablePanelPadding(isMobile) }}>
         <ConfigProvider theme={{ components: { Table: { colorText: token.colorTextTertiary, headerColor: token.colorTextTertiary } } }}>
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="period"
-              columns={columns}
+              columns={isMobile ? mobileRows : columns}
+              {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               dataSource={contract.schedule}
               size="small"
               pagination={false}
-              scroll={contract.schedule.length > 0 ? { x: 'max-content' } : undefined}
+              scroll={contract.schedule.length > 0 && !isMobile ? { x: 'max-content' } : undefined}
               // Per the doc: "Overdue (highlighted)" — the item past its
               // due date without full payment gets a tinted row, same
               // functional-error background used elsewhere for this kind

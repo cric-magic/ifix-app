@@ -7,13 +7,16 @@ import { canManageProducts, canViewProducts, homePath } from '../../constants/ro
 import { EditProductModal } from './components/EditProductModal'
 import { OverviewTab } from './detail/OverviewTab'
 import { UnitsTab } from './detail/UnitsTab'
-import { Lock, Package } from 'lucide-react'
+import { Lock, Package, Pencil } from 'lucide-react'
 import { PageEmptyState } from '../../components/PageEmptyState'
+import { MobileActionBar } from '../../components/MobileActionBar'
+import { useIsMobile } from '../../components/useIsMobile'
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
   const user = useCurrentUser()
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const [editOpen, setEditOpen] = useState(false)
   const [version, setVersion] = useState(0)
 
@@ -48,6 +51,12 @@ export function ProductDetailPage() {
       <OverviewTab actor={user} product={product} canEdit={canEdit} onEdit={() => setEditOpen(true)} />
 
       <UnitsTab actor={user} product={product} />
+
+      {isMobile && canEdit && (
+        <MobileActionBar>
+          <Button type="primary" icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+        </MobileActionBar>
+      )}
 
       <EditProductModal
         open={editOpen}

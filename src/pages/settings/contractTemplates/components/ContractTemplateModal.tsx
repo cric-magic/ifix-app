@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Drawer, Button, Space, Form, Input, Radio, Divider, Typography, theme } from 'antd'
 import { InputNumber } from '../../../../components/AppInputNumber'
 import { Plus, Trash2 } from 'lucide-react'
@@ -192,14 +193,14 @@ export function ContractTemplateModal({ open, template, merchantId, onClose, onS
           ]} />
         </Form.Item>
 
-        <Space.Compact block>
-          <Form.Item label="Min Down Payment (%)" name="minDownPaymentPercent" rules={[{ required: true, message: 'Required' }]} style={{ width: '50%' }}>
+        <FieldPair stacked={!sideBySide}>
+          <Form.Item label="Min Down Payment (%)" name="minDownPaymentPercent" rules={[{ required: true, message: 'Required' }]}>
             <InputNumber style={{ width: '100%' }} min={0} max={100} addonAfter="%" />
           </Form.Item>
-          <Form.Item label="Max Down Payment (%)" name="maxDownPaymentPercent" rules={[{ required: true, message: 'Required' }]} style={{ width: '50%' }}>
+          <Form.Item label="Max Down Payment (%)" name="maxDownPaymentPercent" rules={[{ required: true, message: 'Required' }]}>
             <InputNumber style={{ width: '100%' }} min={0} max={100} addonAfter="%" />
           </Form.Item>
-        </Space.Compact>
+        </FieldPair>
 
         <Form.Item label="Max Loan Amount (฿)" name="maxLoanAmount" rules={[{ required: true, message: 'Required' }]}>
           <InputNumber style={{ width: '100%' }} min={0} step={1000} addonBefore="฿" />
@@ -287,14 +288,14 @@ export function ContractTemplateModal({ open, template, merchantId, onClose, onS
           </Form.Item>
         )}
 
-        <Space.Compact block>
-          <Form.Item label="Grace Period (days)" name="penaltyGraceDays" rules={[{ required: true, message: 'Required' }]} style={{ width: '50%' }}>
+        <FieldPair stacked={!sideBySide}>
+          <Form.Item label="Grace Period (days)" name="penaltyGraceDays" rules={[{ required: true, message: 'Required' }]}>
             <InputNumber style={{ width: '100%' }} min={0} max={30} addonAfter="days" />
           </Form.Item>
-          <Form.Item label="Max Penalty Cap (฿)" name="penaltyMaxCap" rules={[{ required: true, message: 'Required' }]} style={{ width: '50%' }}>
+          <Form.Item label="Max Penalty Cap (฿)" name="penaltyMaxCap" rules={[{ required: true, message: 'Required' }]}>
             <InputNumber style={{ width: '100%' }} min={0} step={500} addonBefore="฿" />
           </Form.Item>
-        </Space.Compact>
+        </FieldPair>
 
         <Form.Item label="Penalty Legal Text" name="penaltyLegalText" rules={[{ required: true, message: 'Required' }]}>
           <Input.TextArea rows={2} />
@@ -325,5 +326,18 @@ export function ContractTemplateModal({ open, template, merchantId, onClose, onS
         </div>
       </div>
     </Drawer>
+  )
+}
+
+// Two short fields sharing a row, joined into one control (Space.Compact) in
+// the form column beside the preview. In the single-column layout (phone
+// width, where every drawer form stacks its multi-column rows — see
+// index.css) each gets the full width instead.
+function FieldPair({ stacked, children }: { stacked: boolean; children: ReactNode }) {
+  if (stacked) return <>{children}</>
+  return (
+    <Space.Compact block className="ifix-field-pair">
+      {children}
+    </Space.Compact>
   )
 }

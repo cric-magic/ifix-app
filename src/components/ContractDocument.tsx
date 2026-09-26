@@ -71,15 +71,20 @@ export interface ContractDocumentData {
 // A contract is a paper artifact — dark on white whatever theme the app is
 // in — so the whole document renders under PAPER_THEME (see its own file for
 // why resetting the app's seeds is required, not just the algorithm).
-export function ContractDocument({ data }: { data: ContractDocumentData }) {
+//
+// fixedWidth holds the sheet at its true page width instead of letting it
+// narrow to fit (and reflow into a long strip) — for a caller that scales
+// the whole page down itself, like a document viewer (ContractPreviewTab),
+// or captures it at print size (the PDF export).
+export function ContractDocument({ data, fixedWidth }: { data: ContractDocumentData; fixedWidth?: boolean }) {
   return (
     <ConfigProvider theme={PAPER_THEME}>
-      <DocumentBody data={data} />
+      <DocumentBody data={data} fixedWidth={fixedWidth} />
     </ConfigProvider>
   )
 }
 
-function DocumentBody({ data }: { data: ContractDocumentData }) {
+function DocumentBody({ data, fixedWidth }: { data: ContractDocumentData; fixedWidth?: boolean }) {
   const { token } = theme.useToken()
   const { merchant, contract, customer, product, financials, schedule, payment, content } = data
 
@@ -99,6 +104,7 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
         // than one page grows past the ratio, as a real one would spill
         // onto a second sheet.
         maxWidth: PAGE_WIDTH,
+        ...(fixedWidth ? { width: PAGE_WIDTH } : {}),
         aspectRatio: `${PAGE_WIDTH} / ${PAGE_HEIGHT}`,
         margin: '0 auto',
         padding: 48,
@@ -255,6 +261,10 @@ function DocumentBody({ data }: { data: ContractDocumentData }) {
 // all three have to move together.
 const PAGE_WIDTH = 816
 const PAGE_HEIGHT = 1344
+
+// The document at its true size: the sheet plus the grey desk's 32px either
+// side — what a caller scaling the whole page down (FitToWidth) fits.
+export const CONTRACT_DESK_WIDTH = PAGE_WIDTH + 32 * 2
 
 type Token = ReturnType<typeof theme.useToken>['token']
 

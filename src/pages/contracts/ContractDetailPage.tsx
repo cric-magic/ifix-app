@@ -14,12 +14,16 @@ import { PenaltyTab } from './detail/PenaltyTab'
 import { ContractPreviewTab } from './detail/ContractPreviewTab'
 import { LifecycleActions } from './components/LifecycleActions'
 import { PageEmptyState } from '../../components/PageEmptyState'
+import { MobileActionBar } from '../../components/MobileActionBar'
+import { useIsMobile } from '../../components/useIsMobile'
+import { hasLifecycleAction } from './components/hasLifecycleAction'
 
 export function ContractDetailPage() {
   const { id } = useParams<{ id: string }>()
   const actor = useCurrentUser()
   const navigate = useNavigate()
   const [version, setVersion] = useState(0)
+  const isMobile = useIsMobile()
   void version // trigger re-render after mutating the mock record in place
 
   if (!canViewContracts(actor)) {
@@ -65,20 +69,46 @@ export function ContractDetailPage() {
 
   const hasSchedule = contract.schedule.some(s => s.period > 0)
 
+  function goToEdit() {
+    navigate(`/contracts/${contract!.id}/edit`)
+  }
+
+  // Mobile action bar: the lifecycle step (Start Review, Reject | Approve,
+  // Print Contract, …) gets the bar when there is one, with Edit behind
+  // "…"; otherwise Edit is the next step itself (Draft, Rejected) and takes
+  // the bar as the primary button.
+  const lifecycleInBar = canManage && hasLifecycleAction(contract, actor)
+  const mobileActions = isMobile && (
+    <MobileActionBar
+      more={lifecycleInBar && canEditFields
+        ? [{ key: 'edit', label: 'Edit', icon: <Pencil size={16} strokeWidth={2.25} />, onClick: goToEdit }]
+        : []}
+    >
+      {lifecycleInBar
+        ? <LifecycleActions contract={contract} actor={actor} onChanged={refresh} />
+        : canEditFields && (
+          <Button type="primary" icon={<Pencil size={16} strokeWidth={2.25} />} onClick={goToEdit}>
+            Edit
+          </Button>
+        )}
+    </MobileActionBar>
+  )
+
   return (
     <div>
       <OverviewTab
         contract={contract}
-        actions={
+        // On mobile the actions move to the bar at the bottom (below).
+        actions={isMobile ? null : (
           <Space size={8}>
             {canEditFields && (
-              <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => navigate(`/contracts/${contract.id}/edit`)}>
+              <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={goToEdit}>
                 Edit
               </Button>
             )}
             {canManage && <LifecycleActions contract={contract} actor={actor} onChanged={refresh} />}
           </Space>
-        }
+        )}
       />
 
       {/* Grouped by purpose, not one tab per panel — Schedule and Payment
@@ -115,6 +145,8 @@ export function ContractDetailPage() {
           },
         ]}
       />
+
+      {mobileActions}
     </div>
   )
 }

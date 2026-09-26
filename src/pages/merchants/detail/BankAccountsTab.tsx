@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { App, Button, ConfigProvider, Dropdown, Table, Tag, Typography, theme } from 'antd'
-import { Plus, Pencil, Trash2, MoreHorizontal, Landmark, Star } from 'lucide-react'
+import { Plus, Pencil, Trash2, MoreHorizontal, Landmark, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import type { BankAccountProfile, Merchant } from '../../../types/merchant'
 import { BankAccountModal } from '../components/BankAccountModal'
@@ -9,6 +9,9 @@ import { withColumnMinWidths } from '../../../components/tableColumns'
 import { useIsMobile } from '../../../components/useIsMobile'
 import { MobileTableRow } from '../../../components/MobileTableRow'
 import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
+import { ListToolbar } from '../../../components/ListToolbar'
+import { ListSearch } from '../../../components/ListSearch'
+import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
 
 interface Props {
   merchant: Merchant
@@ -33,6 +36,18 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
   const { modal, message } = App.useApp()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<BankAccountProfile | null>(null)
+  const [search, setSearch] = useState('')
+
+  // Search only exists on the standalone list page (Settings › Bank
+  // Accounts); the merchant detail tab shows every account.
+  const query = standalone ? search.trim().toLowerCase() : ''
+  const accounts = query
+    ? merchant.bankAccounts.filter(a =>
+        a.bank.toLowerCase().includes(query) ||
+        a.accountNumber.toLowerCase().includes(query) ||
+        a.accountName.toLowerCase().includes(query) ||
+        !!a.branch?.toLowerCase().includes(query))
+    : merchant.bankAccounts
 
   function handleSave(account: BankAccountProfile) {
     const isNew = !merchant.bankAccounts.some(a => a.id === account.id)
@@ -147,17 +162,28 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
       columns={isMobile ? mobileRows : withColumnMinWidths(columns, 'bank')}
       {...(isMobile ? MOBILE_TABLE_PROPS : {})}
       onRow={isMobile && canManage ? a => ({ onClick: () => { setEditingAccount(a); setModalOpen(true) }, style: { cursor: 'pointer' } }) : undefined}
-      dataSource={merchant.bankAccounts}
+      dataSource={accounts}
       size="small"
-      pagination={false}
       // Only when there's real data to scroll through — an empty table
       // (just the "No bank accounts yet" placeholder) still computes a
       // fixed-column width slightly wider than the container (the shadow
       // reserved for .ant-table-cell-fix-start/-end), which otherwise
       // triggers a pointless horizontal scrollbar with nothing to scroll to.
-      scroll={merchant.bankAccounts.length > 0 && !isMobile ? { x: 'max-content' } : undefined}
+      // The standalone page also fills the screen (ifix-fill-page), so its
+      // rows scroll under a pinned header and pager, like every list page.
+      scroll={accounts.length > 0
+        ? isMobile
+          ? (standalone ? { y: '100%' } : undefined)
+          : { x: 'max-content', ...(standalone ? { y: '100%' } : {}) }
+        : undefined}
       locale={{
-        emptyText: (
+        emptyText: query ? (
+          <TableEmptyState
+            icon={<Landmark size={22} strokeWidth={2.25} />}
+            title="No bank accounts found"
+            description="Try a different bank, account number, or name."
+          />
+        ) : (
           <TableEmptyState
             icon={<Landmark size={22} strokeWidth={2.25} />}
             title="No bank accounts yet"
@@ -165,17 +191,32 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
           />
         ),
       }}
+      pagination={{
+        defaultPageSize: DEFAULT_PAGE_SIZE,
+        size: 'small',
+        showSizeChanger: PAGE_SIZE_CHANGER,
+        pageSizeOptions: PAGE_SIZE_OPTIONS,
+        prevIcon: <ChevronLeft size={14} strokeWidth={2.25} />,
+        nextIcon: <ChevronRight size={14} strokeWidth={2.25} />,
+        jumpPrevIcon: JUMP_PREV_ICON,
+        jumpNextIcon: JUMP_NEXT_ICON,
+        showTotal: (total, range) => (
+          <span style={{ color: token.colorTextTertiary }}>
+            {range[0]}–{range[1]} of {total}
+          </span>
+        ),
+        ...(isMobile ? MOBILE_PAGINATION : {}),
+      }}
     />
   )
 
   return (
-    <div>
-      {standalone && canManage && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-          <Button type="primary" icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => { setEditingAccount(null); setModalOpen(true) }}>
-            Add Bank Account
-          </Button>
-        </div>
+    <div className={standalone ? 'ifix-fill-page' : undefined}>
+      {standalone && (
+        <ListToolbar
+          search={<ListSearch value={search} onChange={setSearch} placeholder="Search by bank, account number, or name" mobilePlaceholder="Search bank accounts" />}
+          action={canManage ? { label: 'Add Bank Account', onClick: () => { setEditingAccount(null); setModalOpen(true) } } : undefined}
+        />
       )}
 
       <ConfigProvider theme={{

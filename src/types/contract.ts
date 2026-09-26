@@ -5,9 +5,9 @@
 // of the doc's actual status lifecycle, template snapshotting, or approval
 // routing. This is a full rewrite against the Contract doc, not a rename.
 //
-// types/installment.ts itself is left alone — Product/AuthUser/UserRole/
-// ScheduleResult there are shared far outside this module (SmartCalculator,
-// Products pages, roles.ts) and aren't part of the rename.
+// types/installment.ts itself is left alone — AuthUser/UserRole/
+// ScheduleResult there are shared far outside this module (Products pages,
+// roles.ts) and aren't part of the rename.
 import type { ContractTemplateType, PenaltyRule } from './contractTemplate'
 
 // The doc's full lifecycle. Defaulted/Closed are explicitly called out as

@@ -26,6 +26,10 @@ interface Props {
   activeFilterCount?: number
   onClearFilters?: () => void
   action?: { label: string; onClick: () => void }
+  // Inside a panel's own header (a detail view's filters — see
+  // ContractTemplatesTab) rather than above the panel: no bottom margin,
+  // the header's own padding spaces it.
+  bare?: boolean
 }
 
 // The row above a list page's table: search, filters and the primary
@@ -40,7 +44,7 @@ interface Props {
 // that opens them stacked in a bottom sheet, and the primary action becomes a
 // square "+" button that keeps its label for screen readers. Filters still
 // apply the moment they change — the sheet is just where they live.
-export function ListToolbar({ leading, search, filters = [], activeFilterCount = 0, onClearFilters, action }: Props) {
+export function ListToolbar({ leading, search, filters = [], activeFilterCount = 0, onClearFilters, action, bare }: Props) {
   const isMobile = useIsMobile()
   const { token } = theme.useToken()
   const appWindow = useAppWindowContainer()
@@ -48,7 +52,7 @@ export function ListToolbar({ leading, search, filters = [], activeFilterCount =
 
   if (!isMobile) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: bare ? 0 : 16, gap: 8, overflowX: 'auto', overflowY: 'clip' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {leading}
           {search}
@@ -64,7 +68,7 @@ export function ListToolbar({ leading, search, filters = [], activeFilterCount =
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: bare ? 0 : 16 }}>
       {leading && <div className="ifix-toolbar-leading">{leading}</div>}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div className="ifix-toolbar-search" style={{ flex: 1, minWidth: 0 }}>{search}</div>

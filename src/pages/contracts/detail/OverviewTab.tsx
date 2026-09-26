@@ -5,16 +5,15 @@ import type { Contract } from '../../../types/contract'
 import { CurrencyDisplay } from '../../../components/CurrencyDisplay'
 import { DetailDescriptions } from '../../../components/DetailDescriptions'
 import { ContractStatusTag } from '../components/ContractStatusTag'
+import { DetailHeader } from '../../../components/DetailHeader'
 
 interface Props {
   contract: Contract
   actions: ReactNode
 }
 
-// Same page-header pattern as Products' OverviewTab: title/tags on the
-// left, actions on the right, no card chrome (see that file for why —
-// antd dropped PageHeader from core in v5+, so this reproduces its layout
-// by hand). The contract number stands in for a "name" here.
+// The contract number stands in for a "name" in the header. On mobile the
+// actions move to the page's bottom bar (see ContractDetailPage).
 export function OverviewTab({ contract, actions }: Props) {
   const { token } = theme.useToken()
   const navigate = useNavigate()
@@ -22,13 +21,11 @@ export function OverviewTab({ contract, actions }: Props) {
 
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', gap: 12 }}>
-          <Typography.Title level={4} style={{ margin: 0 }}>{contract.contractNumber}</Typography.Title>
-          <ContractStatusTag status={contract.status} />
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>{actions}</div>
-      </div>
+      <DetailHeader
+        title={contract.contractNumber}
+        tags={<ContractStatusTag status={contract.status} />}
+        actions={actions}
+      />
 
       <DetailDescriptions
         items={[

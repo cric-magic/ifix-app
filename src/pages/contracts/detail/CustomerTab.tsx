@@ -33,9 +33,9 @@ export function CustomerTab({ customer }: Props) {
             { key: 'phone', label: 'Phone', children: customer.phone },
             { key: 'dob', label: 'Date of Birth', children: customer.dateOfBirth },
             { key: 'email', label: 'Email', children: customer.email || <span style={{ color: token.colorTextDisabled }}>—</span> },
-            { key: 'idCardAddress', label: "ID Card's Address", children: customer.idCardAddress, span: 2 },
-            { key: 'currentAddress', label: 'Current Address', children: customer.currentAddress, span: 2 },
-            ...(customer.workplaceAddress ? [{ key: 'workplaceAddress', label: 'Workplace Address', children: customer.workplaceAddress, span: 2 }] : []),
+            { key: 'idCardAddress', label: "ID Card's Address", children: customer.idCardAddress, span: 2, className: 'ifix-descriptions-stacked' },
+            { key: 'currentAddress', label: 'Current Address', children: customer.currentAddress, span: 2, className: 'ifix-descriptions-stacked' },
+            ...(customer.workplaceAddress ? [{ key: 'workplaceAddress', label: 'Workplace Address', children: customer.workplaceAddress, span: 2, className: 'ifix-descriptions-stacked' }] : []),
           ]}
         />
       </div>

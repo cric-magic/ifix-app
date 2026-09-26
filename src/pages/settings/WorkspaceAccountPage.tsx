@@ -9,6 +9,8 @@ import { MerchantStatusTag } from '../merchants/components/MerchantStatusTag'
 import { EditMerchantModal } from '../merchants/components/EditMerchantModal'
 import { CollectionFeeSettingsModal } from './components/CollectionFeeSettingsModal'
 import { SettingsCard, SettingsRow } from '../../components/SettingsCard'
+import { MobileActionBar } from '../../components/MobileActionBar'
+import { useIsMobile } from '../../components/useIsMobile'
 import { getWorkspaceAvatarUrl } from '../../utils/avatar'
 import ifixLogoDark from '../../assets/logo.png'
 import ifixLogoLight from '../../assets/logo-light.png'
@@ -32,6 +34,7 @@ export function WorkspaceAccountPage() {
   const { token } = theme.useToken()
   const { themeVariant } = useDevTools()
   const actor = useCurrentUser()
+  const isMobile = useIsMobile()
   const [editOpen, setEditOpen] = useState(false)
   const [collectionFeeOpen, setCollectionFeeOpen] = useState(false)
   const [version, setVersion] = useState(0)
@@ -84,84 +87,96 @@ export function WorkspaceAccountPage() {
   }
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto' }}>
-      {/* Wraps on narrow screens so Edit drops to its own row instead of
-          squeezing the name block — same as UserDetailPage's header. */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 16, rowGap: 12, marginBottom: 16 }}>
-        <img
-          src={merchant.logoUrl ?? getWorkspaceAvatarUrl(merchant.id)}
-          alt=""
-          style={{ width: 48, height: 48, borderRadius: 8, background: token.colorFillSecondary, flexShrink: 0, objectFit: 'cover' }}
-        />
-        <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-          <Typography.Text strong style={{ fontSize: 18, display: 'block' }} ellipsis>
-            {merchant.name}
-          </Typography.Text>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-            <Typography.Text type="secondary" style={{ fontSize: 13 }}>{merchant.legalName}</Typography.Text>
-            <MerchantStatusTag status={merchant.status} />
+    <>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        {/* Wraps on narrow screens so Edit drops to its own row instead of
+            squeezing the name block — same as UserDetailPage's header. On
+            mobile Edit moves to the bottom bar instead, as it does there. */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 16, rowGap: 12, marginBottom: 16 }}>
+          <img
+            src={merchant.logoUrl ?? getWorkspaceAvatarUrl(merchant.id)}
+            alt=""
+            style={{ width: 48, height: 48, borderRadius: 8, background: token.colorFillSecondary, flexShrink: 0, objectFit: 'cover' }}
+          />
+          <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+            <Typography.Text strong style={{ fontSize: 18, display: 'block' }} ellipsis>
+              {merchant.name}
+            </Typography.Text>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+              <Typography.Text type="secondary" style={{ fontSize: 13 }}>{merchant.legalName}</Typography.Text>
+              <MerchantStatusTag status={merchant.status} />
+            </div>
           </div>
+          {canEdit && !isMobile && (
+            <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+          )}
         </div>
-        {canEdit && (
-          <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
-        )}
+
+        <SettingsCard title="Company">
+          <SettingsRow label="Legal name">{merchant.legalName}</SettingsRow>
+          <SettingsRow label="Address" stacked>{merchant.address}</SettingsRow>
+          <SettingsRow label="Phone">{merchant.phone}</SettingsRow>
+          <SettingsRow label="Owner">{merchant.ownerName} ({merchant.ownerEmail})</SettingsRow>
+        </SettingsCard>
+
+        <SettingsCard title="Contract">
+          <SettingsRow label="Format">{CONTRACT_FORMAT_LABELS[merchant.contractFormat]}</SettingsRow>
+          <SettingsRow label="Prefix">{merchant.contractPrefix}</SettingsRow>
+          <SettingsRow label="Next contract number">
+            {/* A code — kept whole; the label wraps instead on narrow screens. */}
+            <span style={{ fontFamily: token.fontFamilyCode, whiteSpace: 'nowrap' }}>{previewContractNumber(merchant)}</span>
+          </SettingsRow>
+        </SettingsCard>
+
+        <SettingsCard
+          title="Collection Fee"
+          action={canManageCollectionFee && (
+            <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setCollectionFeeOpen(true)}>
+              Edit
+            </Button>
+          )}
+        >
+          <SettingsRow label="Status">
+            {merchant.collectionFeeEnabled ? 'Enabled' : 'Disabled'}
+          </SettingsRow>
+          {merchant.collectionFeeEnabled && (
+            <SettingsRow label="Default amount">
+              <span style={{ fontFamily: token.fontFamilyCode }}>฿{merchant.collectionFeeAmount.toLocaleString()}</span>
+            </SettingsRow>
+          )}
+        </SettingsCard>
+
+        <EditMerchantModal
+          open={editOpen}
+          merchant={merchant}
+          onClose={() => setEditOpen(false)}
+          onUpdated={() => {
+            setEditOpen(false)
+            refresh()
+            message.success('Workspace updated')
+          }}
+        />
+
+        <CollectionFeeSettingsModal
+          open={collectionFeeOpen}
+          merchant={merchant}
+          onClose={() => setCollectionFeeOpen(false)}
+          onSaved={() => {
+            setCollectionFeeOpen(false)
+            refresh()
+            message.success('Collection Fee settings updated')
+          }}
+        />
       </div>
 
-      <SettingsCard title="Company">
-        <SettingsRow label="Legal name">{merchant.legalName}</SettingsRow>
-        <SettingsRow label="Address">{merchant.address}</SettingsRow>
-        <SettingsRow label="Phone">{merchant.phone}</SettingsRow>
-        <SettingsRow label="Owner">{merchant.ownerName} ({merchant.ownerEmail})</SettingsRow>
-      </SettingsCard>
-
-      <SettingsCard title="Contract">
-        <SettingsRow label="Format">{CONTRACT_FORMAT_LABELS[merchant.contractFormat]}</SettingsRow>
-        <SettingsRow label="Prefix">{merchant.contractPrefix}</SettingsRow>
-        <SettingsRow label="Next contract number">
-          {/* A code — kept whole; the label wraps instead on narrow screens. */}
-          <span style={{ fontFamily: token.fontFamilyCode, whiteSpace: 'nowrap' }}>{previewContractNumber(merchant)}</span>
-        </SettingsRow>
-      </SettingsCard>
-
-      <SettingsCard
-        title="Collection Fee"
-        action={canManageCollectionFee && (
-          <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setCollectionFeeOpen(true)}>
-            Edit
-          </Button>
-        )}
-      >
-        <SettingsRow label="Status">
-          {merchant.collectionFeeEnabled ? 'Enabled' : 'Disabled'}
-        </SettingsRow>
-        {merchant.collectionFeeEnabled && (
-          <SettingsRow label="Default amount">
-            <span style={{ fontFamily: token.fontFamilyCode }}>฿{merchant.collectionFeeAmount.toLocaleString()}</span>
-          </SettingsRow>
-        )}
-      </SettingsCard>
-
-      <EditMerchantModal
-        open={editOpen}
-        merchant={merchant}
-        onClose={() => setEditOpen(false)}
-        onUpdated={() => {
-          setEditOpen(false)
-          refresh()
-          message.success('Workspace updated')
-        }}
-      />
-
-      <CollectionFeeSettingsModal
-        open={collectionFeeOpen}
-        merchant={merchant}
-        onClose={() => setCollectionFeeOpen(false)}
-        onSaved={() => {
-          setCollectionFeeOpen(false)
-          refresh()
-          message.success('Collection Fee settings updated')
-        }}
-      />
-    </div>
+      {/* The workspace's own Edit only — each card's Edit (Collection Fee)
+          stays on its card, since it edits just that card. Outside the
+          640px column so the bar spans the screen edge to edge. */}
+      {isMobile && canEdit && (
+        <MobileActionBar>
+          <Button type="primary" icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+        </MobileActionBar>
+      )}
+    </>
   )
 }

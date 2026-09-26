@@ -4,7 +4,6 @@ import { AppLayout } from '../layouts/AppLayout'
 import { RequireAuth } from './RequireAuth'
 import { HeaderContentProvider } from '../contexts/HeaderContentContext'
 import { HomeRedirect } from './HomeRedirect'
-import { SmartCalculatorPage } from '../pages/calculator/SmartCalculatorPage'
 import { CreateContractPage } from '../pages/contracts/CreateContractPage'
 import { EditContractPage } from '../pages/contracts/EditContractPage'
 import { ContractsListPage } from '../pages/contracts/ContractsListPage'
@@ -50,7 +49,6 @@ export const router = createBrowserRouter([
         element: <RequireAuth><HeaderContentProvider><AppLayout /></HeaderContentProvider></RequireAuth>,
         children: [
           { index: true, element: <HomeRedirect /> },
-          { path: 'calculator', element: <SmartCalculatorPage /> },
           { path: 'contracts/new', element: <CreateContractPage /> },
           { path: 'contracts', element: <ContractsListPage /> },
           { path: 'contracts/:id', element: <ContractDetailPage /> },

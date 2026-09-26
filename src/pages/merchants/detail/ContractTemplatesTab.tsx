@@ -11,6 +11,7 @@ import type { ContractTemplate } from '../../../types/contractTemplate'
 import { ContractTemplateTable } from '../../settings/contractTemplates/components/ContractTemplateTable'
 import { ListToolbar } from '../../../components/ListToolbar'
 import { ListSearch } from '../../../components/ListSearch'
+import { useIsMobile } from '../../../components/useIsMobile'
 import { ContractTemplateModal } from '../../settings/contractTemplates/components/ContractTemplateModal'
 
 type StatusFilter = 'all' | ContractTemplate['status']
@@ -48,6 +49,7 @@ interface Props {
 export function ContractTemplatesTab({ merchantId, standalone }: Props) {
   const actor = useCurrentUser()
   const iconColors = useIconColors()
+  const isMobile = useIsMobile()
   const [version, setVersion] = useState(0)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -120,6 +122,18 @@ export function ContractTemplatesTab({ merchantId, standalone }: Props) {
   // The detail view's filters, sharing a 56px header with the title and the
   // action button, so the search shrinks rather than pushing them. The list
   // view (standalone) uses ListToolbar above the panel instead.
+  // ListToolbar's filters — the list view's toolbar, and the detail view's
+  // header on mobile.
+  const toolbarFilters = [
+    { key: 'status', label: 'Status', control: <Select value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} style={{ width: 150 }} /> },
+    { key: 'type', label: 'Type', control: <Select value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} style={{ width: 150 }} /> },
+  ]
+  const activeFilterCount = (statusFilter !== 'all' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0)
+  function clearFilters() {
+    setStatusFilter('all')
+    setTypeFilter('all')
+  }
+
   const filterControls = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
       <Input
@@ -157,12 +171,9 @@ export function ContractTemplatesTab({ merchantId, standalone }: Props) {
       {standalone && (
         <ListToolbar
           search={<ListSearch value={search} onChange={setSearch} placeholder="Search by name or type" mobilePlaceholder="Search templates" />}
-          filters={[
-            { key: 'status', label: 'Status', control: <Select value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} style={{ width: 150 }} /> },
-            { key: 'type', label: 'Type', control: <Select value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} style={{ width: 150 }} /> },
-          ]}
-          activeFilterCount={(statusFilter !== 'all' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0)}
-          onClearFilters={() => { setStatusFilter('all'); setTypeFilter('all') }}
+          filters={toolbarFilters}
+          activeFilterCount={activeFilterCount}
+          onClearFilters={clearFilters}
           action={canManage ? { label: 'Create Template', onClick: () => { setEditingTemplate(null); setModalOpen(true) } } : undefined}
         />
       )}
@@ -170,13 +181,26 @@ export function ContractTemplatesTab({ merchantId, standalone }: Props) {
       <ContractTemplateTable
         fillHeight={standalone}
         headerTitle={standalone ? undefined : `${filtered.length} Template${filtered.length === 1 ? '' : 's'}`}
-        filters={standalone ? undefined : filterControls}
+        // Detail view: filters share the panel's header. On mobile that's
+        // the list pages' toolbar row (search, a Filters sheet, "+") under
+        // the title, rather than three controls and a labelled button
+        // wrapping into a stack.
+        filters={standalone ? undefined : isMobile ? (
+          <ListToolbar
+            bare
+            search={<ListSearch value={search} onChange={setSearch} placeholder="Search" mobilePlaceholder="Search templates" />}
+            filters={toolbarFilters}
+            activeFilterCount={activeFilterCount}
+            onClearFilters={clearFilters}
+            action={canManage ? { label: 'Create Template', onClick: () => { setEditingTemplate(null); setModalOpen(true) } } : undefined}
+          />
+        ) : filterControls}
         templates={filtered}
         contracts={MOCK_CONTRACTS}
         canManage={canManage}
         hasActiveFilter={hasActiveFilter}
 
-        headerAction={!standalone && canManage ? (
+        headerAction={!standalone && !isMobile && canManage ? (
           <Button icon={<Plus size={16} strokeWidth={2.25} />} onClick={() => { setEditingTemplate(null); setModalOpen(true) }}>
             Create Template
           </Button>

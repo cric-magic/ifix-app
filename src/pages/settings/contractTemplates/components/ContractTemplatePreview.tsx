@@ -1,7 +1,8 @@
 import { useCurrentUser } from '../../../../contexts/AuthContext'
 import { MOCK_MERCHANTS } from '../../../../constants/mockMerchants'
 import { MOCK_BRANCHES } from '../../../../constants/mockBranches'
-import { ContractDocument } from '../../../../components/ContractDocument'
+import { CONTRACT_DESK_WIDTH, ContractDocument } from '../../../../components/ContractDocument'
+import { FitToWidth } from '../../../../components/FitToWidth'
 import { buildSampleContractDocument } from '../../../../utils/contractDocument'
 
 export interface PreviewValues {
@@ -33,7 +34,9 @@ interface Props {
 //
 // Rendered inline beside the editor (live, as the doc's "the preview updates
 // when the template is changed" asks for) and inside a drawer from the list —
-// hence a plain component rather than something drawer-shaped.
+// hence a plain component rather than something drawer-shaped. Scaled to
+// fit either one rather than reflowing, same as the contract's own Preview
+// tab — at phone width a reflowed page is a strip several screens long.
 export function ContractTemplatePreview({ values, merchantId }: Props) {
   const actor = useCurrentUser()
   const merchant = MOCK_MERCHANTS.find(m => m.id === merchantId)
@@ -62,5 +65,9 @@ export function ContractTemplatePreview({ values, merchantId }: Props) {
     },
   })
 
-  return <ContractDocument data={data} />
+  return (
+    <FitToWidth width={CONTRACT_DESK_WIDTH}>
+      <ContractDocument data={data} fixedWidth />
+    </FitToWidth>
+  )
 }

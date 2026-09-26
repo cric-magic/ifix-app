@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, message } from 'antd'
+import { App, Button, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_BRANCHES } from '../../constants/mockBranches'
 import { MOCK_USER_ACCOUNTS } from '../../constants/mockUsers'
@@ -9,13 +9,17 @@ import { OverviewTab } from './detail/OverviewTab'
 import { BankAccountTab } from './detail/BankAccountTab'
 import { AssignedUsersTab } from './detail/AssignedUsersTab'
 import { EditBranchModal } from './components/EditBranchModal'
-import { Store } from 'lucide-react'
+import { Archive, ArchiveRestore, Pencil, Store } from 'lucide-react'
 import { PageEmptyState } from '../../components/PageEmptyState'
+import { MobileActionBar } from '../../components/MobileActionBar'
+import { useIsMobile } from '../../components/useIsMobile'
 
 export function BranchDetailPage() {
   const { id } = useParams<{ id: string }>()
   const actor = useCurrentUser()
   const navigate = useNavigate()
+  const { modal } = App.useApp()
+  const isMobile = useIsMobile()
   const [editOpen, setEditOpen] = useState(false)
   const [version, setVersion] = useState(0)
   void version
@@ -68,18 +72,45 @@ export function BranchDetailPage() {
     refresh()
   }
 
+  const isArchived = branch.status === 'archived'
+
+  function confirmToggleArchive() {
+    modal.confirm({
+      title: isArchived ? 'Unarchive this branch?' : 'Archive this branch?',
+      content: isArchived ? undefined : 'All staff and branch managers at this branch will be suspended.',
+      okText: isArchived ? 'Unarchive' : 'Archive',
+      okButtonProps: { danger: !isArchived },
+      onOk: handleToggleArchive,
+    })
+  }
+
   return (
     <div>
       <OverviewTab
         branch={branch}
         canEdit={canEdit}
         onEdit={() => setEditOpen(true)}
-        onToggleArchive={handleToggleArchive}
+        onToggleArchive={confirmToggleArchive}
       />
 
       <BankAccountTab branch={branch} canManage={canEdit} onChanged={refresh} />
 
       <AssignedUsersTab branch={branch} canManage={canEdit} />
+
+      {/* Mobile: Edit in the bottom bar, Archive behind "…". */}
+      {isMobile && canEdit && (
+        <MobileActionBar
+          more={[{
+            key: 'archive',
+            label: isArchived ? 'Unarchive' : 'Archive',
+            icon: isArchived ? <ArchiveRestore size={16} strokeWidth={2.25} /> : <Archive size={16} strokeWidth={2.25} />,
+            danger: !isArchived,
+            onClick: confirmToggleArchive,
+          }]}
+        >
+          <Button type="primary" icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+        </MobileActionBar>
+      )}
 
       <EditBranchModal
         open={editOpen}

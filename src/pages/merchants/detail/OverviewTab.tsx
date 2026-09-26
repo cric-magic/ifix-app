@@ -1,9 +1,10 @@
-import { App, Button, Image, Typography, theme } from 'antd'
+import { Button, Image, theme } from 'antd'
 import { Pencil, Ban, RotateCcw } from 'lucide-react'
 import type { Merchant } from '../../../types/merchant'
 import { previewContractNumber } from '../../../constants/mockMerchants'
 import { getWorkspaceAvatarUrl } from '../../../utils/avatar'
 import { DetailDescriptions } from '../../../components/DetailDescriptions'
+import { DetailHeader } from '../../../components/DetailHeader'
 import { MerchantStatusTag } from '../components/MerchantStatusTag'
 
 const CONTRACT_FORMAT_LABELS = {
@@ -16,56 +17,46 @@ interface Props {
   canEdit: boolean
   onEdit: () => void
   // Only Super Admin can deactivate/reactivate a merchant — undefined here
-  // means "not shown," used for the Workspace Settings > General context
-  // where a Merchant Owner edits their own merchant but never suspends it.
+  // means "not shown." Asks for confirmation itself (MerchantDetailPage) —
+  // the mobile action bar calls the same thing.
   onToggleSuspend?: () => void
 }
 
-// Same page-header pattern as Products' OverviewTab: title/tags on the
-// left, actions on the right, no card chrome — see that file for why (antd
-// dropped PageHeader from core in v5+, so this reproduces its layout by
-// hand). The logo shrinks to the same 40px thumbnail as Product's photo,
-// beside the name instead of a larger block to its left.
+// The logo shrinks to the same 40px thumbnail as Product's photo, beside the
+// name instead of a larger block to its left. On mobile the actions move to
+// the page's bottom bar (see MerchantDetailPage).
 export function OverviewTab({ merchant, canEdit, onEdit, onToggleSuspend }: Props) {
   const { token } = theme.useToken()
-  const { modal } = App.useApp()
   const isSuspended = merchant.status === 'suspended'
 
-  function handleToggleSuspendClick() {
-    if (!onToggleSuspend) return
-    modal.confirm({
-      title: isSuspended ? 'Reactivate this merchant?' : 'Suspend this merchant?',
-      content: isSuspended ? undefined : 'This merchant loses access to the platform until reactivated.',
-      okText: isSuspended ? 'Reactivate' : 'Suspend',
-      okButtonProps: { danger: !isSuspended },
-      onOk: onToggleSuspend,
-    })
-  }
-
-  // Only `address` spans both columns — a full street address is the one
-  // value here long enough to justify it. legalName/owner/nextContract
-  // used to span 2 as well, back when this panel was a narrower flex
-  // layout next to a larger logo image; now that it runs the full page
-  // width (see the page-header rewrite), forcing those short, single-line
-  // values full-width just left them stranded alone on a row while
-  // shorter fields like Contract format/prefix paired up normally.
+  // Grouped so each two-column row holds one kind of thing — who (owner
+  // and email), numbering (format and prefix) — with the company name above
+  // and the long values below at full width; the same order at every width.
+  // Owner and email are separate fields: together they wrapped on a phone.
   const items = [
-    { key: 'legalName', label: 'Legal name', children: merchant.legalName },
-    { key: 'address', label: 'Address', children: merchant.address, span: 2 },
-    { key: 'owner', label: 'Owner', children: `${merchant.ownerName} (${merchant.ownerEmail})` },
+    { key: 'legalName', label: 'Legal name', children: merchant.legalName, span: 2 },
+    { key: 'owner', label: 'Owner', children: merchant.ownerName },
+    { key: 'ownerEmail', label: 'Owner email', children: merchant.ownerEmail },
     { key: 'contractFormat', label: 'Contract format', children: CONTRACT_FORMAT_LABELS[merchant.contractFormat] },
     { key: 'contractPrefix', label: 'Contract prefix', children: merchant.contractPrefix },
     {
       key: 'nextContract',
       label: 'Next contract number',
-      children: <span style={{ fontFamily: token.fontFamilyCode }}>{previewContractNumber(merchant)}</span>,
+      // Body font, like contract numbers everywhere else — the code font
+      // set it visibly larger than the values around it.
+      children: previewContractNumber(merchant),
+      span: 2,
+      // A random (UUID) number is ~40 characters: never fits beside its
+      // label on a phone, so it stacks there like the address.
+      ...(merchant.contractFormat === 'random' ? { className: 'ifix-descriptions-stacked' } : {}),
     },
+    { key: 'address', label: 'Address', children: merchant.address, span: 2, className: 'ifix-descriptions-stacked' },
   ]
 
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', gap: 12 }}>
+      <DetailHeader
+        leading={(
           <Image
             src={merchant.logoUrl ?? getWorkspaceAvatarUrl(merchant.id)}
             alt={merchant.name}
@@ -79,24 +70,26 @@ export function OverviewTab({ merchant, canEdit, onEdit, onToggleSuspend }: Prop
               background: token.colorFillSecondary,
             }}
           />
-          <Typography.Title level={4} style={{ margin: 0 }}>{merchant.name}</Typography.Title>
-          <MerchantStatusTag status={merchant.status} />
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {onToggleSuspend && (
-            <Button
-              danger={!isSuspended}
-              icon={isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />}
-              onClick={handleToggleSuspendClick}
-            >
-              {isSuspended ? 'Reactivate' : 'Suspend'}
-            </Button>
-          )}
-          {canEdit && (
-            <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={onEdit}>Edit</Button>
-          )}
-        </div>
-      </div>
+        )}
+        title={merchant.name}
+        tags={<MerchantStatusTag status={merchant.status} />}
+        actions={(onToggleSuspend || canEdit) && (
+          <>
+            {onToggleSuspend && (
+              <Button
+                danger={!isSuspended}
+                icon={isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />}
+                onClick={onToggleSuspend}
+              >
+                {isSuspended ? 'Reactivate' : 'Suspend'}
+              </Button>
+            )}
+            {canEdit && (
+              <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={onEdit}>Edit</Button>
+            )}
+          </>
+        )}
+      />
 
       <DetailDescriptions items={items} />
     </div>

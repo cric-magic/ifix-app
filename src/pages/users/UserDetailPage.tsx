@@ -12,6 +12,8 @@ import { UserStatusTag } from './components/UserStatusTag'
 import { EditUserModal } from './components/EditUserModal'
 import { TempPasswordModal } from './components/TempPasswordModal'
 import { PageEmptyState } from '../../components/PageEmptyState'
+import { MobileActionBar } from '../../components/MobileActionBar'
+import { useIsMobile } from '../../components/useIsMobile'
 
 const dateFormatter = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 
@@ -28,6 +30,7 @@ export function UserDetailPage() {
   const actor = useCurrentUser()
   const navigate = useNavigate()
   const { modal } = App.useApp()
+  const isMobile = useIsMobile()
   const [editOpen, setEditOpen] = useState(false)
   const [tempPassword, setTempPassword] = useState<string | null>(null)
   const [version, setVersion] = useState(0)
@@ -91,106 +94,121 @@ export function UserDetailPage() {
     setTempPassword(newTemp)
   }
 
+  function confirmToggleSuspend() {
+    modal.confirm({
+      title: isSuspended ? 'Reactivate this user?' : 'Suspend this user?',
+      okText: isSuspended ? 'Reactivate' : 'Suspend',
+      okButtonProps: { danger: !isSuspended },
+      onOk: handleToggleSuspend,
+    })
+  }
+
+  const resetIcon = <KeyRound size={16} strokeWidth={2.25} />
+  const suspendIcon = isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />
+
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto' }}>
-      {/* Wraps on narrow screens: the Edit / "…" buttons drop to their own
-          row rather than squeezing the name block (which broke the role
-          label onto two lines) — same idea as the entity detail headers. */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 16, rowGap: 12, marginBottom: 16 }}>
-        <Avatar src={getAvatarUrl(account.id)} size={48} style={{ flexShrink: 0 }} />
-        <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-          <Typography.Text strong style={{ fontSize: 18, display: 'block' }} ellipsis>
-            {account.name}
-          </Typography.Text>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-            <Typography.Text type="secondary" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{ROLE_LABELS[account.role]}</Typography.Text>
-            <UserStatusTag status={account.status} />
+    <>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        {/* Wraps on narrow screens: the Edit / "…" buttons drop to their own
+            row rather than squeezing the name block (which broke the role
+            label onto two lines) — same idea as the entity detail headers. */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 16, rowGap: 12, marginBottom: 16 }}>
+          <Avatar src={getAvatarUrl(account.id)} size={48} style={{ flexShrink: 0 }} />
+          <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+            <Typography.Text strong style={{ fontSize: 18, display: 'block' }} ellipsis>
+              {account.name}
+            </Typography.Text>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+              <Typography.Text type="secondary" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{ROLE_LABELS[account.role]}</Typography.Text>
+              <UserStatusTag status={account.status} />
+            </div>
           </div>
-        </div>
-        {canEdit && (
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-            <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
-            <Dropdown
-              trigger={['click']}
-              placement="bottomRight"
-              menu={{
-                items: [
-                  { key: 'reset', icon: <KeyRound size={16} strokeWidth={2.25} />, label: 'Reset password' },
-                  { type: 'divider' },
-                  {
-                    key: 'suspend',
-                    danger: !isSuspended,
-                    icon: isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />,
-                    label: isSuspended ? 'Reactivate' : 'Suspend',
+          {canEdit && !isMobile && (
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+              <Dropdown
+                trigger={['click']}
+                placement="bottomRight"
+                menu={{
+                  items: [
+                    { key: 'reset', icon: resetIcon, label: 'Reset password' },
+                    { type: 'divider' },
+                    { key: 'suspend', danger: !isSuspended, icon: suspendIcon, label: isSuspended ? 'Reactivate' : 'Suspend' },
+                  ],
+                  onClick: ({ key }) => {
+                    if (key === 'reset') handleForceReset()
+                    if (key === 'suspend') confirmToggleSuspend()
                   },
-                ],
-                onClick: ({ key }) => {
-                  if (key === 'reset') handleForceReset()
-                  if (key === 'suspend') {
-                    modal.confirm({
-                      title: isSuspended ? 'Reactivate this user?' : 'Suspend this user?',
-                      okText: isSuspended ? 'Reactivate' : 'Suspend',
-                      okButtonProps: { danger: !isSuspended },
-                      onOk: handleToggleSuspend,
-                    })
-                  }
-                },
-              }}
-            >
-              <Button icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
-            </Dropdown>
-          </div>
-        )}
+                }}
+              >
+                <Button icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
+              </Dropdown>
+            </div>
+          )}
+        </div>
+
+        <SettingsCard title="Profile">
+          <SettingsRow label="Name">{account.name}</SettingsRow>
+          <SettingsRow label="Staff ID">{account.staffId}</SettingsRow>
+          <SettingsRow label="Role">{ROLE_LABELS[account.role]}</SettingsRow>
+          {account.branch && <SettingsRow label="Branch">{account.branch}</SettingsRow>}
+          {account.role === 'staff' && (
+            <SettingsRow label="Product Categories">
+              {account.permittedCategories?.length
+                ? account.permittedCategories.map(c => CATEGORY_LABELS[c]).join(', ')
+                : 'All categories'}
+            </SettingsRow>
+          )}
+        </SettingsCard>
+
+        <SettingsCard title="Contact">
+          <SettingsRow label="Email">{account.email}</SettingsRow>
+          <SettingsRow label="Phone">{account.phone}</SettingsRow>
+        </SettingsCard>
+
+        <SettingsCard title="Account">
+          <SettingsRow label="Status"><UserStatusTag status={account.status} /></SettingsRow>
+          <SettingsRow label="Created by & at">
+            {actorName(account.createdBy) ? `${actorName(account.createdBy)} · ${formatDate(account.createdAt)}` : formatDate(account.createdAt)}
+          </SettingsRow>
+          <SettingsRow label="Activated at">{formatDate(account.activatedAt)}</SettingsRow>
+          <SettingsRow label="Suspended by & at">
+            {account.suspendedBy ? `${actorName(account.suspendedBy) ?? '—'} · ${formatDate(account.suspendedAt)}` : '—'}
+          </SettingsRow>
+        </SettingsCard>
+
+        <EditUserModal
+          open={editOpen}
+          actor={actor}
+          account={account}
+          onClose={() => setEditOpen(false)}
+          onUpdated={() => {
+            setEditOpen(false)
+            refresh()
+            message.success('User updated')
+          }}
+        />
+
+        <TempPasswordModal
+          open={!!tempPassword}
+          userName={account.name}
+          tempPassword={tempPassword ?? ''}
+          onClose={() => setTempPassword(null)}
+        />
       </div>
 
-      <SettingsCard title="Profile">
-        <SettingsRow label="Name">{account.name}</SettingsRow>
-        <SettingsRow label="Staff ID">{account.staffId}</SettingsRow>
-        <SettingsRow label="Role">{ROLE_LABELS[account.role]}</SettingsRow>
-        {account.branch && <SettingsRow label="Branch">{account.branch}</SettingsRow>}
-        {account.role === 'staff' && (
-          <SettingsRow label="Product Categories">
-            {account.permittedCategories?.length
-              ? account.permittedCategories.map(c => CATEGORY_LABELS[c]).join(', ')
-              : 'All categories'}
-          </SettingsRow>
-        )}
-      </SettingsCard>
-
-      <SettingsCard title="Contact">
-        <SettingsRow label="Email">{account.email}</SettingsRow>
-        <SettingsRow label="Phone">{account.phone}</SettingsRow>
-      </SettingsCard>
-
-      <SettingsCard title="Account">
-        <SettingsRow label="Status"><UserStatusTag status={account.status} /></SettingsRow>
-        <SettingsRow label="Created by & at">
-          {actorName(account.createdBy) ? `${actorName(account.createdBy)} · ${formatDate(account.createdAt)}` : formatDate(account.createdAt)}
-        </SettingsRow>
-        <SettingsRow label="Activated at">{formatDate(account.activatedAt)}</SettingsRow>
-        <SettingsRow label="Suspended by & at">
-          {account.suspendedBy ? `${actorName(account.suspendedBy) ?? '—'} · ${formatDate(account.suspendedAt)}` : '—'}
-        </SettingsRow>
-      </SettingsCard>
-
-      <EditUserModal
-        open={editOpen}
-        actor={actor}
-        account={account}
-        onClose={() => setEditOpen(false)}
-        onUpdated={() => {
-          setEditOpen(false)
-          refresh()
-          message.success('User updated')
-        }}
-      />
-
-      <TempPasswordModal
-        open={!!tempPassword}
-        userName={account.name}
-        tempPassword={tempPassword ?? ''}
-        onClose={() => setTempPassword(null)}
-      />
-    </div>
+      {/* Mobile: Edit in the bottom bar, the rest behind its "…". Outside
+          the 640px column so the bar spans the screen edge to edge. */}
+      {isMobile && canEdit && (
+        <MobileActionBar
+          more={[
+            { key: 'reset', label: 'Reset password', icon: resetIcon, onClick: handleForceReset },
+            { key: 'suspend', label: isSuspended ? 'Reactivate' : 'Suspend', icon: suspendIcon, danger: !isSuspended, onClick: confirmToggleSuspend },
+          ]}
+        >
+          <Button type="primary" icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+        </MobileActionBar>
+      )}
+    </>
   )
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Tabs, message } from 'antd'
+import { App, Button, Tabs, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_MERCHANTS } from '../../constants/mockMerchants'
 import { canViewMerchantList, canEditMerchant, canManageBankAccounts, homePath } from '../../constants/roles'
@@ -9,13 +9,17 @@ import { BankAccountsTab } from './detail/BankAccountsTab'
 import { BranchesTab } from './detail/BranchesTab'
 import { ContractTemplatesTab } from './detail/ContractTemplatesTab'
 import { EditMerchantModal } from './components/EditMerchantModal'
-import { Building2, Lock } from 'lucide-react'
+import { Ban, Building2, Lock, Pencil, RotateCcw } from 'lucide-react'
 import { PageEmptyState } from '../../components/PageEmptyState'
+import { MobileActionBar } from '../../components/MobileActionBar'
+import { useIsMobile } from '../../components/useIsMobile'
 
 export function MerchantDetailPage() {
   const { id } = useParams<{ id: string }>()
   const actor = useCurrentUser()
   const navigate = useNavigate()
+  const { modal } = App.useApp()
+  const isMobile = useIsMobile()
   const [editOpen, setEditOpen] = useState(false)
   const [version, setVersion] = useState(0)
   void version // trigger re-render after mutating the mock record in place
@@ -63,13 +67,26 @@ export function MerchantDetailPage() {
     refresh()
   }
 
+  const isSuspended = merchant.status === 'suspended'
+  const canEdit = canEditMerchant(actor, merchant)
+
+  function confirmToggleSuspend() {
+    modal.confirm({
+      title: isSuspended ? 'Reactivate this merchant?' : 'Suspend this merchant?',
+      content: isSuspended ? undefined : 'This merchant loses access to the platform until reactivated.',
+      okText: isSuspended ? 'Reactivate' : 'Suspend',
+      okButtonProps: { danger: !isSuspended },
+      onOk: handleToggleSuspend,
+    })
+  }
+
   return (
     <div>
       <OverviewTab
         merchant={merchant}
-        canEdit={canEditMerchant(actor, merchant)}
+        canEdit={canEdit}
         onEdit={() => setEditOpen(true)}
-        onToggleSuspend={handleToggleSuspend}
+        onToggleSuspend={confirmToggleSuspend}
       />
 
       {/* Header + merchant details above, everything else in tabs — the
@@ -100,6 +117,32 @@ export function MerchantDetailPage() {
           },
         ]}
       />
+
+      {/* Mobile: Edit in the bottom bar, Suspend behind "…". Only Super
+          Admin reaches this page, and they can always suspend. */}
+      {isMobile && (
+        <MobileActionBar
+          more={canEdit ? [{
+            key: 'suspend',
+            label: isSuspended ? 'Reactivate' : 'Suspend',
+            icon: isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />,
+            danger: !isSuspended,
+            onClick: confirmToggleSuspend,
+          }] : []}
+        >
+          {canEdit ? (
+            <Button type="primary" icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+          ) : (
+            <Button
+              danger={!isSuspended}
+              icon={isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />}
+              onClick={confirmToggleSuspend}
+            >
+              {isSuspended ? 'Reactivate' : 'Suspend'}
+            </Button>
+          )}
+        </MobileActionBar>
+      )}
 
       <EditMerchantModal
         open={editOpen}

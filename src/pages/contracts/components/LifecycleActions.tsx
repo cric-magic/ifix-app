@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { App, Button, Form, Input, Modal, Space, Typography } from 'antd'
+import { App, Button, Drawer, Form, Input, Modal, Space, Typography } from 'antd'
 import { InputNumber } from '../../../components/AppInputNumber'
 import { Check, X, Printer, Upload, Wallet } from 'lucide-react'
 import { Select } from '../../../components/AppSelect'
@@ -11,6 +11,7 @@ import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 import { PhotoUpload } from '../../../components/PhotoUpload'
 import { SignedCopyUpload } from './SignedCopyUpload'
 import { ContractPrintCopy } from './ContractPrintCopy'
+import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 
 interface Props {
   contract: Contract
@@ -24,6 +25,7 @@ interface Props {
 // walkable from the detail page without a separate workflow screen.
 export function LifecycleActions({ contract, actor, onChanged }: Props) {
   const { modal, message } = App.useApp()
+  const appWindow = useAppWindowContainer()
   const [rejectOpen, setRejectOpen] = useState(false)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
@@ -86,6 +88,11 @@ export function LifecycleActions({ contract, actor, onChanged }: Props) {
     setConfirmPrintedOpen(false)
     message.success('Marked as awaiting signature')
     onChanged()
+  }
+
+  function closeUpload() {
+    setUploadOpen(false)
+    uploadForm.resetFields()
   }
 
   function handleUploadSignedCopy(values: { files: SignedContractFile[] }) {
@@ -200,15 +207,24 @@ export function LifecycleActions({ contract, actor, onChanged }: Props) {
     return (
       <>
         <Button type="primary" icon={<Upload size={16} strokeWidth={2.25} />} onClick={() => setUploadOpen(true)}>Upload Signed Copy</Button>
-        <Modal
+        {/* A side drawer like the other forms on this page (Record
+            payment, Add discount) — full screen on mobile. */}
+        <Drawer
           title="Upload signed copy"
           open={uploadOpen}
-          onCancel={() => { setUploadOpen(false); uploadForm.resetFields() }}
-          okText="Upload"
-          // Nothing to confirm until there's a file — the status only moves
-          // on once the signed copy is actually attached to the contract.
-          okButtonProps={{ disabled: !uploadedFiles?.length }}
-          onOk={() => uploadForm.validateFields().then(handleUploadSignedCopy)}
+          onClose={closeUpload}
+          width={420}
+          getContainer={appWindow ?? undefined}
+          footer={
+            <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button onClick={closeUpload}>Cancel</Button>
+              {/* Nothing to confirm until there's a file — the status only
+                  moves on once the signed copy is actually attached. */}
+              <Button type="primary" disabled={!uploadedFiles?.length} onClick={() => uploadForm.validateFields().then(handleUploadSignedCopy)}>
+                Upload
+              </Button>
+            </Space>
+          }
         >
           <Typography.Paragraph type="secondary" style={{ marginBottom: 16 }}>
             Attach the contract the customer signed. It's kept on this contract under Contract Preview → Signed copy, and the contract moves to Pending Payment.
@@ -218,7 +234,7 @@ export function LifecycleActions({ contract, actor, onChanged }: Props) {
               <SignedCopyUpload />
             </Form.Item>
           </Form>
-        </Modal>
+        </Drawer>
       </>
     )
   }
@@ -227,12 +243,19 @@ export function LifecycleActions({ contract, actor, onChanged }: Props) {
     return (
       <>
         <Button type="primary" icon={<Wallet size={16} strokeWidth={2.25} />} onClick={() => setPaymentOpen(true)}>Record Down Payment</Button>
-        <Modal
+        {/* The same drawer as the installments' Record payment (ScheduleTab). */}
+        <Drawer
           title="Record down payment"
           open={paymentOpen}
-          onCancel={() => setPaymentOpen(false)}
-          okText="Record & Activate"
-          onOk={() => paymentForm.validateFields().then(handleRecordPayment)}
+          onClose={() => setPaymentOpen(false)}
+          width={420}
+          getContainer={appWindow ?? undefined}
+          footer={
+            <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button onClick={() => setPaymentOpen(false)}>Cancel</Button>
+              <Button type="primary" onClick={() => paymentForm.validateFields().then(handleRecordPayment)}>Record & Activate</Button>
+            </Space>
+          }
         >
           <Form form={paymentForm} layout="vertical" initialValues={{ amount: contract.financing.downPaymentAmount, method: 'transfer' }}>
             <Form.Item label="Amount (฿)" name="amount" rules={[{ required: true, message: 'Required' }]}>
@@ -248,7 +271,7 @@ export function LifecycleActions({ contract, actor, onChanged }: Props) {
               <PhotoUpload />
             </Form.Item>
           </Form>
-        </Modal>
+        </Drawer>
       </>
     )
   }

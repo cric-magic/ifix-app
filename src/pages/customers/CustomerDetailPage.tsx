@@ -1,20 +1,25 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, message } from 'antd'
+import { App, Button } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_CUSTOMERS } from '../../constants/mockCustomers'
 import { MOCK_CONTRACTS } from '../../constants/mockContracts'
-import { canViewCustomers, canManageCustomers, homePath } from '../../constants/roles'
+import { canViewCustomers, canManageCustomers, canManageCustomerBlacklist, homePath } from '../../constants/roles'
 import { OverviewTab } from './detail/OverviewTab'
 import { ContractHistoryTab } from './detail/ContractHistoryTab'
 import { CustomerModal } from './components/CustomerModal'
-import { Contact, Lock } from 'lucide-react'
+import { Contact, Lock, Pencil, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { PageEmptyState } from '../../components/PageEmptyState'
+import { MobileActionBar } from '../../components/MobileActionBar'
+import type { MoreAction } from '../../components/MobileActionBar'
+import { useIsMobile } from '../../components/useIsMobile'
 
 export function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>()
   const actor = useCurrentUser()
   const navigate = useNavigate()
+  const { modal, message } = App.useApp()
+  const isMobile = useIsMobile()
   const [editOpen, setEditOpen] = useState(false)
   const [version, setVersion] = useState(0)
   void version // trigger re-render after mutating the mock record in place
@@ -49,16 +54,56 @@ export function CustomerDetailPage() {
     setVersion(v => v + 1)
   }
 
+  const canToggleBlacklist = canManageCustomerBlacklist(actor)
+
+  function confirmToggleBlacklist() {
+    const willBlacklist = !customer!.blacklisted
+    modal.confirm({
+      title: willBlacklist ? 'Blacklist this customer?' : 'Remove from blacklist?',
+      content: willBlacklist
+        ? 'New contracts for this customer will require approval and show a warning to whoever creates them.'
+        : undefined,
+      okText: willBlacklist ? 'Blacklist' : 'Remove',
+      okButtonProps: { danger: willBlacklist },
+      onOk: () => {
+        customer!.blacklisted = willBlacklist
+        refresh()
+        message.success(willBlacklist ? `${customer!.fullName} blacklisted` : `${customer!.fullName} removed from blacklist`)
+      },
+    })
+  }
+
+  // Mobile: Edit in the bottom bar, the blacklist toggle behind "…" — or
+  // the toggle itself in the bar for someone who can't edit.
+  const blacklistAction: MoreAction = {
+    key: 'blacklist',
+    label: customer.blacklisted ? 'Remove from Blacklist' : 'Blacklist',
+    icon: customer.blacklisted ? <ShieldCheck size={16} strokeWidth={2.25} /> : <ShieldAlert size={16} strokeWidth={2.25} />,
+    danger: !customer.blacklisted,
+    onClick: confirmToggleBlacklist,
+  }
+
   return (
     <div>
       <OverviewTab
         customer={customer}
         canEdit={canEdit}
+        canToggleBlacklist={canToggleBlacklist}
         onEdit={() => setEditOpen(true)}
-        onChanged={refresh}
+        onToggleBlacklist={confirmToggleBlacklist}
       />
 
       <ContractHistoryTab contracts={contracts} />
+
+      {isMobile && (canEdit || canToggleBlacklist) && (
+        <MobileActionBar more={canEdit && canToggleBlacklist ? [blacklistAction] : []}>
+          {canEdit ? (
+            <Button type="primary" icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
+          ) : (
+            <Button danger={blacklistAction.danger} icon={blacklistAction.icon} onClick={confirmToggleBlacklist}>{blacklistAction.label}</Button>
+          )}
+        </MobileActionBar>
+      )}
 
       <CustomerModal
         open={editOpen}

@@ -10,6 +10,9 @@ import { DotTag } from '../../../components/DotTag'
 import { useIconColors } from '../../../constants/iconColors'
 import { canVoidPaymentRecord } from '../../../constants/roles'
 import { voidPaymentRecord } from '../../../utils/contract'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 
 const METHOD_LABELS: Record<ContractPaymentRecord['method'], string> = {
   cash: 'Cash',
@@ -32,6 +35,7 @@ interface Props {
 // bigger operation than this action is meant for.
 export function PaymentHistoryTab({ contract, actor, onChanged }: Props) {
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
   const { message } = App.useApp()
   const iconColors = useIconColors()
   const [voidTarget, setVoidTarget] = useState<ContractPaymentRecord | null>(null)
@@ -106,6 +110,34 @@ export function PaymentHistoryTab({ contract, actor, onChanged }: Props) {
     }] : []),
   ]
 
+  // Mobile: which item it paid and the amount on top (struck through once
+  // voided); method, who received it and any note below — or the void
+  // reason in red — with the payment date. Voiding stays on desktop, like
+  // other row actions.
+  const mobileRows = mobileColumns<ContractPaymentRecord>(record => {
+    const slips = record.slipPhotos?.length ?? 0
+    const title = record.period === 0 ? 'Down Payment' : `Installment ${record.period}`
+    // The down payment's own note just says "Down payment" — the title does.
+    const note = record.note && record.note.toLowerCase() !== title.toLowerCase() ? record.note : null
+    const details = [METHOD_LABELS[record.method], record.receivedBy, slips > 0 ? `${slips} slip${slips === 1 ? '' : 's'}` : null, note]
+      .filter(Boolean)
+      .join(' · ')
+    return (
+      <MobileTableRow
+        primary={title}
+        trailing={(
+          <span style={record.voided ? { textDecoration: 'line-through', color: token.colorTextDisabled } : { color: token.colorText }}>
+            <CurrencyDisplay amount={record.amount} />
+          </span>
+        )}
+        secondary={record.voided
+          ? <span style={{ color: token.colorError }}>Voided — {record.voidReason}</span>
+          : details}
+        trailingSecondary={record.paymentDate}
+      />
+    )
+  })
+
   return (
     <div className="ifix-table-panel" style={{ marginBottom: 16 }}>
       <div style={{
@@ -118,12 +150,13 @@ export function PaymentHistoryTab({ contract, actor, onChanged }: Props) {
         <Typography.Text strong style={{ fontSize: 15 }}>Payment History</Typography.Text>
       </div>
 
-      <div style={{ padding: 16 }}>
+      <div style={{ padding: tablePanelPadding(isMobile) }}>
         <ConfigProvider theme={{ components: { Table: { colorText: token.colorTextTertiary, headerColor: token.colorTextTertiary } } }}>
           <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
             <Table
               rowKey="id"
-              columns={columns}
+              columns={isMobile ? mobileRows : columns}
+              {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               dataSource={contract.payments}
               size="small"
               pagination={false}

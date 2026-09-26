@@ -1712,6 +1712,9 @@ label[for="password"]::after {
     height: auto !important;
     max-height: none !important;
     transform: none !important;
+    /* FitToWidth scales the on-screen page to fit a narrow panel;
+       the printed sheet is always full size. */
+    zoom: 1 !important;
     position: static !important;
   }
 
@@ -1897,4 +1900,174 @@ label[for="password"]::after {
    header to line up with, so auto is safe here. */
 .ifix-mobile-rows .ant-table-body {
   overflow-y: auto !important;
+}
+
+/* MobileActionBar: a detail page's actions pinned to the bottom of the
+   screen on mobile — always, not only once the page is long enough to
+   scroll (a sticky bar sat straight under a short page's content, halfway
+   up the screen). `fixed` resolves against the app window here, not the
+   browser viewport: the window's content element has a transform (see
+   DesktopStageLayout), which makes it the containing block, so the bar
+   spans exactly the simulated phone screen. Same background as the page
+   behind it (the app window's), so content scrolls under it cleanly. The
+   main action(s) share the width; "…" keeps its square size. */
+.ifix-action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--ant-color-bg-container);
+  border-top: 0.5px solid var(--ant-color-split);
+}
+
+/* Room for the bar under the page's last content, so nothing ends up
+   hidden behind it: the bar's own height (12 + 36 + 12, plus the 0.5px
+   border, rounded up), on top of the content area's usual 16px. Derived
+   from the bar's dimensions, not a free spacing choice. The page wrapper
+   grows with the page (min-height instead of AppLayout's fixed 100%) —
+   padding on a fixed-height wrapper doesn't extend what overflows it. */
+.ant-layout-content > div:has(.ifix-action-bar) {
+  height: auto !important;
+  min-height: 100%;
+  padding-bottom: 61px;
+}
+
+.ifix-action-bar-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.ifix-action-bar-main > .ant-btn,
+.ifix-action-bar-main > .ant-space {
+  flex: 1;
+  min-width: 0;
+}
+
+.ifix-action-bar-main .ant-space {
+  display: flex !important;
+  gap: 8px !important;
+}
+
+.ifix-action-bar-main .ant-space > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.ifix-action-bar-main .ant-btn {
+  width: 100%;
+}
+
+/* DetailDescriptions' single-column layout (narrow panels, i.e. mobile):
+   label left, value right, with a divider between rows — the same row as
+   SettingsRow (8px above and below, border-secondary hairline, none under
+   the last). The label may wrap if a long value needs the room; the value
+   right-aligns and wraps too rather than overflowing. */
+.ifix-descriptions-split .ant-descriptions-row > td {
+  padding: 8px 0 !important;
+  border-bottom: 0.5px solid var(--ant-color-border-secondary);
+}
+
+.ifix-descriptions-split .ant-descriptions-row:first-child > td {
+  padding-top: 0 !important;
+}
+
+.ifix-descriptions-split .ant-descriptions-row:last-child > td {
+  border-bottom: none;
+}
+
+.ifix-descriptions-split .ant-descriptions-item-container {
+  gap: 16px;
+}
+
+.ifix-descriptions-split .ant-descriptions-item-label {
+  flex: 0 1 auto;
+}
+
+.ifix-descriptions-split .ant-descriptions-item-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+/* Full-width fields (span 2 on the wide grid — addresses) stack instead:
+   label above, value below at full width and left-aligned. */
+.ifix-descriptions-split .ifix-descriptions-stacked .ant-descriptions-item-container {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ifix-descriptions-split .ifix-descriptions-stacked .ant-descriptions-item-content {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+/* Scrollable tabs: no edge shadow. antd draws an inset grey shadow on
+   whichever side of the tab bar has tabs scrolled out of view — a fixed
+   black-alpha that reads as a smudge on the light page, and there's no
+   single background to fade to instead (tabs sit on the page, the main
+   panel and cards). The "…" overflow menu already says there's more. */
+.ant-tabs-nav-wrap::before,
+.ant-tabs-nav-wrap::after {
+  box-shadow: none !important;
+}
+
+/* ContractTemplateModal's FieldPair: the two fields split the row evenly. */
+.ifix-field-pair .ant-form-item {
+  width: 50%;
+}
+
+/* Table rows: the native vertical scrollbar is hidden and TableScrollbars
+   draws a thin one over the rows instead. antd reserves the native bar's
+   width at the end of a pinned header, measured once, so the header columns
+   line up with the rows — which, wherever the browser draws full-width
+   scrollbars (a mouse connected, or "always show"), left a permanent ~15px
+   strip down the right of every list panel, even with nothing to scroll.
+   - Rows area: back to the app's own ::-webkit-scrollbar rules (antd's
+     `scrollbar-width: thin` switches those off in Chromium), with the
+     vertical bar at zero width. The horizontal bar stays — the app's thin
+     one — for tables wider than their panel.
+   - antd's measuring element (rc-scrollbar-measure-*, which it styles like
+     the table's rows area) gets the same zero width, so the header reserves
+     nothing and stays aligned whether or not the rows overflow. */
+.ant-table-body {
+  scrollbar-width: auto !important;
+  scrollbar-color: auto !important;
+}
+
+.ant-table-body::-webkit-scrollbar,
+[id^="rc-scrollbar-measure-"]::-webkit-scrollbar {
+  width: 0;
+}
+
+/* TableScrollbars' overlay thumb: the same 6px pill and colours as the
+   app's native thumb (the ::-webkit-scrollbar rules at the top of this
+   file), 2px in from the rows' right edge, over the rows rather than
+   beside them. Shown at rest whenever the rows overflow, so there's always
+   a cue there's more; brighter on hover and while dragging. */
+.ant-table-container {
+  position: relative;
+}
+
+.ifix-table-thumb {
+  position: absolute;
+  right: 2px;
+  width: 6px;
+  border-radius: 999px;
+  background: var(--ifix-scrollbar-thumb);
+  z-index: 5;
+  cursor: default;
+  touch-action: none;
+  transition: background-color 0.15s ease;
+}
+
+.ifix-table-thumb:hover,
+.ifix-table-thumb-dragging {
+  background: var(--ifix-scrollbar-thumb-hover);
 }

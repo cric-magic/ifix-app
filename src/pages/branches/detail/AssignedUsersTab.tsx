@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Table, Typography, message, theme } from 'antd'
+import { Avatar, Button, Table, Typography, message, theme } from 'antd'
 import { UserPlus, Users } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
@@ -10,6 +10,10 @@ import { ROLE_LABELS } from '../../../constants/roles'
 import { UserStatusTag } from '../../users/components/UserStatusTag'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { AssignUserModal } from './AssignUserModal'
+import { getAvatarUrl } from '../../../utils/avatar'
+import { useIsMobile } from '../../../components/useIsMobile'
+import { MobileTableRow } from '../../../components/MobileTableRow'
+import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 
 interface Props {
   branch: Branch
@@ -19,6 +23,7 @@ interface Props {
 export function AssignedUsersTab({ branch, canManage }: Props) {
   const { token } = theme.useToken()
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const [assignOpen, setAssignOpen] = useState(false)
   const [version, setVersion] = useState(0)
   void version
@@ -56,6 +61,18 @@ export function AssignedUsersTab({ branch, canManage }: Props) {
     },
   ]
 
+  // Mobile: the same row as the Users list (UserTable) minus the branch,
+  // which is this page. The whole row opens the user.
+  const mobileRows = mobileColumns<UserAccount>(u => (
+    <MobileTableRow
+      leading={<Avatar src={getAvatarUrl(u.id)} size={44} />}
+      primary={u.name}
+      trailing={<UserStatusTag status={u.status} />}
+      secondary={ROLE_LABELS[u.role]}
+      trailingSecondary={u.staffId}
+    />
+  ))
+
   return (
     <div className="ifix-table-panel">
       <div style={{
@@ -84,11 +101,13 @@ export function AssignedUsersTab({ branch, canManage }: Props) {
         )}
       </div>
 
-      <div style={{ padding: 16 }}>
+      <div style={{ padding: tablePanelPadding(isMobile) }}>
         <div className="ifix-panel-table" style={{ margin: '0 -16px' }}>
           <Table
             rowKey="id"
-            columns={columns}
+            columns={isMobile ? mobileRows : columns}
+            {...(isMobile ? MOBILE_TABLE_PROPS : {})}
+            onRow={isMobile ? record => ({ onClick: () => navigate(`/settings/members/${record.id}`), style: { cursor: 'pointer' } }) : undefined}
             dataSource={assigned}
             size="small"
             pagination={false}

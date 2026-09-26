@@ -1,4 +1,5 @@
 import { Typography, theme } from 'antd'
+import { useIsMobile } from './useIsMobile'
 
 // `action` sits on the right of the title row (e.g. an Edit button for the
 // card's own settings) rather than trailing below the rows, where it read
@@ -19,8 +20,22 @@ export function SettingsCard({ title, action, children }: { title: string; actio
   )
 }
 
-export function SettingsRow({ label, children }: { label: string; children: React.ReactNode }) {
+// `stacked` is for long free text (an address): on mobile it goes under its
+// label at full width, left-aligned, instead of squeezed into the right half
+// — the same rule DetailDescriptions applies to its full-row fields.
+export function SettingsRow({ label, stacked, children }: { label: string; stacked?: boolean; children: React.ReactNode }) {
   const { token } = theme.useToken()
+  const isMobile = useIsMobile()
+
+  if (stacked && isMobile) {
+    return (
+      <div className="ifix-settings-row" style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '8px 0' }}>
+        <span style={{ fontSize: 14, color: token.colorTextSecondary }}>{label}</span>
+        <span style={{ fontSize: 14, color: token.colorText }}>{children}</span>
+      </div>
+    )
+  }
+
   return (
     // Divider lives in index.css (.ifix-settings-row) so the card's last row
     // can drop it — the card's own edge already closes the list.
