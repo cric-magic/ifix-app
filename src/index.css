@@ -2071,3 +2071,26 @@ label[for="password"]::after {
 .ifix-table-thumb-dragging {
   background: var(--ifix-scrollbar-thumb-hover);
 }
+
+/* The menu bar's account picker in its compact layout (DevToolsPanel): a
+   long name cuts off with "…" instead of pushing the right-hand buttons
+   off a narrow screen. */
+.ifix-menubar-compact-account .ifix-menubar-item {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.ifix-menubar-compact-account .ifix-menubar-item > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Preview's tools button on touch screens (DevToolsPanel's
+   PreviewToolsButton) sits bottom-right; on a page with a bottom action
+   bar it rises above it — the bar's height (see .ifix-action-bar) plus the
+   button's usual 16px. */
+body:has(.ifix-action-bar) .ifix-preview-tools {
+  bottom: 77px !important;
+}

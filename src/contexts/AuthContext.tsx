@@ -1,8 +1,25 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import type { AuthUser } from '../types/installment'
 import type { UserAccount } from '../types/user'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
 import { toAuthUser } from '../constants/roles'
+import { PREVIEW_STORAGE_KEY } from './DevToolsContext'
+
+// Sign-in otherwise lives only in memory, so a reload signs out. Preview is
+// the exception, since it's the view a shared link opens and a client
+// reloads: a link's `as` (the account it was copied as — see previewLink in
+// DevToolsPanel) signs that account in, and a tab in preview remembers its
+// account across reloads.
+const PREVIEW_ACCOUNT_KEY = 'ifix-preview-account'
+
+function readInitialState(): AuthState {
+  const fromLink = new URLSearchParams(window.location.search).get('as')
+  const inPreview = sessionStorage.getItem(PREVIEW_STORAGE_KEY) === '1'
+    || new URLSearchParams(window.location.search).get('preview') === '1'
+  const id = fromLink ?? (inPreview ? sessionStorage.getItem(PREVIEW_ACCOUNT_KEY) : null)
+  const account = id ? MOCK_USER_ACCOUNTS.find(u => u.id === id) : undefined
+  return account && account.status !== 'suspended' ? { status: 'signed_in', account } : { status: 'signed_out' }
+}
 
 type AuthState =
   | { status: 'signed_out' }
@@ -27,7 +44,13 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({ status: 'signed_out' })
+  const [state, setState] = useState<AuthState>(readInitialState)
+
+  // Keep the preview account current (it's only read back in preview).
+  useEffect(() => {
+    if (state.status === 'signed_in') sessionStorage.setItem(PREVIEW_ACCOUNT_KEY, state.account.id)
+    else sessionStorage.removeItem(PREVIEW_ACCOUNT_KEY)
+  }, [state])
 
   function login(email: string, password: string): LoginResult {
     const account = MOCK_USER_ACCOUNTS.find(u => u.email.toLowerCase() === email.trim().toLowerCase())

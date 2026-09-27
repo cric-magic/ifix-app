@@ -37,7 +37,7 @@ function withAlpha(color: string, alpha: number): string {
 // the docs page renders as its own plain full-size page: no desktop
 // background, no window chrome, not resizable.
 export function DesktopStageLayout() {
-  const { windowSize, setWindowSize, setAppWindowEl } = useDevTools()
+  const { windowSize, setWindowSize, setAppWindowEl, previewMode } = useDevTools()
   const { token } = theme.useToken()
   const [resizing, setResizing] = useState<ResizeDir | null>(null)
   const startRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null)
@@ -86,8 +86,25 @@ export function DesktopStageLayout() {
 
   const handleStyle: React.CSSProperties = { position: 'absolute', userSelect: 'none' }
 
+  // Preview mode keeps this same tree — so the page underneath stays
+  // mounted, with its state, when toggling — but drops everything that
+  // makes it a simulated window: the wallpaper and its padding, the
+  // window's frame, corners and shadow, and the resize handles. The window
+  // then fills the browser tab (windowSize is the real viewport there).
+  const previewOuter: React.CSSProperties = {
+    height: '100%',
+    backgroundColor: token.colorBgContainer,
+  }
+  const previewWindow: React.CSSProperties = {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    background: token.colorBgContainer,
+    overflow: 'hidden',
+  }
+
   return (
-    <div style={{
+    <div style={previewMode ? previewOuter : {
       // minHeight (not height): this sits inside AppThemed's own flex:1/
       // overflow:auto scroll container, so it should fill that area at
       // minimum (to center the window both vertically and horizontally when
@@ -126,8 +143,8 @@ export function DesktopStageLayout() {
           to get half-clipped by that same overflow, shrinking its hit area
           and, at the corner grip, visibly cutting the grip icon off square
           against the rounded corner instead of sitting outside it cleanly. */}
-      <div style={{ position: 'relative', width: windowSize.width, height: windowSize.height, flexShrink: 0 }}>
-        <div style={{
+      <div style={{ position: 'relative', width: previewMode ? '100%' : windowSize.width, height: previewMode ? '100%' : windowSize.height, flexShrink: 0 }}>
+        <div style={previewMode ? previewWindow : {
           position: 'relative',
           width: '100%',
           height: '100%',
@@ -182,6 +199,7 @@ export function DesktopStageLayout() {
         {/* Resize handles — right edge (width), bottom edge (height), corner (both).
             Kept invisible at rest and only need to be wide enough to grab; the
             corner handle gets a small visible grip so the affordance is discoverable. */}
+        {!previewMode && <>
         <div onMouseDown={startResize('right')} style={{ ...handleStyle, top: 0, right: -4, width: 8, height: '100%', cursor: 'ew-resize' }} />
         <div onMouseDown={startResize('bottom')} style={{ ...handleStyle, left: 0, bottom: -4, height: 8, width: '100%', cursor: 'ns-resize' }} />
         <div onMouseDown={startResize('corner')} style={{
@@ -202,6 +220,7 @@ export function DesktopStageLayout() {
             borderBottomRightRadius: 4,
           }} />
         </div>
+        </>}
       </div>
     </div>
   )

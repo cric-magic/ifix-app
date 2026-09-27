@@ -4,7 +4,7 @@ import { RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { DevToolsProvider, useDevTools } from './contexts/DevToolsContext'
 import type { ThemeVariant } from './contexts/DevToolsContext'
-import { DevToolsPanel } from './components/DevToolsPanel'
+import { DevToolsPanel, PreviewControls } from './components/DevToolsPanel'
 import { InspectorOverlay } from './components/InspectorOverlay'
 import { ICON_COLOR_SECONDARY, ICON_COLOR_PRIMARY } from './constants/iconColors'
 import { router } from './router'
@@ -654,6 +654,7 @@ function AppThemed() {
         <AuthProvider>
           <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
             <DevToolsPanel />
+            <PreviewControls />
             <InspectorOverlay />
             {/* Always present regardless of route, so both the windowed app
                 (via DesktopStageLayout, nested inside the router tree) and
