@@ -240,7 +240,7 @@ export function TronArenaBackground({ top, height }: Props) {
   // prominent against a light surface at the Neutral/Bluish intensity, so
   // it's a lower multiplier there rather than a different color or being
   // hidden outright.
-  const gridIntensity = themeVariant === 'light' ? 0.08 : themeVariant === 'blue' ? 0.2 : 0.35
+  const gridIntensity = themeVariant === 'light' ? 0.08 : 0.2
   // Read by the running frame loop's closure on every frame — mutating
   // these on theme change repaints with the new values immediately, no
   // need to tear down and recreate the whole WebGPU context.

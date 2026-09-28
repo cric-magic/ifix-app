@@ -25,13 +25,21 @@ export const DEVICE_PRESET_LABELS: Record<string, string> = {
 // turn the sidebar into a drawer. Re-exported by components/useIsMobile.
 export const MOBILE_MAX_WIDTH = 768
 
-export type ThemeVariant = 'neutral' | 'blue' | 'light'
+// The two themes the app renders: light, and a dark mode with a bluish
+// (navy) tone. What's applied comes from the viewer's preference below.
+export type ThemeVariant = 'dark' | 'light'
 
-export const THEME_LABELS: Record<ThemeVariant, string> = {
-  neutral: 'Neutral',
-  blue: 'Bluish',
+// What the viewer picked (Account › General › Appearance, or the menu
+// bar): a fixed theme, or System — follow the device's light/dark setting.
+export type ThemePreference = 'light' | 'dark' | 'system'
+
+export const THEME_LABELS: Record<ThemePreference, string> = {
   light: 'Light',
+  dark: 'Dark',
+  system: 'System',
 }
+
+export const THEME_PREFERENCES: ThemePreference[] = ['light', 'dark', 'system']
 
 interface DevToolsContextValue {
   // The app window's size — the simulated device's, or in preview mode the
@@ -50,8 +58,10 @@ interface DevToolsContextValue {
   // the prototype's own chrome (the menu bar), which lives in the browser,
   // not inside the simulated window.
   viewport: WindowSize
+  // The theme being shown — the preference, with System resolved.
   themeVariant: ThemeVariant
-  setThemeVariant: (t: ThemeVariant) => void
+  themePreference: ThemePreference
+  setThemePreference: (t: ThemePreference) => void
   inspectMode: boolean
   setInspectMode: (v: boolean) => void
   // Mirrors AppWindowContext's value up to this top-level context so
@@ -74,21 +84,26 @@ const DevToolsContext = createContext<DevToolsContextValue | null>(null)
 // whatever theme the app itself was showing.
 const THEME_STORAGE_KEY = 'ifix-theme-variant'
 
-function isThemeVariant(v: string | null): v is ThemeVariant {
-  return v === 'neutral' || v === 'blue' || v === 'light'
+// Read a stored or linked theme choice. Neutral and Bluish were both dark
+// themes before Dark became the single (bluish) dark mode, so either
+// becomes Dark.
+function parseThemePreference(v: string | null): ThemePreference | null {
+  if (v === 'light' || v === 'dark' || v === 'system') return v
+  if (v === 'neutral' || v === 'blue') return 'dark'
+  return null
 }
 
-function readStoredThemeVariant(): ThemeVariant {
-  const stored = localStorage.getItem(THEME_STORAGE_KEY)
-  return isThemeVariant(stored) ? stored : 'light'
+function readStoredThemePreference(): ThemePreference {
+  return parseThemePreference(localStorage.getItem(THEME_STORAGE_KEY)) ?? 'system'
 }
 
 // A shared preview link can carry the theme it was copied in (see
 // previewLink), which wins over this browser's own stored choice.
-function readInitialThemeVariant(): ThemeVariant {
-  const fromLink = new URLSearchParams(window.location.search).get('theme')
-  return isThemeVariant(fromLink) ? fromLink : readStoredThemeVariant()
+function readInitialThemePreference(): ThemePreference {
+  return parseThemePreference(new URLSearchParams(window.location.search).get('theme')) ?? readStoredThemePreference()
 }
+
+const DARK_SCHEME_QUERY = '(prefers-color-scheme: dark)'
 
 // Preview mode starts on for: a shared preview link (?preview=1); a reload
 // while already in preview (kept per tab in sessionStorage, since in-app
@@ -108,7 +123,8 @@ function readViewport(): WindowSize {
 
 export function DevToolsProvider({ children }: { children: React.ReactNode }) {
   const [deviceSize, setWindowSize] = useState<WindowSize>(DEVICE_PRESETS.desktop)
-  const [themeVariant, setThemeVariantState] = useState<ThemeVariant>(readInitialThemeVariant)
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>(readInitialThemePreference)
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia(DARK_SCHEME_QUERY).matches)
   const [inspectMode, setInspectMode] = useState(false)
   const [appWindowEl, setAppWindowEl] = useState<HTMLElement | null>(null)
   const [previewMode, setPreviewModeState] = useState(readInitialPreview)
@@ -146,9 +162,22 @@ export function DevToolsProvider({ children }: { children: React.ReactNode }) {
 
   const windowSize = previewMode ? viewport : deviceSize
 
-  function setThemeVariant(variant: ThemeVariant) {
-    setThemeVariantState(variant)
-    localStorage.setItem(THEME_STORAGE_KEY, variant)
+  // System follows the device live — switching the OS to dark mode (or
+  // its own schedule doing it at sunset) re-themes an open app.
+  useEffect(() => {
+    const query = window.matchMedia(DARK_SCHEME_QUERY)
+    const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches)
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
+  }, [])
+
+  const themeVariant: ThemeVariant = themePreference === 'system'
+    ? (systemDark ? 'dark' : 'light')
+    : themePreference
+
+  function setThemePreference(preference: ThemePreference) {
+    setThemePreferenceState(preference)
+    localStorage.setItem(THEME_STORAGE_KEY, preference)
   }
 
   // Keeps an already-open tab (e.g. /design-docs opened before a later
@@ -158,7 +187,7 @@ export function DevToolsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     function handleStorage(e: StorageEvent) {
       if (e.key === THEME_STORAGE_KEY && e.newValue) {
-        setThemeVariantState(readStoredThemeVariant())
+        setThemePreferenceState(readStoredThemePreference())
       }
     }
     window.addEventListener('storage', handleStorage)
@@ -166,7 +195,7 @@ export function DevToolsProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <DevToolsContext.Provider value={{ windowSize, setWindowSize, previewMode, setPreviewMode, viewport, themeVariant, setThemeVariant, inspectMode, setInspectMode, appWindowEl, setAppWindowEl }}>
+    <DevToolsContext.Provider value={{ windowSize, setWindowSize, previewMode, setPreviewMode, viewport, themeVariant, themePreference, setThemePreference, inspectMode, setInspectMode, appWindowEl, setAppWindowEl }}>
       {children}
     </DevToolsContext.Provider>
   )

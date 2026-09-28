@@ -6,7 +6,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { ROLE_LABELS, ROLE_TAG_COLOR } from '../constants/roles'
 import { MOCK_USER_ACCOUNTS } from '../constants/mockUsers'
 import { getAvatarUrl } from '../utils/avatar'
-import type { ThemeVariant } from '../contexts/DevToolsContext'
+import { THEME_PREFERENCES } from '../contexts/DevToolsContext'
+import type { ThemePreference, ThemeVariant } from '../contexts/DevToolsContext'
 import type { ItemType } from 'antd/es/menu/interface'
 
 const MENU_BAR_FONT_SIZE = 13
@@ -82,7 +83,8 @@ function accountItems(): ItemType[] {
 }
 
 // A link that opens straight into preview, as the same account and in the
-// same theme — for sending to a client. Read back by DevToolsContext
+// theme being shown — the resolved one, so a System preference copies as
+// whichever of Light or Dark is on screen, not the recipient's own device — for sending to a client. Read back by DevToolsContext
 // (preview, theme) and AuthContext (as).
 function previewLink(theme: ThemeVariant, accountId?: string): string {
   const params = new URLSearchParams({ preview: '1', theme })
@@ -91,7 +93,7 @@ function previewLink(theme: ThemeVariant, accountId?: string): string {
 }
 
 export function DevToolsPanel() {
-  const { windowSize, setWindowSize, themeVariant, setThemeVariant, inspectMode, setInspectMode, previewMode, setPreviewMode, viewport } = useDevTools()
+  const { windowSize, setWindowSize, themePreference, setThemePreference, inspectMode, setInspectMode, previewMode, setPreviewMode, viewport } = useDevTools()
   const compact = viewport.width < COMPACT_BAR_MAX_WIDTH
   const { user, devSetUser } = useAuth()
   // DevToolsPanel renders as a sibling above <RouterProvider> in App.tsx
@@ -116,7 +118,7 @@ export function DevToolsPanel() {
     label: `${DEVICE_PRESET_LABELS[key]} · ${DEVICE_PRESETS[key].width}×${DEVICE_PRESETS[key].height}`,
   }))
 
-  const themeItems: ItemType[] = (['neutral', 'blue', 'light'] as ThemeVariant[]).map(t => ({
+  const themeItems: ItemType[] = THEME_PREFERENCES.map(t => ({
     key: t,
     label: THEME_LABELS[t],
   }))
@@ -180,10 +182,10 @@ export function DevToolsPanel() {
       {
         type: 'group',
         label: 'Theme',
-        children: (['neutral', 'blue', 'light'] as ThemeVariant[]).map(t => ({
+        children: THEME_PREFERENCES.map(t => ({
           key: `theme:${t}`,
           label: THEME_LABELS[t],
-          extra: tick(t === themeVariant),
+          extra: tick(t === themePreference),
         })),
       },
       { type: 'divider' },
@@ -193,7 +195,7 @@ export function DevToolsPanel() {
 
     function onMore(key: string) {
       if (key.startsWith('viewport:')) setWindowSize(DEVICE_PRESETS[key.slice('viewport:'.length)])
-      else if (key.startsWith('theme:')) setThemeVariant(key.slice('theme:'.length) as ThemeVariant)
+      else if (key.startsWith('theme:')) setThemePreference(key.slice('theme:'.length) as ThemePreference)
       else if (key === 'inspect') setInspectMode(!inspectMode)
       else if (key === 'docs') window.open('/design-docs', '_blank', 'noreferrer')
     }
@@ -260,8 +262,8 @@ export function DevToolsPanel() {
         <MenuBarTrigger items={viewportItems} onSelect={key => setWindowSize(DEVICE_PRESETS[key])}>
           {viewportLabel}
         </MenuBarTrigger>
-        <MenuBarTrigger items={themeItems} onSelect={key => setThemeVariant(key as ThemeVariant)}>
-          {THEME_LABELS[themeVariant]}
+        <MenuBarTrigger items={themeItems} onSelect={key => setThemePreference(key as ThemePreference)}>
+          {THEME_LABELS[themePreference]}
         </MenuBarTrigger>
       </div>
 
@@ -348,7 +350,7 @@ export function PreviewControls() {
 // .ifix-preview-tools in index.css) opening the account and theme pickers
 // and Copy link.
 function PreviewToolsButton() {
-  const { themeVariant, setThemeVariant } = useDevTools()
+  const { themeVariant, themePreference, setThemePreference } = useDevTools()
   const { user, devSetUser } = useAuth()
   const { message } = App.useApp()
 
@@ -366,10 +368,10 @@ function PreviewToolsButton() {
     {
       type: 'group',
       label: 'Theme',
-      children: (['neutral', 'blue', 'light'] as ThemeVariant[]).map(t => ({
+      children: THEME_PREFERENCES.map(t => ({
         key: `theme:${t}`,
         label: THEME_LABELS[t],
-        extra: tick(t === themeVariant),
+        extra: tick(t === themePreference),
       })),
     },
     { type: 'divider' },
@@ -381,7 +383,7 @@ function PreviewToolsButton() {
       const account = MOCK_USER_ACCOUNTS.find(a => a.id === key.slice('account:'.length))
       if (account) devSetUser(account)
     } else if (key.startsWith('theme:')) {
-      setThemeVariant(key.slice('theme:'.length) as ThemeVariant)
+      setThemePreference(key.slice('theme:'.length) as ThemePreference)
     } else if (key === 'copy') {
       navigator.clipboard.writeText(previewLink(themeVariant, user?.id))
         .then(() => message.success('Preview link copied'))

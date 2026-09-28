@@ -9,9 +9,8 @@ import { InspectorOverlay } from './components/InspectorOverlay'
 import { ICON_COLOR_SECONDARY, ICON_COLOR_PRIMARY } from './constants/iconColors'
 import { router } from './router'
 
-// Per-variant seed values. neutral/blue only ever change the accent +
-// background hue and share the same dark algorithm, white-alpha
-// borders/split, and light-on-dark icon colors. light is a genuine algorithm
+// Per-variant seed values: dark (the bluish navy theme) and light. light is a
+// genuine algorithm
 // switch (theme.defaultAlgorithm, not just a background swap) — the real
 // test of whether the token pipeline (border/split alpha direction, icon
 // contrast, the colorBgElevated derivation) holds up outside the dark-mode
@@ -38,10 +37,9 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
   // the page even where flat surfaces don't.
   boxShadow: string
   boxShadowSecondary: string
-  // Optional per-variant override for the functional colors — omitted only
-  // for neutral, which keeps the shared muted family below (tuned around
-  // that variant's own teal-ish primary). Bluish and Light both use the
-  // real brand primary (#3283F8), a lot more saturated than that muted
+  // Optional per-variant override for the functional colors (a variant
+  // without one falls back to the shared muted family below). Dark and
+  // Light both use the real brand primary (#3283F8), a lot more saturated than that muted
   // family, so success/warning/error/info need their own more vivid family
   // to actually look like they belong next to it instead of reading dull/
   // mismatched. colorInfo intentionally equals colorPrimary here — "info"
@@ -56,33 +54,9 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
     colorInfo: string
   }
 }> = {
-  neutral: {
-    colorPrimary: '#5b9aa8',
-    colorBgBase: '#000000',
-    // Was '#0a0a0a' — that's also the exact hex colorFillQuaternary
-    // solidizes to further down when blended onto colorBgLayout (pure
-    // black), so the Sider (showing this seed directly) and the Content
-    // wrapper (painted with that solidized quaternary tint) rendered
-    // identically, erasing the seam between them. Moved to '#050505' so it
-    // no longer collides with that ~#0a0a0a computed value — colorLayout
-    // is already floored at pure black, so this side had to move instead.
-    colorBgContainer: '#050505',
-    colorBgLayout: '#000000',
-    algorithm: 'dark',
-    colorBorder: 'rgba(255, 255, 255, 0.12)',
-    colorBorderSecondary: 'rgba(255, 255, 255, 0.08)',
-    colorSplit: 'rgba(255, 255, 255, 0.12)',
-    colorIcon: ICON_COLOR_SECONDARY,
-    colorIconHover: ICON_COLOR_PRIMARY,
-    // antd's own default boxShadow (a soft 3-layer ambient glow, max alpha
-    // 0.12) is tuned for a light backdrop and reads as nearly invisible
-    // against near-black — this flatter, higher-contrast single line is
-    // legible on dark without antd's fixed boxShadowTertiary's even-fainter
-    // alpha (0.03) being an option either.
-    boxShadow: '0 0.5px 1px 1px rgba(0, 0, 0, 0.15)',
-    boxShadowSecondary: '0 0.5px 1px 1px rgba(0, 0, 0, 0.15)',
-  },
-  blue: {
+  // Dark mode: the bluish (navy) theme — the one dark theme since Neutral
+  // (near-black with a muted teal accent) was retired.
+  dark: {
     // Real brand colors (as of this pass): primary #3283F8, dark navy
     // #121B22, plus a lighter sky-blue #68D2F9 that has no seed slot to
     // land in yet — this token schema only has one accent color
@@ -118,10 +92,10 @@ const VARIANT_SEEDS: Record<ThemeVariant, {
     },
   },
   light: {
-    // Same real brand primary as Bluish (#3283F8), not the old muted teal —
+    // Same real brand primary as Dark (#3283F8), not the old muted teal —
     // this is the one accent color meant to represent the actual brand, so
     // Light shouldn't show a different one just because the surface flipped
-    // to white. Functional colors below are the same vivid family Bluish
+    // to white. Functional colors below are the same vivid family Dark
     // uses for the same reason (see that variant's own comment).
     colorPrimary: '#3283F8',
     // Elevation runs the opposite direction from dark mode: the outer page
@@ -191,11 +165,10 @@ function ensureContrast(color: string, against: string, minDelta: number, direct
   return `rgb(${clamp(cr + shift)},${clamp(cg + shift)},${clamp(cb + shift)})`
 }
 
-// Shared fallback for variants that don't specify their own functionalColors
-// override (neutral, light) — muted, moderate-saturation family tuned
-// around those variants' own teal-ish primary. Kept as the default rather
-// than duplicated onto every variant so only Bluish (the one with an
-// actual brand primary so far) needs to specify anything different.
+// Shared fallback for a variant that doesn't specify its own
+// functionalColors — a muted, moderate-saturation family, tuned around the
+// retired Neutral theme's teal primary. Both current variants set their
+// own; this stays as the default for any future one.
 const DEFAULT_FUNCTIONAL_COLORS = {
   colorSuccess: '#6a9c72',
   colorWarning: '#c99753',

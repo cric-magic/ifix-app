@@ -1,10 +1,12 @@
-import { Avatar, Typography } from 'antd'
+import { Avatar, Segmented, Typography } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_USER_ACCOUNTS } from '../../constants/mockUsers'
 import { ROLE_LABELS } from '../../constants/roles'
 import { getAvatarUrl } from '../../utils/avatar'
 import { UserStatusTag } from '../users/components/UserStatusTag'
 import { SettingsCard, SettingsRow } from '../../components/SettingsCard'
+import { THEME_LABELS, THEME_PREFERENCES, useDevTools } from '../../contexts/DevToolsContext'
+import type { ThemePreference } from '../../contexts/DevToolsContext'
 
 const dateFormatter = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 
@@ -16,14 +18,19 @@ function actorName(userId: string | null): string | null {
   return userId ? MOCK_USER_ACCOUNTS.find(a => a.id === userId)?.name ?? null : null
 }
 
-// Read-only — per the User Account doc's Out of Scope: "User cannot edit
-// his/her details in MVP." Same header + card layout as UserDetailPage
-// (the admin-facing view of another user) so the two stay visually
-// identical; this one never shows the Edit/actions controls since a user
-// can never manage their own account.
+// The account details are read-only — per the User Account doc's Out of
+// Scope: "User cannot edit his/her details in MVP." Same header + card
+// layout as UserDetailPage (the admin-facing view of another user) so the
+// two stay visually identical; this one never shows the Edit/actions
+// controls since a user can never manage their own account.
+//
+// Appearance is the exception: a personal display preference, not account
+// data. Light, Dark (the bluish theme), or System — follow the device.
+// Kept per browser, so a shared shop device keeps its own setting.
 export function AccountGeneralPage() {
   const user = useCurrentUser()
   const account = MOCK_USER_ACCOUNTS.find(a => a.id === user.id)
+  const { themePreference, setThemePreference } = useDevTools()
 
   if (!account) return null
 
@@ -62,6 +69,16 @@ export function AccountGeneralPage() {
         <SettingsRow label="Activated at">{formatDate(account.activatedAt)}</SettingsRow>
         <SettingsRow label="Suspended by & at">
           {account.suspendedBy ? `${actorName(account.suspendedBy) ?? '—'} · ${formatDate(account.suspendedAt)}` : '—'}
+        </SettingsRow>
+      </SettingsCard>
+
+      <SettingsCard title="Appearance">
+        <SettingsRow label="Theme">
+          <Segmented<ThemePreference>
+            value={themePreference}
+            onChange={setThemePreference}
+            options={THEME_PREFERENCES.map(t => ({ value: t, label: THEME_LABELS[t] }))}
+          />
         </SettingsRow>
       </SettingsCard>
     </div>

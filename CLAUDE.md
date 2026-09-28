@@ -67,6 +67,7 @@ Lucide icons are stroked paths, and several have crossing/overlapping segments (
 - `Menu` — muted active state (10% primary opacity bg)
 
 ### Theme is configured in `src/App.tsx` via `ConfigProvider`
+- Two themes: **dark** (a bluish navy) and **light** (`VARIANT_SEEDS`). Which one shows comes from the viewer's preference — Light, Dark or System (follows the device) — set in Account › General › Appearance or the menu bar, stored per browser (`DevToolsContext`).
 - Change `colorPrimary` there to shift the entire app palette
 - `theme.darkAlgorithm` is active — all tokens adapt automatically
 - Do not override colors at the component level unless there is no token equivalent
@@ -143,7 +144,7 @@ A perfect circle (`borderRadius: '50%'`, e.g. `DotTag.tsx`'s status dot) is a di
 ## Shadow
 Not a graduated scale like Spacing/Radius — just two elevation levels, each a real per-variant seed token in `App.tsx`'s `VARIANT_SEEDS`:
 
-| Token | Used for | neutral/blue | light |
+| Token | Used for | dark | light |
 |---|---|---|---|
 | `boxShadow` | Flat surfaces (panels, table cards) | `0 0.5px 1px 1px rgba(0,0,0,0.15)` | `none` |
 | `boxShadowSecondary` | Floating overlays (Dropdown/Select/DatePicker) | same as `boxShadow` | `rgba(0,0,0,0.08) 0 0 0 1px, rgba(0,0,0,0.08) 0 4px 12px 0` |

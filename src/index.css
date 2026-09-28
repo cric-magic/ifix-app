@@ -401,18 +401,18 @@ body {
   color: var(--ant-color-icon-hover) !important;
 }
 
-/* Primary button "border beam" — applies to every theme (Neutral, Bluish,
+/* Primary button "border beam" — applies to both themes (Dark,
    Light) now. data-ifix-theme (set on :root by App.tsx) is still used
    below to swap the beam's own color for Light specifically.
 
    The surface is no longer a flat colorPrimary fill — it's a neutral
    elevated-surface gradient (colorBgElevated → colorBgLayout, the same
    pairing Card/Drawer use for "raised surface sitting on the page"),
-   which is why it reads as near-black in Neutral/Bluish and near-white
+   which is why it reads as near-black in Dark and near-white
    in Light: those tokens already resolve that way per theme, same as
    everywhere else in the app. The only color signal left is the spinning
-   conic-gradient ring that appears on hover (colorWhite in Neutral/
-   Bluish, swapped to colorPrimary in Light — see below), plus a top inner
+   conic-gradient ring that appears on hover (colorWhite in
+   Dark, swapped to colorPrimary in Light — see below), plus a top inner
    highlight (the border-beam demo's bevel). Active and Focus each have
    their own distinct look further down — not just hover-with-extras.
    Text/icon color follows the same secondary→primary convention as every
@@ -620,7 +620,7 @@ body {
 }
 
 /* Light swaps the beam color: a white beam (the default, above) reads as a
-   highlight against Bluish's dark surface, but against Light's near-white
+   highlight against Dark's navy surface, but against Light's near-white
    surface it would barely register — so the ring becomes the brand color
    instead. No glow to swap anymore (removed from both variants), just the
    ring's own color. */
