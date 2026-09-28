@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { App, Avatar, Dropdown, Space, Tag, Typography } from 'antd'
+import { App, Avatar, Dropdown, Space, Tag, Tooltip, Typography } from 'antd'
 import { User, BookOpen, ChevronDown, Home, Crosshair, Play, X, Link2, MoreHorizontal, Check, SlidersHorizontal } from 'lucide-react'
 import { useDevTools, DEVICE_PRESETS, DEVICE_PRESET_LABELS, THEME_LABELS } from '../contexts/DevToolsContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -331,25 +331,28 @@ function overlayOpen(): boolean {
   )].some(el => el.getClientRects().length > 0 && !/-hidden\b/.test(el.className))
 }
 
-// Preview's only chrome. With a mouse: a small pill at the top centre with
-// Exit preview and Copy link, shown for a moment on entering, then out of
-// the way until the pointer comes up to the top edge, like a video player's
-// controls; Esc exits too. On a touch screen (a real phone, where preview
-// starts by itself and the simulated desktop is no use to exit to): a
-// floating tools button instead, for switching account or theme in place.
+// Preview's only chrome: one small round tools button on the screen's side
+// edge (see PreviewToolsButton) — on every device. It used to be a pill at
+// the top centre on desktop, which reappeared whenever the pointer neared
+// the top edge — right where the header and breadcrumbs are — and covered
+// them. Esc exits too, with a mouse and keyboard.
 export function PreviewControls() {
   const { previewMode } = useDevTools()
   const [coarsePointer] = useState(() => window.matchMedia('(pointer: coarse)').matches)
   if (!previewMode) return null
-  // Remounted each time preview starts, so the pill always shows first.
-  return coarsePointer ? <PreviewToolsButton /> : <PreviewPill />
+  // Remounted each time preview starts, so its "how to exit" hint shows
+  // again. On a touch screen (a real phone, where preview starts by itself
+  // and the simulated desktop is no use to exit to) there's no Exit.
+  return <PreviewToolsButton canExit={!coarsePointer} />
 }
 
-// Touch screens' preview tools: a round button opening the account and
-// theme pickers and Copy link. It can be dragged anywhere and snaps to the
-// nearer side edge on release, so it can be moved off whatever it's
-// covering; where it was left is remembered (per browser). A tap opens the
-// menu; a drag doesn't. It stays clear of a detail page's bottom action bar.
+// Preview's tools: a round button opening Exit preview (with a mouse and
+// keyboard), the account and theme pickers and Copy link. It can be dragged
+// anywhere and snaps to the nearer side edge on release, so it can be moved
+// off whatever it's covering; where it was left is remembered (per
+// browser). A tap or click opens the menu; a drag doesn't. It stays clear of
+// a detail page's bottom action bar. On entering preview a short hint next
+// to it says how to get out.
 const TOOLS_SIZE = 44
 const TOOLS_MARGIN = 16
 // Movement (px) past which a press counts as a drag rather than a tap.
@@ -372,8 +375,11 @@ function readToolsPosition(): ToolsPosition | null {
   }
 }
 
-function PreviewToolsButton() {
-  const { themeVariant, themePreference, setThemePreference, viewport } = useDevTools()
+// How long the "how to exit" hint shows on entering preview.
+const EXIT_HINT_MS = 3000
+
+function PreviewToolsButton({ canExit }: { canExit: boolean }) {
+  const { themeVariant, themePreference, setThemePreference, setPreviewMode, viewport } = useDevTools()
   const { user, devSetUser } = useAuth()
   const { message } = App.useApp()
   const [open, setOpen] = useState(false)
@@ -383,6 +389,20 @@ function PreviewToolsButton() {
   const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null)
   const justDragged = useRef(false)
   const actionBar = useActionBarPresent()
+  const [hint, setHint] = useState(canExit)
+
+  useEffect(() => {
+    if (!canExit) return
+    const timer = window.setTimeout(() => setHint(false), EXIT_HINT_MS)
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !overlayOpen()) setPreviewMode(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [canExit, setPreviewMode])
 
   // Where it can sit vertically: inside the screen's margins, and above the
   // action bar when the page has one. Re-clamped as the screen or page
@@ -390,7 +410,10 @@ function PreviewToolsButton() {
   const minTop = TOOLS_MARGIN
   const maxTop = viewport.height - TOOLS_MARGIN - TOOLS_SIZE - (actionBar ? ACTION_BAR_HEIGHT : 0)
   const side = position?.side ?? 'right'
-  const top = Math.min(maxTop, Math.max(minTop, position?.top ?? maxTop))
+  // Unmoved, it sits two-thirds of the way down the right edge — clear of
+  // the header, and of the pager a list page pins to its bottom.
+  const defaultTop = Math.round(viewport.height * 2 / 3 - TOOLS_SIZE / 2)
+  const top = Math.min(maxTop, Math.max(minTop, position?.top ?? defaultTop))
   const left = side === 'left' ? TOOLS_MARGIN : viewport.width - TOOLS_MARGIN - TOOLS_SIZE
 
   function onPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
@@ -426,6 +449,15 @@ function PreviewToolsButton() {
 
   const tick = (on: boolean) => on ? <Check size={14} strokeWidth={2.25} /> : null
   const items: ItemType[] = [
+    ...(canExit ? [
+      {
+        key: 'exit',
+        icon: <X size={14} strokeWidth={2.25} />,
+        label: 'Exit preview',
+        extra: <span style={{ fontSize: 12 }}>Esc</span>,
+      },
+      { type: 'divider' as const },
+    ] : []),
     // Inline rather than a submenu: a flyout opens on hover (so not on a
     // tap) and runs off a phone-width screen.
     {
@@ -450,7 +482,9 @@ function PreviewToolsButton() {
 
   function onSelect(key: string) {
     setOpen(false)
-    if (key.startsWith('account:')) {
+    if (key === 'exit') {
+      setPreviewMode(false)
+    } else if (key.startsWith('account:')) {
       const account = MOCK_USER_ACCOUNTS.find(a => a.id === key.slice('account:'.length))
       if (account) devSetUser(account)
     } else if (key.startsWith('theme:')) {
@@ -481,6 +515,11 @@ function PreviewToolsButton() {
         style: { maxHeight: Math.max(160, room - 8), overflowY: 'auto' },
       }}
     >
+      <Tooltip
+        open={hint && !open}
+        title="Preview tools — press Esc to exit"
+        placement={side === 'left' ? 'right' : 'left'}
+      >
       <button
         type="button"
         aria-label="Prototype tools"
@@ -514,6 +553,7 @@ function PreviewToolsButton() {
       >
         <SlidersHorizontal size={16} strokeWidth={2.25} />
       </button>
+      </Tooltip>
     </Dropdown>
   )
 }
@@ -540,90 +580,3 @@ function useActionBarPresent(): boolean {
   return present
 }
 
-// The pointer counts as "at the top" within this many px of the edge.
-const REVEAL_ZONE = 56
-
-function PreviewPill() {
-  const { setPreviewMode, themeVariant } = useDevTools()
-  const { user } = useAuth()
-  const { message } = App.useApp()
-  const [shown, setShown] = useState(true)
-  const hovering = useRef(false)
-
-  useEffect(() => {
-    let timer = window.setTimeout(() => setShown(false), 2500)
-    function hideSoon() {
-      window.clearTimeout(timer)
-      timer = window.setTimeout(() => { if (!hovering.current) setShown(false) }, 800)
-    }
-    function onMove(e: MouseEvent) {
-      if (e.clientY <= REVEAL_ZONE) {
-        window.clearTimeout(timer)
-        setShown(true)
-      } else if (!hovering.current) {
-        hideSoon()
-      }
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape' && !overlayOpen()) setPreviewMode(false)
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.clearTimeout(timer)
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [setPreviewMode])
-
-  function copyLink() {
-    navigator.clipboard.writeText(previewLink(themeVariant, user?.id))
-      .then(() => message.success('Preview link copied'))
-      .catch(() => message.error('Could not copy the link'))
-  }
-
-  const itemStyle: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 8, border: 'none', cursor: 'pointer',
-    background: 'transparent', color: BAR_TEXT, fontSize: MENU_BAR_FONT_SIZE,
-  }
-
-  return (
-    <div
-      onMouseEnter={() => { hovering.current = true; setShown(true) }}
-      onMouseLeave={() => { hovering.current = false }}
-      style={{
-        position: 'fixed',
-        top: 8,
-        left: '50%',
-        transform: `translate(-50%, ${shown ? 0 : -8}px)`,
-        zIndex: 1100,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2,
-        padding: 4,
-        // Centred with left: 50%, which on its own caps an auto width at
-        // half the screen — on a narrow window the labels broke onto two
-        // lines. max-content keeps it one row at its natural width.
-        width: 'max-content',
-        whiteSpace: 'nowrap',
-        background: BAR_BG,
-        backdropFilter: BAR_BLUR,
-        WebkitBackdropFilter: BAR_BLUR,
-        borderRadius: 8,
-        opacity: shown ? 1 : 0,
-        pointerEvents: shown ? 'auto' : 'none',
-        transition: 'opacity 0.2s ease, transform 0.2s ease',
-      }}
-    >
-      <button type="button" className="ifix-menubar-item" style={itemStyle} onClick={() => setPreviewMode(false)}>
-        <X size={14} strokeWidth={2.25} />
-        <span>Exit preview</span>
-        <span style={{ color: BAR_TEXT_TERTIARY }}>Esc</span>
-      </button>
-      <button type="button" className="ifix-menubar-item" style={{ ...itemStyle, color: BAR_TEXT_SECONDARY }} onClick={copyLink}>
-        <Link2 size={14} strokeWidth={2.25} />
-        <span>Copy link</span>
-      </button>
-    </div>
-  )
-}
