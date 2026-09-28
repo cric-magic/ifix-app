@@ -345,14 +345,84 @@ export function PreviewControls() {
   return coarsePointer ? <PreviewToolsButton /> : <PreviewPill />
 }
 
-// Touch screens' preview tools: a round button in the bottom-right corner
-// (lifted above a detail page's bottom action bar — see
-// .ifix-preview-tools in index.css) opening the account and theme pickers
-// and Copy link.
+// Touch screens' preview tools: a round button opening the account and
+// theme pickers and Copy link. It can be dragged anywhere and snaps to the
+// nearer side edge on release, so it can be moved off whatever it's
+// covering; where it was left is remembered (per browser). A tap opens the
+// menu; a drag doesn't. It stays clear of a detail page's bottom action bar.
+const TOOLS_SIZE = 44
+const TOOLS_MARGIN = 16
+// Movement (px) past which a press counts as a drag rather than a tap.
+const DRAG_THRESHOLD = 6
+// The bottom action bar's height (see .ifix-action-bar), kept clear of.
+const ACTION_BAR_HEIGHT = 61
+const TOOLS_POSITION_KEY = 'ifix-preview-tools-position'
+
+interface ToolsPosition {
+  side: 'left' | 'right'
+  top: number
+}
+
+function readToolsPosition(): ToolsPosition | null {
+  try {
+    const stored = JSON.parse(localStorage.getItem(TOOLS_POSITION_KEY) ?? 'null')
+    return stored && (stored.side === 'left' || stored.side === 'right') && typeof stored.top === 'number' ? stored : null
+  } catch {
+    return null
+  }
+}
+
 function PreviewToolsButton() {
-  const { themeVariant, themePreference, setThemePreference } = useDevTools()
+  const { themeVariant, themePreference, setThemePreference, viewport } = useDevTools()
   const { user, devSetUser } = useAuth()
   const { message } = App.useApp()
+  const [open, setOpen] = useState(false)
+  const [position, setPosition] = useState<ToolsPosition | null>(readToolsPosition)
+  // While dragging: the button follows the finger freely (left/top in px).
+  const [dragAt, setDragAt] = useState<{ left: number; top: number } | null>(null)
+  const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null)
+  const justDragged = useRef(false)
+  const actionBar = useActionBarPresent()
+
+  // Where it can sit vertically: inside the screen's margins, and above the
+  // action bar when the page has one. Re-clamped as the screen or page
+  // changes, so a remembered spot never ends up off-screen or under the bar.
+  const minTop = TOOLS_MARGIN
+  const maxTop = viewport.height - TOOLS_MARGIN - TOOLS_SIZE - (actionBar ? ACTION_BAR_HEIGHT : 0)
+  const side = position?.side ?? 'right'
+  const top = Math.min(maxTop, Math.max(minTop, position?.top ?? maxTop))
+  const left = side === 'left' ? TOOLS_MARGIN : viewport.width - TOOLS_MARGIN - TOOLS_SIZE
+
+  function onPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
+    drag.current = { x: e.clientX, y: e.clientY, moved: false }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLButtonElement>) {
+    const d = drag.current
+    if (!d) return
+    if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < DRAG_THRESHOLD) return
+    d.moved = true
+    setOpen(false)
+    setDragAt({ left: e.clientX - TOOLS_SIZE / 2, top: e.clientY - TOOLS_SIZE / 2 })
+  }
+
+  function onPointerUp(e: React.PointerEvent<HTMLButtonElement>) {
+    const d = drag.current
+    drag.current = null
+    if (!d?.moved) return
+    // Snap to the nearer side, at the height it was let go.
+    const next: ToolsPosition = {
+      side: e.clientX < viewport.width / 2 ? 'left' : 'right',
+      top: Math.min(maxTop, Math.max(minTop, e.clientY - TOOLS_SIZE / 2)),
+    }
+    setPosition(next)
+    setDragAt(null)
+    try { localStorage.setItem(TOOLS_POSITION_KEY, JSON.stringify(next)) } catch { /* not remembered */ }
+    // The click that follows a drag's release shouldn't open the menu.
+    justDragged.current = true
+    window.setTimeout(() => { justDragged.current = false }, 0)
+  }
 
   const tick = (on: boolean) => on ? <Check size={14} strokeWidth={2.25} /> : null
   const items: ItemType[] = [
@@ -379,6 +449,7 @@ function PreviewToolsButton() {
   ]
 
   function onSelect(key: string) {
+    setOpen(false)
     if (key.startsWith('account:')) {
       const account = MOCK_USER_ACCOUNTS.find(a => a.id === key.slice('account:'.length))
       if (account) devSetUser(account)
@@ -391,19 +462,39 @@ function PreviewToolsButton() {
     }
   }
 
+  // The menu opens toward the roomier half of the screen, aligned to the
+  // button's side, and never taller than the room it has — it scrolls
+  // inside instead of running off the screen.
+  const opensUp = top + TOOLS_SIZE / 2 > viewport.height / 2
+  const room = opensUp ? top - TOOLS_MARGIN : viewport.height - (top + TOOLS_SIZE) - TOOLS_MARGIN
+  const placement = `${opensUp ? 'top' : 'bottom'}${side === 'left' ? 'Left' : 'Right'}` as const
+
   return (
-    <Dropdown trigger={['click']} placement="topRight" menu={{ items, onClick: ({ key }) => onSelect(key) }}>
+    <Dropdown
+      trigger={['click']}
+      placement={placement}
+      open={open}
+      onOpenChange={next => { if (!justDragged.current) setOpen(next) }}
+      menu={{
+        items,
+        onClick: ({ key }) => onSelect(key),
+        style: { maxHeight: Math.max(160, room - 8), overflowY: 'auto' },
+      }}
+    >
       <button
         type="button"
         aria-label="Prototype tools"
-        className="ifix-preview-tools"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => { drag.current = null; setDragAt(null) }}
         style={{
           position: 'fixed',
-          right: 16,
-          bottom: 16,
+          left: dragAt?.left ?? left,
+          top: dragAt?.top ?? top,
           zIndex: 1100,
-          width: 44,
-          height: 44,
+          width: TOOLS_SIZE,
+          height: TOOLS_SIZE,
           borderRadius: '50%',
           border: 'none',
           display: 'flex',
@@ -413,13 +504,40 @@ function PreviewToolsButton() {
           backdropFilter: BAR_BLUR,
           WebkitBackdropFilter: BAR_BLUR,
           color: BAR_TEXT,
-          cursor: 'pointer',
+          cursor: dragAt ? 'grabbing' : 'pointer',
+          // The finger drags it, not the page underneath.
+          touchAction: 'none',
+          // Glides to the edge on release; follows the finger exactly while
+          // dragging.
+          transition: dragAt ? 'none' : 'left 0.2s ease, top 0.2s ease',
         }}
       >
         <SlidersHorizontal size={16} strokeWidth={2.25} />
       </button>
     </Dropdown>
   )
+}
+
+// Whether the page currently shows a bottom action bar (a detail page on
+// mobile) — watched as pages change, so the tools button can keep clear.
+function useActionBarPresent(): boolean {
+  const [present, setPresent] = useState(() => !!document.querySelector('.ifix-action-bar'))
+  useEffect(() => {
+    let frame = 0
+    const observer = new MutationObserver(() => {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        setPresent(!!document.querySelector('.ifix-action-bar'))
+      })
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+    return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
+  }, [])
+  return present
 }
 
 // The pointer counts as "at the top" within this many px of the edge.

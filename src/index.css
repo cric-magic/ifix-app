@@ -2088,13 +2088,6 @@ label[for="password"]::after {
   white-space: nowrap;
 }
 
-/* Preview's tools button on touch screens (DevToolsPanel's
-   PreviewToolsButton) sits bottom-right; on a page with a bottom action
-   bar it rises above it — the bar's height (see .ifix-action-bar) plus the
-   button's usual 16px. */
-body:has(.ifix-action-bar) .ifix-preview-tools {
-  bottom: 77px !important;
-}
 
 /* The contract template editor's "where did it go" flash: a moved
    section's outline (ContractDocument's SectionOutline) holds for a
