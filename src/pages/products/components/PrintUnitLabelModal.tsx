@@ -5,6 +5,7 @@ import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import { MOCK_MERCHANTS } from '../../../constants/mockMerchants'
 import type { Product, ProductUnit } from '../../../types/product'
 import { UnitLabel, UnitLabelPreview, encodedValueFor } from '../../../components/UnitLabel'
+import { LABEL_SIZES } from '../../../constants/labelSizes'
 
 interface Props {
   open: boolean
@@ -50,7 +51,12 @@ export function PrintUnitLabelModal({ open, unit, product, merchantId, onClose }
       }
     >
       <div style={{ marginBottom: 16 }}>
-        <UnitLabelPreview unit={unit} product={product} settings={settings} />
+        <UnitLabelPreview
+          unit={unit}
+          product={product}
+          settings={settings}
+          fitHint="An admin can turn off a field or change the sticker size in Settings → Barcode."
+        />
       </div>
 
       {/* The copy that actually prints. Portalled to <body> so it sits
@@ -58,6 +64,10 @@ export function PrintUnitLabelModal({ open, unit, product, merchantId, onClose }
           index.css. Hidden on screen; the preview above is what's seen. */}
       {createPortal(
         <div className="ifix-print-label">
+          {/* The printed page is the sticker itself: its size, no margin.
+              Only while this drawer is open, so it overrides the contract's
+              Legal @page (index.css) just for this print. */}
+          <style>{`@media print { @page { size: ${LABEL_SIZES[settings.labelSize].width}mm ${LABEL_SIZES[settings.labelSize].height}mm; margin: 0; } }`}</style>
           <UnitLabel unit={unit} product={product} settings={settings} forPrint />
         </div>,
         document.body,
@@ -69,6 +79,8 @@ export function PrintUnitLabelModal({ open, unit, product, merchantId, onClose }
           : settings.codeTypes === 'qr' ? 'QR Code only' : 'Barcode only'}
         {' · '}
         encodes {ENCODED_LABELS[settings.encodedValue]}
+        {' · '}
+        {LABEL_SIZES[settings.labelSize].label}
       </Typography.Text>
       <div style={{ marginTop: 4, fontFamily: token.fontFamilyCode, fontSize: 12, color: token.colorTextTertiary, wordBreak: 'break-all' }}>
         {encodedValueFor(unit, settings)}

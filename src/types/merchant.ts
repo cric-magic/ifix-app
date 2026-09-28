@@ -31,12 +31,22 @@ export type BarcodeCodeTypes = 'barcode' | 'qr' | 'both'
 // stays printed as human-readable text (see the doc's note).
 export type BarcodeEncodedValue = 'serialNumber' | 'unitId'
 
+// The physical sticker, width × height in mm. 40 × 30 is the smallest
+// commonly used thermal label, so it's the baseline; 50 × 30 gives the text
+// more room when the chosen fields don't fit (see constants/labelSizes).
+export type LabelSize = '40x30' | '50x30'
+
 export interface BarcodeSettings {
   codeTypes: BarcodeCodeTypes
   encodedValue: BarcodeEncodedValue
-  // Optional human-readable lines printed under the code. Serial Number is
-  // always shown and so isn't listed here.
+  labelSize: LabelSize
+  // Optional human-readable details printed under the code. Serial Number
+  // is always shown and so isn't listed here.
   showProductName: boolean
+  showStorage: boolean
+  showColor: boolean
+  // Used units only — a new unit has no grade, so its sticker skips it.
+  showGrade: boolean
   showSkuCode: boolean
   showBranch: boolean
   showSalesPrice: boolean

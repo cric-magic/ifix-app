@@ -9,7 +9,11 @@ import { MERCHANT_ID, MERCHANT_NAME } from './mockUsers'
 export const DEFAULT_BARCODE_SETTINGS: BarcodeSettings = {
   codeTypes: 'both',
   encodedValue: 'serialNumber',
+  labelSize: '40x30',
   showProductName: true,
+  showStorage: true,
+  showColor: true,
+  showGrade: true,
   showSkuCode: false,
   showBranch: false,
   showSalesPrice: false,

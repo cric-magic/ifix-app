@@ -95,10 +95,33 @@ export function BarcodeSettingsModal({ open, merchant, sampleUnit, sampleProduct
               />
             </Form.Item>
 
-            <Form.Item label="Label fields" extra="Serial Number is always printed." style={{ marginBottom: 0 }}>
+            <Form.Item
+              label="Sticker size"
+              name="labelSize"
+              extra="40 × 30 mm is the smallest common sticker. Use 50 × 30 mm if the fields you need don't fit."
+            >
+              <Radio.Group
+                options={[
+                  { value: '40x30', label: '40 × 30 mm' },
+                  { value: '50x30', label: '50 × 30 mm' },
+                ]}
+                style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+              />
+            </Form.Item>
+
+            <Form.Item label="Label fields" extra="Serial Number is always printed. Grade prints on used units only." style={{ marginBottom: 0 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <Form.Item name="showProductName" valuePropName="checked" noStyle>
                   <Checkbox>Product name</Checkbox>
+                </Form.Item>
+                <Form.Item name="showStorage" valuePropName="checked" noStyle>
+                  <Checkbox>Storage</Checkbox>
+                </Form.Item>
+                <Form.Item name="showColor" valuePropName="checked" noStyle>
+                  <Checkbox>Color</Checkbox>
+                </Form.Item>
+                <Form.Item name="showGrade" valuePropName="checked" noStyle>
+                  <Checkbox>Grade</Checkbox>
                 </Form.Item>
                 <Form.Item name="showSkuCode" valuePropName="checked" noStyle>
                   <Checkbox>SKU code</Checkbox>
@@ -128,7 +151,13 @@ export function BarcodeSettingsModal({ open, merchant, sampleUnit, sampleProduct
             : { marginTop: 24 }}
           >
             <div style={{ flex: '1 1 auto', minHeight: 0 }}>
-              <UnitLabelPreview unit={sampleUnit} product={sampleProduct} settings={previewSettings} fill={sideBySide} />
+              <UnitLabelPreview
+                unit={sampleUnit}
+                product={sampleProduct}
+                settings={previewSettings}
+                fill={sideBySide}
+                fitHint={previewSettings.labelSize === '40x30' ? 'Turn off a field, or use 50 × 30 mm.' : 'Turn off a field.'}
+              />
             </div>
             {sideBySide && (
               <Typography.Text

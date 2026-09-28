@@ -10,6 +10,7 @@ import { canConfigureBarcodeSettings, scopedAllUnits } from '../../constants/rol
 import { SettingsCard, SettingsRow } from '../../components/SettingsCard'
 import { UnitLabelPreview } from '../../components/UnitLabel'
 import { BarcodeSettingsModal } from './components/BarcodeSettingsModal'
+import { LABEL_SIZES } from '../../constants/labelSizes'
 
 const CODE_TYPE_LABELS = {
   both: 'Barcode and QR Code',
@@ -46,11 +47,16 @@ export function WorkspaceBarcodePage() {
 
   // Previewed against a real unit so the composition is shown with the
   // merchant's own data rather than placeholder text.
-  const sampleUnit = scopedAllUnits(actor, MOCK_PRODUCT_UNITS, MOCK_PRODUCTS)[0]
+  // A used unit where there is one, so Grade shows too when it's on.
+  const units = scopedAllUnits(actor, MOCK_PRODUCT_UNITS, MOCK_PRODUCTS)
+  const sampleUnit = units.find(u => u.grade) ?? units[0]
   const sampleProduct = sampleUnit ? MOCK_PRODUCTS.find(p => p.id === sampleUnit.productId) : undefined
 
   const fields = [
     settings.showProductName && 'Product name',
+    settings.showStorage && 'Storage',
+    settings.showColor && 'Color',
+    settings.showGrade && 'Grade',
     settings.showSkuCode && 'SKU code',
     settings.showBranch && 'Branch',
     settings.showSalesPrice && 'Sales price',
@@ -68,6 +74,7 @@ export function WorkspaceBarcodePage() {
       >
         <SettingsRow label="Code types">{CODE_TYPE_LABELS[settings.codeTypes]}</SettingsRow>
         <SettingsRow label="Encoded value">{ENCODED_LABELS[settings.encodedValue]}</SettingsRow>
+        <SettingsRow label="Sticker size">{LABEL_SIZES[settings.labelSize].label}</SettingsRow>
         <SettingsRow label="Label fields">
           Serial Number{fields.length > 0 ? `, ${fields.join(', ')}` : ''}
         </SettingsRow>
@@ -78,7 +85,12 @@ export function WorkspaceBarcodePage() {
           <Typography.Text type="secondary" style={{ fontSize: 13, marginBottom: 16 }}>
             How a label prints for {sampleUnit.serialNumber}.
           </Typography.Text>
-          <UnitLabelPreview unit={sampleUnit} product={sampleProduct} settings={settings} />
+          <UnitLabelPreview
+            unit={sampleUnit}
+            product={sampleProduct}
+            settings={settings}
+            fitHint={canEdit ? 'Edit to turn off a field or change the sticker size.' : undefined}
+          />
         </SettingsCard>
       )}
 
