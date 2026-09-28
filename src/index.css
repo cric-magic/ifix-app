@@ -1724,6 +1724,7 @@ label[for="password"]::after {
   }
 
   .ifix-contract-page {
+    border-radius: 0 !important;
     position: absolute !important;
     inset-inline-start: 0 !important;
     top: 0 !important;
@@ -2093,4 +2094,51 @@ label[for="password"]::after {
    button's usual 16px. */
 body:has(.ifix-action-bar) .ifix-preview-tools {
   bottom: 77px !important;
+}
+
+/* The contract template editor's "where did it go" flash: a moved
+   section's outline (ContractDocument's SectionOutline) holds for a
+   moment, then fades out. */
+@keyframes ifix-section-flash {
+  0%, 50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.ifix-section-flash {
+  animation: ifix-section-flash 1.2s ease-out forwards;
+}
+
+/* The contract template editor's collapsible form groups (Details,
+   Content, Penalty, Sections): flush with the form column — no inset on
+   the header or body, so fields line up with the column's own edge — and a
+   hairline between groups, like the settings rows. */
+.ifix-form-groups.ant-collapse > .ant-collapse-item {
+  border-bottom: 0.5px solid var(--ant-color-border-secondary);
+}
+
+.ifix-form-groups.ant-collapse > .ant-collapse-item:last-child {
+  border-bottom: none;
+}
+
+.ifix-form-groups.ant-collapse > .ant-collapse-item > .ant-collapse-header {
+  padding: 12px 0;
+  align-items: center;
+}
+
+.ifix-form-groups.ant-collapse > .ant-collapse-item > .ant-collapse-panel > .ant-collapse-body,
+.ifix-form-groups.ant-collapse > .ant-collapse-item > .ant-collapse-content > .ant-collapse-content-box {
+  padding: 4px 0 8px !important;
+}
+
+/* The groups' chevron follows the icon rule — secondary at rest, primary
+   when its header is hovered or focused — the same solid icon pair as the
+   button icons (--ant-color-icon / -hover). */
+.ifix-form-groups .ant-collapse-expand-icon {
+  color: var(--ant-color-icon);
+  transition: color 0.15s ease;
+}
+
+.ifix-form-groups .ant-collapse-header:hover .ant-collapse-expand-icon,
+.ifix-form-groups .ant-collapse-header:focus-visible .ant-collapse-expand-icon {
+  color: var(--ant-color-icon-hover);
 }

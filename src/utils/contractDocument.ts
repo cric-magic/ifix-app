@@ -5,6 +5,7 @@ import type { Branch } from '../types/branch'
 import type { Contract } from '../types/contract'
 import { calcFixRate } from './calculator'
 import { getWorkspaceAvatarUrl } from './avatar'
+import { normalizeSections } from '../constants/contractSections'
 
 // Per the doc, "Sample values are used when no contract has been created
 // yet" — the template preview lays the live content fields over this fixed
@@ -192,6 +193,8 @@ export function buildContractDocument(
       bindingStatement: template.bindingStatement,
       legalDeclarations: template.legalDeclarations,
       penaltyLegalText: template.penalty.legalText,
+      sections: normalizeSections(template.sections),
+      commission: template.commission,
     },
   }
 }

@@ -1,9 +1,11 @@
 import { useCurrentUser } from '../../../../contexts/AuthContext'
 import { MOCK_MERCHANTS } from '../../../../constants/mockMerchants'
 import { MOCK_BRANCHES } from '../../../../constants/mockBranches'
-import { CONTRACT_DESK_WIDTH, ContractDocument } from '../../../../components/ContractDocument'
+import { CONTRACT_DESK_WIDTH, ContractDocument, type SectionIndicator } from '../../../../components/ContractDocument'
 import { FitToWidth } from '../../../../components/FitToWidth'
 import { buildSampleContractDocument } from '../../../../utils/contractDocument'
+import { normalizeSections } from '../../../../constants/contractSections'
+import type { CommissionRule, ContractSection } from '../../../../types/contractTemplate'
 
 export interface PreviewValues {
   title?: string
@@ -18,6 +20,12 @@ export interface PreviewValues {
   // separate preview components for the same content.
   penaltyLegalText?: string
   penalty?: { legalText?: string }
+  sections?: ContractSection[]
+  // Same two shapes as the penalty text: the table passes the template's
+  // nested `commission`, the editor its flat form fields.
+  commission?: CommissionRule
+  commissionRatePercent?: number
+  commissionText?: string
 }
 
 interface Props {
@@ -26,6 +34,8 @@ interface Props {
   // so the list passes the template's merchant and the editor passes the one
   // selected on the page.
   merchantId: string | undefined
+  // The editor pointing at one section (see ContractDocument).
+  indicator?: SectionIndicator
 }
 
 // The printed contract (see components/ContractDocument) drawn over sample
@@ -37,7 +47,7 @@ interface Props {
 // hence a plain component rather than something drawer-shaped. Scaled to
 // fit either one rather than reflowing, same as the contract's own Preview
 // tab — at phone width a reflowed page is a strip several screens long.
-export function ContractTemplatePreview({ values, merchantId }: Props) {
+export function ContractTemplatePreview({ values, merchantId, indicator }: Props) {
   const actor = useCurrentUser()
   const merchant = MOCK_MERCHANTS.find(m => m.id === merchantId)
 
@@ -62,12 +72,17 @@ export function ContractTemplatePreview({ values, merchantId }: Props) {
       bindingStatement: values.bindingStatement ?? '',
       legalDeclarations: values.legalDeclarations ?? '',
       penaltyLegalText: values.penaltyLegalText ?? values.penalty?.legalText,
+      sections: normalizeSections(values.sections),
+      commission: values.commission ?? {
+        ratePercent: values.commissionRatePercent ?? 0,
+        text: values.commissionText ?? '',
+      },
     },
   })
 
   return (
     <FitToWidth width={CONTRACT_DESK_WIDTH}>
-      <ContractDocument data={data} fixedWidth />
+      <ContractDocument data={data} fixedWidth indicator={indicator} />
     </FitToWidth>
   )
 }

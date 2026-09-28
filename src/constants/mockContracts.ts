@@ -8,6 +8,7 @@ import { MOCK_PRODUCT_UNITS, unitIdFor } from './mockProductUnits'
 import { MOCK_CUSTOMERS } from './mockCustomers'
 import { MOCK_CONTRACT_TEMPLATES } from './mockContractTemplates'
 import { sampleSignedContract } from './sampleSignedCopy'
+import { normalizeSections } from './contractSections'
 
 function deviceSnapshotFor(unitId: string): DeviceSnapshot {
   const unit = MOCK_PRODUCT_UNITS.find(u => u.id === unitId)!
@@ -50,6 +51,8 @@ function templateSnapshotFor(template: ContractTemplate): TemplateSnapshot {
     bindingStatement: template.bindingStatement,
     legalDeclarations: template.legalDeclarations,
     penalty: template.penalty,
+    sections: normalizeSections(template.sections),
+    commission: template.commission,
   }
 }
 

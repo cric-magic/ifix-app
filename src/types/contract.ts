@@ -8,7 +8,7 @@
 // types/installment.ts itself is left alone — AuthUser/UserRole/
 // ScheduleResult there are shared far outside this module (Products pages,
 // roles.ts) and aren't part of the rename.
-import type { ContractTemplateType, PenaltyRule } from './contractTemplate'
+import type { CommissionRule, ContractSection, ContractTemplateType, PenaltyRule } from './contractTemplate'
 
 // The doc's full lifecycle. Defaulted/Closed are explicitly called out as
 // "proposed — TBD" / out of scope, but included here (unused by the
@@ -75,6 +75,10 @@ export interface TemplateSnapshot {
   // edit to the template's penalty rule never changes an existing
   // contract's own snapshot.
   penalty: PenaltyRule
+  // The template's section layout and commission as they were when the
+  // contract was created. Absent on older contracts (default layout).
+  sections?: ContractSection[]
+  commission?: CommissionRule
 }
 
 export interface FinancingTerms {

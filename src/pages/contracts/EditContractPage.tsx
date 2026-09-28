@@ -28,6 +28,7 @@ import { canEditContractFields, isMerchantAdminOrAbove, scopedContractList, scop
 import type { Customer } from '../../types/customer'
 import type { Contract } from '../../types/contract'
 import { PageEmptyState } from '../../components/PageEmptyState'
+import { normalizeSections } from '../../constants/contractSections'
 
 // Per the Contract doc's Free Rate terms ("pick a term: 3/6/10/12/18/24
 // months") — a different set from Fixed Rate's own per-template terms.
@@ -349,6 +350,8 @@ export function EditContractPage() {
       bindingStatement: selectedTemplate!.bindingStatement,
       legalDeclarations: selectedTemplate!.legalDeclarations,
       penalty: selectedTemplate!.penalty,
+      sections: normalizeSections(selectedTemplate!.sections),
+      commission: selectedTemplate!.commission,
     }
     contract.financing = financing
 
