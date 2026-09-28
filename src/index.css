@@ -133,11 +133,6 @@ body {
   border-bottom: 0.5px solid var(--ant-color-border-secondary) !important;
 }
 
-/* …and 12px (Spacing 3) above and below instead of desktop's 8px. */
-.ifix-mobile-rows .ant-table-tbody > tr:not(.ant-table-measure-row) > td {
-  padding-top: 12px !important;
-  padding-bottom: 12px !important;
-}
 
 /* Mobile list toolbar (ListToolbar): the search field takes the row's spare
    width instead of its desktop 320px cap, and filters in the bottom sheet
@@ -1140,9 +1135,14 @@ label[for="password"]::after {
    — it sets its own inline padding: 0 to stay collapsed to 0 height, which
    this rule's !important was overriding, forcing a visible empty gap above
    every table's first real row. */
-.ant-table-thead > tr > th,
-.ant-table-tbody > tr:not(.ant-table-measure-row) > td {
+.ant-table-thead > tr > th {
   padding: 8px 16px !important;
+}
+
+/* Rows: 12px (Spacing 3) above and below — a little more air than the
+   header's 8px, the same on desktop and mobile. */
+.ant-table-tbody > tr:not(.ant-table-measure-row) > td {
+  padding: 12px 16px !important;
 }
 
 /* No top padding on table headers. Text now sits flush against the top of
