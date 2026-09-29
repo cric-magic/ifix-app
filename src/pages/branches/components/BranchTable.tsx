@@ -10,6 +10,8 @@ import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, P
 import { useIsMobile } from '../../../components/useIsMobile'
 import { MobileTableRow } from '../../../components/MobileTableRow'
 import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
+import { useActionSheet } from '../../../components/useActionSheet'
+import { rowActionMenu, type RowAction } from '../../../components/rowActions'
 
 interface Props {
   branches: Branch[]
@@ -35,40 +37,37 @@ function staffCount(branch: Branch): number {
 
 export function BranchTable({ branches, search, canManage, onToggleArchive, headerAction, fillHeight }: Props) {
   const { token } = theme.useToken()
+  const actionSheet = useActionSheet()
   const isMobile = useIsMobile()
   const { modal } = App.useApp()
   const navigate = useNavigate()
 
-  function actionsMenu(b: Branch) {
-    if (!canManage(b)) return null
+  // A row's actions — the desktop "…" menu and the mobile action sheet
+  // (its "…", on every row with actions, at every size).
+  function rowActions(b: Branch): RowAction[] {
+    if (!canManage(b)) return []
     const isArchived = b.status === 'archived'
+    return [{
+      key: 'archive',
+      danger: !isArchived,
+      icon: isArchived ? <ArchiveRestore size={16} strokeWidth={2.25} /> : <Archive size={16} strokeWidth={2.25} />,
+      label: isArchived ? 'Unarchive' : 'Archive',
+      onClick: () => modal.confirm({
+        title: isArchived ? 'Unarchive this branch?' : 'Archive this branch?',
+        content: isArchived ? undefined : 'All staff and branch managers at this branch will be suspended.',
+        okText: isArchived ? 'Unarchive' : 'Archive',
+        okButtonProps: { danger: !isArchived },
+        onOk: () => onToggleArchive(b),
+      }),
+    }]
+  }
+
+  function actionsMenu(b: Branch) {
+    const actions = rowActions(b)
+    if (actions.length === 0) return null
     return (
       <div onClick={e => e.stopPropagation()}>
-        <Dropdown
-          trigger={['click']}
-          placement="bottomRight"
-          menu={{
-            items: [
-              {
-                key: 'archive',
-                danger: !isArchived,
-                icon: isArchived ? <ArchiveRestore size={16} strokeWidth={2.25} /> : <Archive size={16} strokeWidth={2.25} />,
-                label: isArchived ? 'Unarchive' : 'Archive',
-              },
-            ],
-            onClick: ({ key }) => {
-              if (key === 'archive') {
-                modal.confirm({
-                  title: isArchived ? 'Unarchive this branch?' : 'Archive this branch?',
-                  content: isArchived ? undefined : 'All staff and branch managers at this branch will be suspended.',
-                  okText: isArchived ? 'Unarchive' : 'Archive',
-                  okButtonProps: { danger: !isArchived },
-                  onOk: () => onToggleArchive(b),
-                })
-              }
-            },
-          }}
-        >
+        <Dropdown trigger={['click']} placement="bottomRight" menu={rowActionMenu(actions)}>
           <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
         </Dropdown>
       </div>
@@ -118,6 +117,7 @@ export function BranchTable({ branches, search, canManage, onToggleArchive, head
         trailing={<BranchStatusTag status={b.status} />}
         secondary={b.code}
         trailingSecondary={`${staff} staff`}
+        onMore={rowActions(b).length ? () => actionSheet.open(b.name, rowActions(b)) : undefined}
       />
     )
   })
@@ -197,6 +197,7 @@ export function BranchTable({ branches, search, canManage, onToggleArchive, head
           </div>
         </div>
       </div>
+      {actionSheet.sheet}
     </ConfigProvider>
   )
 }

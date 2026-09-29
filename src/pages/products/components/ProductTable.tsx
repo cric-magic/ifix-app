@@ -18,6 +18,8 @@ import { MobileTableRow } from '../../../components/MobileTableRow'
 import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 import { useColumnPicker } from '../../../components/useColumnPicker'
 import { withColumnMinWidths } from '../../../components/tableColumns'
+import { useActionSheet } from '../../../components/useActionSheet'
+import { rowActionMenu, type RowAction } from '../../../components/rowActions'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 
@@ -33,6 +35,7 @@ interface Props {
 export function ProductTable({ actor, products, isSearching, onEdit, onRemove, onAddUnit }: Props) {
   const applyColumnPicker = useColumnPicker('products', ['name', 'status'])
   const { token } = theme.useToken()
+  const actionSheet = useActionSheet()
   const isMobile = useIsMobile()
   const dash = <span style={{ color: token.colorTextDisabled }}>—</span>
   const iconColors = useIconColors()
@@ -71,27 +74,26 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
     })
   }
 
+  // A row's actions — the desktop "…" menu and the mobile action sheet
+  // (its "…", on every row with actions, at every size).
+  function rowActions(p: Product): RowAction[] {
+    if (!canManage) return []
+    return [
+      { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit', onClick: () => onEdit(p) },
+      ...(canAddUnit ? [{ key: 'add-unit', icon: <Boxes size={16} strokeWidth={2.25} />, label: 'Add Unit', onClick: () => onAddUnit(p) }] : []),
+      { key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove', onClick: () => confirmRemove(p) },
+    ]
+  }
+
   function actionsMenu(p: Product) {
+    const actions = rowActions(p)
+    if (actions.length === 0) return null
     return (
-      <Dropdown
-        trigger={['click']}
-        placement="bottomRight"
-        menu={{
-          items: [
-            { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
-            ...(canAddUnit ? [{ key: 'add-unit', icon: <Boxes size={16} strokeWidth={2.25} />, label: 'Add Unit' }] : []),
-            { type: 'divider' as const },
-            { key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' },
-          ],
-          onClick: ({ key }) => {
-            if (key === 'edit') onEdit(p)
-            if (key === 'add-unit') onAddUnit(p)
-            if (key === 'remove') confirmRemove(p)
-          },
-        }}
-      >
-        <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
-      </Dropdown>
+      <div onClick={e => e.stopPropagation()}>
+        <Dropdown trigger={['click']} placement="bottomRight" menu={rowActionMenu(actions)}>
+          <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
+        </Dropdown>
+      </div>
     )
   }
 
@@ -184,6 +186,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
           trailing={<ProductStatusTag status={p.status} />}
           secondary={`${TYPE_LABELS[p.type]} · ${p.sku}`}
           trailingSecondary={formatter.format(p.salesPrice)}
+          onMore={rowActions(p).length ? () => actionSheet.open(p.name, rowActions(p)) : undefined}
         />
       ))
     : applyColumnPicker(withColumnMinWidths(allColumns))
@@ -236,6 +239,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
             />
           </div>
         </div>
+        {actionSheet.sheet}
       </ConfigProvider>
     </div>
   )

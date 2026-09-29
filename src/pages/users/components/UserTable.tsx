@@ -16,6 +16,8 @@ import { withColumnMinWidths } from '../../../components/tableColumns'
 import { useIsMobile } from '../../../components/useIsMobile'
 import { MobileTableRow } from '../../../components/MobileTableRow'
 import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
+import { useActionSheet } from '../../../components/useActionSheet'
+import { rowActionMenu, type RowAction } from '../../../components/rowActions'
 
 const formatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 
@@ -31,44 +33,40 @@ interface Props {
 export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, onForceReset }: Props) {
   const applyColumnPicker = useColumnPicker('users', ['name', 'status'])
   const { token } = theme.useToken()
+  const actionSheet = useActionSheet()
   const isMobile = useIsMobile()
   const { modal } = App.useApp()
   const navigate = useNavigate()
 
-  function actionsMenu(r: UserAccount) {
-    if (!canManageTargetUser(actor, r)) return null
+  // A row's actions — the desktop "…" menu and the mobile action sheet
+  // (its "…", on every row with actions, at every size).
+  function rowActions(r: UserAccount): RowAction[] {
+    if (!canManageTargetUser(actor, r)) return []
     const isSuspended = r.status === 'suspended'
+    return [
+      { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit', onClick: () => onEdit(r) },
+      { key: 'reset', icon: <KeyRound size={16} strokeWidth={2.25} />, label: 'Reset password', onClick: () => onForceReset(r) },
+      {
+        key: 'suspend',
+        danger: !isSuspended,
+        icon: isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />,
+        label: isSuspended ? 'Reactivate' : 'Suspend',
+        onClick: () => modal.confirm({
+          title: isSuspended ? 'Reactivate this user?' : 'Suspend this user?',
+          okText: isSuspended ? 'Reactivate' : 'Suspend',
+          okButtonProps: { danger: !isSuspended },
+          onOk: () => onToggleSuspend(r),
+        }),
+      },
+    ]
+  }
+
+  function actionsMenu(r: UserAccount) {
+    const actions = rowActions(r)
+    if (actions.length === 0) return null
     return (
       <div onClick={e => e.stopPropagation()}>
-        <Dropdown
-          trigger={['click']}
-          placement="bottomRight"
-          menu={{
-            items: [
-              { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
-              { key: 'reset', icon: <KeyRound size={16} strokeWidth={2.25} />, label: 'Reset password' },
-              { type: 'divider' },
-              {
-                key: 'suspend',
-                danger: !isSuspended,
-                icon: isSuspended ? <RotateCcw size={16} strokeWidth={2.25} /> : <Ban size={16} strokeWidth={2.25} />,
-                label: isSuspended ? 'Reactivate' : 'Suspend',
-              },
-            ],
-            onClick: ({ key }) => {
-              if (key === 'edit') onEdit(r)
-              if (key === 'reset') onForceReset(r)
-              if (key === 'suspend') {
-                modal.confirm({
-                  title: isSuspended ? 'Reactivate this user?' : 'Suspend this user?',
-                  okText: isSuspended ? 'Reactivate' : 'Suspend',
-                  okButtonProps: { danger: !isSuspended },
-                  onOk: () => onToggleSuspend(r),
-                })
-              }
-            },
-          }}
-        >
+        <Dropdown trigger={['click']} placement="bottomRight" menu={rowActionMenu(actions)}>
           <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
         </Dropdown>
       </div>
@@ -158,6 +156,7 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
         trailing={<UserStatusTag status={r.status} />}
         secondary={place ? `${ROLE_LABELS[r.role]} · ${place}` : ROLE_LABELS[r.role]}
         trailingSecondary={r.staffId}
+        onMore={rowActions(r).length ? () => actionSheet.open(r.name, rowActions(r)) : undefined}
       />
     )
   })
@@ -216,6 +215,7 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
           </div>
         </div>
       </div>
+      {actionSheet.sheet}
     </ConfigProvider>
   )
 }

@@ -12,6 +12,8 @@ import { canVoidPaymentRecord } from '../../../constants/roles'
 import { voidPaymentRecord } from '../../../utils/contract'
 import { useIsMobile } from '../../../components/useIsMobile'
 import { MobileTableRow } from '../../../components/MobileTableRow'
+import { useActionSheet } from '../../../components/useActionSheet'
+import { rowActionMenu, type RowAction } from '../../../components/rowActions'
 import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 
 const METHOD_LABELS: Record<ContractPaymentRecord['method'], string> = {
@@ -35,6 +37,7 @@ interface Props {
 // bigger operation than this action is meant for.
 export function PaymentHistoryTab({ contract, actor, onChanged }: Props) {
   const { token } = theme.useToken()
+  const actionSheet = useActionSheet()
   const isMobile = useIsMobile()
   const { message } = App.useApp()
   const iconColors = useIconColors()
@@ -50,6 +53,14 @@ export function PaymentHistoryTab({ contract, actor, onChanged }: Props) {
     voidForm.resetFields()
     message.success('Payment record voided')
     onChanged()
+  }
+
+  // A payment's actions — Void, for whoever may void, on any payment that
+  // isn't already voided or the down payment. The desktop "…" menu and the
+  // mobile action sheet.
+  function rowActions(record: ContractPaymentRecord): RowAction[] {
+    if (!canVoid || record.voided || record.period === 0) return []
+    return [{ key: 'void', danger: true, icon: <Ban size={16} strokeWidth={2.25} />, label: 'Void', onClick: () => setVoidTarget(record) }]
   }
 
   const columns: ColumnsType<ContractPaymentRecord> = [
@@ -88,25 +99,14 @@ export function PaymentHistoryTab({ contract, actor, onChanged }: Props) {
       title: '',
       key: 'actions',
       width: 40,
-      render: (_: unknown, record: ContractPaymentRecord) => (
-        record.voided || record.period === 0 ? null : (
-          <Dropdown
-            trigger={['click']}
-            menu={{
-              items: [
-                { key: 'void', danger: true, icon: <Ban size={16} strokeWidth={2.25} />, label: 'Void' },
-              ],
-              onClick: ({ key }) => {
-                if (key === 'void') {
-                  setVoidTarget(record)
-                }
-              },
-            }}
-          >
+      render: (_: unknown, record: ContractPaymentRecord) => {
+        const actions = rowActions(record)
+        return actions.length === 0 ? null : (
+          <Dropdown trigger={['click']} menu={rowActionMenu(actions)}>
             <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
           </Dropdown>
         )
-      ),
+      },
     }] : []),
   ]
 
@@ -134,6 +134,7 @@ export function PaymentHistoryTab({ contract, actor, onChanged }: Props) {
           ? <span style={{ color: token.colorError }}>Voided — {record.voidReason}</span>
           : details}
         trailingSecondary={record.paymentDate}
+        onMore={rowActions(record).length ? () => actionSheet.open(title, rowActions(record)) : undefined}
       />
     )
   })
@@ -156,6 +157,9 @@ export function PaymentHistoryTab({ contract, actor, onChanged }: Props) {
             <Table
               rowKey="id"
               columns={isMobile ? mobileRows : columns}
+              onRow={isMobile ? record => (rowActions(record).length
+                ? { onClick: () => actionSheet.open(record.period === 0 ? 'Down Payment' : `Installment ${record.period}`, rowActions(record)), style: { cursor: 'pointer' } }
+                : {}) : undefined}
               {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               dataSource={contract.payments}
               size="small"
@@ -173,6 +177,8 @@ export function PaymentHistoryTab({ contract, actor, onChanged }: Props) {
           </div>
         </ConfigProvider>
       </div>
+
+      {actionSheet.sheet}
 
       <Modal
         title="Void this payment record?"

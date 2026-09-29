@@ -14,6 +14,8 @@ import { ListSearch } from '../../../components/ListSearch'
 import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
 import { useIsMobile } from '../../../components/useIsMobile'
 import { MobileTableRow } from '../../../components/MobileTableRow'
+import { useActionSheet } from '../../../components/useActionSheet'
+import { rowActionMenu, type RowAction } from '../../../components/rowActions'
 import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 
 interface Props {
@@ -25,6 +27,7 @@ interface Props {
 // single list grows, it's this table's problem rather than the navigation's.
 export function AttributeValuesTab({ meta }: Props) {
   const { token } = theme.useToken()
+  const actionSheet = useActionSheet()
   const isMobile = useIsMobile()
   const { modal, message } = App.useApp()
   const [version, setVersion] = useState(0)
@@ -80,23 +83,20 @@ export function AttributeValuesTab({ meta }: Props) {
   const query = search.trim().toLowerCase()
   const rows = attributeValues(meta).filter(r => !query || r.value.toLowerCase().includes(query))
 
+  // A value's actions — the desktop "…" menu and the mobile action sheet.
+  function rowActions(r: AttributeValueRow): RowAction[] {
+    return [{
+      key: 'toggle',
+      danger: r.enabled,
+      icon: r.enabled ? <Ban size={16} strokeWidth={2.25} /> : <RotateCcw size={16} strokeWidth={2.25} />,
+      label: r.enabled ? 'Disable' : 'Enable',
+      onClick: () => handleToggle(r),
+    }]
+  }
+
   function actionsMenu(r: AttributeValueRow) {
     return (
-      <Dropdown
-        trigger={['click']}
-        placement="bottomRight"
-        menu={{
-          items: [{
-            key: 'toggle',
-            danger: r.enabled,
-            icon: r.enabled
-              ? <Ban size={16} strokeWidth={2.25} />
-              : <RotateCcw size={16} strokeWidth={2.25} />,
-            label: r.enabled ? 'Disable' : 'Enable',
-          }],
-          onClick: () => handleToggle(r),
-        }}
-      >
+      <Dropdown trigger={['click']} placement="bottomRight" menu={rowActionMenu(rowActions(r))}>
         <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
       </Dropdown>
     )
@@ -151,6 +151,7 @@ export function AttributeValuesTab({ meta }: Props) {
         primary={r.value}
         trailing={meta.managed ? statusTag(r) : undefined}
         secondary={count > 0 ? `Used by ${count} product${count === 1 ? '' : 's'}` : 'Not in use'}
+        onMore={meta.managed ? () => actionSheet.open(r.value, rowActions(r)) : undefined}
       />
     )
   })
@@ -172,6 +173,7 @@ export function AttributeValuesTab({ meta }: Props) {
                 {...(isMobile ? MOBILE_TABLE_PROPS : {})}
                 dataSource={rows}
                 scroll={rows.length > 0 ? { y: '100%' } : undefined}
+                onRow={isMobile && meta.managed ? r => ({ onClick: () => actionSheet.open(r.value, rowActions(r)), style: { cursor: 'pointer' } }) : undefined}
                 locale={{
                   emptyText: query ? (
                     <TableEmptyState icon={<Shapes size={22} strokeWidth={2.25} />} title="No values found" description={`Try a different ${meta.noun} value.`} />
@@ -200,6 +202,8 @@ export function AttributeValuesTab({ meta }: Props) {
           </div>
         </ConfigProvider>
       </div>
+
+      {actionSheet.sheet}
 
       <Drawer
         title={`Add ${meta.noun}`}

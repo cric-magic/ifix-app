@@ -26,6 +26,8 @@ import { ListSearch } from '../../components/ListSearch'
 import { UnitPrice } from './components/UnitPrice'
 import { useColumnPicker } from '../../components/useColumnPicker'
 import { withColumnMinWidths } from '../../components/tableColumns'
+import { useActionSheet } from '../../components/useActionSheet'
+import { rowActionMenu, type RowAction } from '../../components/rowActions'
 
 const priceFormatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
 
@@ -43,6 +45,7 @@ export function UnitsListPage() {
   const user = useCurrentUser()
   const navigate = useNavigate()
   const { token } = theme.useToken()
+  const actionSheet = useActionSheet()
   const isMobile = useIsMobile()
   const iconColors = useIconColors()
   const { modal, message } = App.useApp()
@@ -102,38 +105,40 @@ export function UnitsListPage() {
     refresh()
   }
 
-  function actionsMenu(u: ProductUnit) {
+  // A row's actions — the desktop "…" menu and the mobile action sheet
+  // (its "…", on every row with actions, at every size).
+  function rowActions(u: ProductUnit): RowAction[] {
     const isSold = u.availability === 'sold'
-    const canPrint = canPrintUnitCodes(user)
+    return [
+      // A label can be (re)printed at any point in a unit's life —
+      // including after it's sold, for a replacement sticker.
+      ...(canPrintUnitCodes(user) ? [{ key: 'print', icon: <Printer size={16} strokeWidth={2.25} />, label: 'Print label', onClick: () => setPrintingUnit(u) }] : []),
+      ...(canManage && !isSold ? [{ key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit', onClick: () => setEditingUnit(u) }] : []),
+      ...(canManage && u.availability === 'available' ? [{
+        key: 'remove',
+        danger: true,
+        icon: <Trash2 size={16} strokeWidth={2.25} />,
+        label: 'Remove',
+        onClick: () => modal.confirm({
+          title: 'Remove this unit?',
+          content: 'It will be removed from branch inventory.',
+          okText: 'Remove',
+          okButtonProps: { danger: true },
+          onOk: () => handleRemove(u),
+        }),
+      }] : []),
+    ]
+  }
+
+  function actionsMenu(u: ProductUnit) {
+    const actions = rowActions(u)
+    if (actions.length === 0) return null
     return (
-      <Dropdown
-        trigger={['click']}
-        placement="bottomRight"
-        menu={{
-          items: [
-            // A label can be (re)printed at any point in a unit's life —
-            // including after it's sold, for a replacement sticker.
-            ...(canPrint ? [{ key: 'print', icon: <Printer size={16} strokeWidth={2.25} />, label: 'Print label' }] : []),
-            ...(canManage && !isSold ? [{ key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' }] : []),
-            ...(canManage && u.availability === 'available' ? [{ key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' }] : []),
-          ],
-          onClick: ({ key }) => {
-            if (key === 'print') setPrintingUnit(u)
-            if (key === 'edit') setEditingUnit(u)
-            if (key === 'remove') {
-              modal.confirm({
-                title: 'Remove this unit?',
-                content: 'It will be removed from branch inventory.',
-                okText: 'Remove',
-                okButtonProps: { danger: true },
-                onOk: () => handleRemove(u),
-              })
-            }
-          },
-        }}
-      >
-        <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
-      </Dropdown>
+      <div onClick={e => e.stopPropagation()}>
+        <Dropdown trigger={['click']} placement="bottomRight" menu={rowActionMenu(actions)}>
+          <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
+        </Dropdown>
+      </div>
     )
   }
 
@@ -207,6 +212,7 @@ export function UnitsListPage() {
         // Just the amount — desktop's "Sales price" note (the unit has no
         // custom price) doesn't fit beside the product name here.
         trailingSecondary={price != null ? priceFormatter.format(price) : undefined}
+        onMore={rowActions(u).length ? () => actionSheet.open(u.serialNumber, rowActions(u)) : undefined}
       />
     )
   })
@@ -302,6 +308,7 @@ export function UnitsListPage() {
           onClose={() => setPrintingUnit(null)}
         />
       )}
+      {actionSheet.sheet}
     </div>
   )
 }

@@ -13,6 +13,8 @@ import { addCollectionFee, addPenaltyDiscount, voidCollectionFee, voidPenaltyDis
 import { MOCK_MERCHANTS } from '../../../constants/mockMerchants'
 import { useIsMobile } from '../../../components/useIsMobile'
 import { MobileTableRow } from '../../../components/MobileTableRow'
+import { useActionSheet } from '../../../components/useActionSheet'
+import { rowActionMenu, type RowAction } from '../../../components/rowActions'
 import { MOBILE_TABLE_PROPS, mobileColumns } from '../../../components/mobileTable'
 
 interface Props {
@@ -28,6 +30,7 @@ interface Props {
 // as the Payment module's Record/Void.
 export function PenaltyTab({ contract, actor, onChanged }: Props) {
   const { token } = theme.useToken()
+  const actionSheet = useActionSheet()
   const isMobile = useIsMobile()
   const { message } = App.useApp()
   const appWindow = useAppWindowContainer()
@@ -92,6 +95,20 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
     onChanged()
   }
 
+  // Row actions — the fee rows' desktop "…" menu, and both lists' mobile
+  // action sheets. Nothing once a record is voided or waived.
+  function discountActions(r: PenaltyAdjustment): RowAction[] {
+    if (!canAdjust || r.voided) return []
+    return [{ key: 'void', danger: true, icon: <AlertTriangle size={16} strokeWidth={2.25} />, label: 'Void', onClick: () => setDiscountVoidTarget(r) }]
+  }
+  function feeActions(r: CollectionFeeRecord): RowAction[] {
+    if (!canManageFee || r.voided || r.waived) return []
+    return [
+      { key: 'waive', icon: <ShieldOff size={16} strokeWidth={2.25} />, label: 'Waive', onClick: () => setFeeWaiveTarget(r) },
+      { key: 'void', danger: true, icon: <AlertTriangle size={16} strokeWidth={2.25} />, label: 'Void', onClick: () => setFeeVoidTarget(r) },
+    ]
+  }
+
   const discountColumns: ColumnsType<PenaltyAdjustment> = [
     { title: 'Date', dataIndex: 'createdAt', key: 'createdAt', render: (v: string) => v.slice(0, 10) },
     { title: 'Amount', dataIndex: 'amount', key: 'amount', align: 'right', render: (v: number, r) => (
@@ -124,20 +141,8 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
     { title: 'By', dataIndex: 'addedBy', key: 'addedBy' },
     ...(canManageFee ? [{
       title: '', key: 'actions', width: 40,
-      render: (_: unknown, r: CollectionFeeRecord) => (r.voided || r.waived) ? null : (
-        <Dropdown
-          trigger={['click']}
-          menu={{
-            items: [
-              { key: 'waive', icon: <ShieldOff size={16} strokeWidth={2.25} />, label: 'Waive' },
-              { key: 'void', danger: true, icon: <AlertTriangle size={16} strokeWidth={2.25} />, label: 'Void' },
-            ],
-            onClick: ({ key }) => {
-              if (key === 'waive') setFeeWaiveTarget(r)
-              if (key === 'void') setFeeVoidTarget(r)
-            },
-          }}
-        >
+      render: (_: unknown, r: CollectionFeeRecord) => feeActions(r).length === 0 ? null : (
+        <Dropdown trigger={['click']} menu={rowActionMenu(feeActions(r))}>
           <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
         </Dropdown>
       ),
@@ -146,7 +151,7 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
 
   // Mobile rows: the reason and the amount (struck through once voided or
   // waived) on top; date and who added it below, or what undid it. Void and
-  // Waive stay on desktop, like other row actions.
+  // Waive open from the row's action sheet (its "…", or tapping the row).
   const struck = { textDecoration: 'line-through', color: token.colorTextDisabled }
   const discountRows = mobileColumns<PenaltyAdjustment>(r => (
     <MobileTableRow
@@ -155,6 +160,7 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
       secondary={r.voided
         ? <span style={{ color: token.colorError }}>Voided — {r.voidReason}</span>
         : `${r.createdAt.slice(0, 10)} · ${r.createdBy}`}
+      onMore={discountActions(r).length ? () => actionSheet.open(r.reason, discountActions(r)) : undefined}
     />
   ))
   const feeRows = mobileColumns<CollectionFeeRecord>(r => (
@@ -166,6 +172,7 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
         : r.waived
           ? `Waived — ${r.waiveReason}`
           : `${r.addedAt.slice(0, 10)} · ${r.addedBy}`}
+      onMore={feeActions(r).length ? () => actionSheet.open(r.reason || 'Collection fee', feeActions(r)) : undefined}
     />
   ))
 
@@ -207,6 +214,7 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
             <Table
               rowKey="id" columns={isMobile ? discountRows : discountColumns} dataSource={contract.penaltyAdjustments} size="small" pagination={false}
               {...(isMobile ? MOBILE_TABLE_PROPS : {})}
+              onRow={isMobile ? r => (discountActions(r).length ? { onClick: () => actionSheet.open(r.reason, discountActions(r)), style: { cursor: 'pointer' } } : {}) : undefined}
               locale={{ emptyText: <TableEmptyState icon={<AlertTriangle size={22} strokeWidth={2.25} />} title="No discounts yet" description="Penalty discounts applied to this contract will show up here." /> }}
             />
           </div>
@@ -240,11 +248,14 @@ export function PenaltyTab({ contract, actor, onChanged }: Props) {
             <Table
               rowKey="id" columns={isMobile ? feeRows : feeColumns} dataSource={contract.collectionFees} size="small" pagination={false}
               {...(isMobile ? MOBILE_TABLE_PROPS : {})}
+              onRow={isMobile ? r => (feeActions(r).length ? { onClick: () => actionSheet.open(r.reason || 'Collection fee', feeActions(r)), style: { cursor: 'pointer' } } : {}) : undefined}
               locale={{ emptyText: <TableEmptyState icon={<Receipt size={22} strokeWidth={2.25} />} title="No collection fees yet" description="Collection fees added to this contract will show up here." /> }}
             />
           </div>
         </div>
       </div>
+
+      {actionSheet.sheet}
 
       <Drawer
         title="Add penalty discount" open={discountOpen} onClose={() => setDiscountOpen(false)}

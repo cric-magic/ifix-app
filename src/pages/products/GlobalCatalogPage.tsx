@@ -20,6 +20,8 @@ import { ListSearch } from '../../components/ListSearch'
 import { useIsMobile } from '../../components/useIsMobile'
 import { MobileTableRow } from '../../components/MobileTableRow'
 import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../components/mobileTable'
+import { useActionSheet } from '../../components/useActionSheet'
+import { rowActionMenu, type RowAction } from '../../components/rowActions'
 
 // The platform's standard SKU definitions — what merchants adopt from rather
 // than defining common devices themselves. Super Admin only; merchants see
@@ -29,6 +31,7 @@ export function GlobalCatalogPage() {
   const actor = useCurrentUser()
   const navigate = useNavigate()
   const { token } = theme.useToken()
+  const actionSheet = useActionSheet()
   const isMobile = useIsMobile()
   const iconColors = useIconColors()
   const { modal } = App.useApp()
@@ -84,33 +87,36 @@ export function GlobalCatalogPage() {
     refresh()
   }
 
+  // A row's actions — the desktop "…" menu and the mobile action sheet
+  // (its "…", on every row with actions, at every size).
+  function rowActions(c: CatalogProduct): RowAction[] {
+    return [
+      { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit', onClick: () => { setEditing(c); setModalOpen(true) } },
+      {
+        key: 'remove',
+        danger: true,
+        icon: <Trash2 size={16} strokeWidth={2.25} />,
+        label: 'Remove',
+        onClick: () => modal.confirm({
+          title: 'Remove this catalog product?',
+          content: 'Merchants can no longer adopt it. Those who already did keep their own copy.',
+          okText: 'Remove',
+          okButtonProps: { danger: true },
+          onOk: () => handleRemove(c),
+        }),
+      },
+    ]
+  }
+
   function actionsMenu(c: CatalogProduct) {
+    const actions = rowActions(c)
+    if (actions.length === 0) return null
     return (
-          <Dropdown
-            trigger={['click']}
-            placement="bottomRight"
-            menu={{
-              items: [
-                { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
-                { type: 'divider' as const },
-                { key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' },
-              ],
-              onClick: ({ key }) => {
-                if (key === 'edit') { setEditing(c); setModalOpen(true) }
-                if (key === 'remove') {
-                  modal.confirm({
-                    title: 'Remove this catalog product?',
-                    content: 'Merchants can no longer adopt it. Those who already did keep their own copy.',
-                    okText: 'Remove',
-                    okButtonProps: { danger: true },
-                    onOk: () => handleRemove(c),
-                  })
-                }
-              },
-            }}
-          >
-            <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
-          </Dropdown>
+      <div onClick={e => e.stopPropagation()}>
+        <Dropdown trigger={['click']} placement="bottomRight" menu={rowActionMenu(actions)}>
+          <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
+        </Dropdown>
+      </div>
     )
   }
 
@@ -164,6 +170,7 @@ export function GlobalCatalogPage() {
       primary={c.name}
       trailing={<span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>{TYPE_LABELS[c.type]}</span>}
       secondary={`${c.skuCode} · ${c.brand}`}
+      onMore={rowActions(c).length ? () => actionSheet.open(c.name, rowActions(c)) : undefined}
     />
   ))
 
@@ -224,6 +231,7 @@ export function GlobalCatalogPage() {
         onClose={() => { setModalOpen(false); setEditing(null) }}
         onSaved={handleSaved}
       />
+      {actionSheet.sheet}
     </div>
   )
 }

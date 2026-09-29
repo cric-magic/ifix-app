@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { theme } from 'antd'
+import { Button, theme } from 'antd'
+import { MoreHorizontal } from 'lucide-react'
 
 interface Props {
   // The row's identifier — contract number, product name, serial number.
@@ -14,6 +15,9 @@ interface Props {
   // 44px, the height of the two lines together, so its top and bottom edges
   // line up with the text's instead of floating inside it.
   leading?: ReactNode
+  // The row's "…", opening its action sheet (see useActionSheet). Omitted
+  // when the viewer has no actions on the row.
+  onMore?: () => void
 }
 
 // A list table's row on mobile, as a compact two-line item instead of a
@@ -27,9 +31,10 @@ interface Props {
 // keep working. Both lines truncate rather than wrap; the right-hand side
 // keeps its natural width.
 //
-// No row actions (the desktop "…" menu) on mobile: a row opens its detail
-// page, and editing happens there.
-export function MobileTableRow({ primary, secondary, trailing, trailingSecondary, leading }: Props) {
+// Any row with actions shows "…" (`onMore`), opening its action sheet — the
+// same actions as the desktop "…" menu. Tapping the row itself opens its
+// detail page where it has one, or the action sheet where it doesn't.
+export function MobileTableRow({ primary, secondary, trailing, trailingSecondary, leading, onMore }: Props) {
   const { token } = theme.useToken()
   const line = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minWidth: 0 } as const
   const truncate = { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } as const
@@ -53,12 +58,22 @@ export function MobileTableRow({ primary, secondary, trailing, trailingSecondary
     </div>
   )
 
-  if (!leading) return lines
+  if (!leading && !onMore) return lines
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-      <div style={{ flexShrink: 0, display: 'flex' }}>{leading}</div>
+      {leading && <div style={{ flexShrink: 0, display: 'flex' }}>{leading}</div>}
       {lines}
+      {onMore && (
+        <Button
+          type="text"
+          size="small"
+          aria-label="More actions"
+          icon={<MoreHorizontal size={16} strokeWidth={2.25} />}
+          style={{ flexShrink: 0 }}
+          onClick={e => { e.stopPropagation(); onMore() }}
+        />
+      )}
     </div>
   )
 }

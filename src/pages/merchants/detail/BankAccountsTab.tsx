@@ -8,6 +8,8 @@ import { TableEmptyState } from '../../../components/TableEmptyState'
 import { withColumnMinWidths } from '../../../components/tableColumns'
 import { useIsMobile } from '../../../components/useIsMobile'
 import { MobileTableRow } from '../../../components/MobileTableRow'
+import { useActionSheet } from '../../../components/useActionSheet'
+import { rowActionMenu, type RowAction } from '../../../components/rowActions'
 import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
 import { ListToolbar } from '../../../components/ListToolbar'
 import { ListSearch } from '../../../components/ListSearch'
@@ -32,6 +34,7 @@ interface Props {
 
 export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: Props) {
   const { token } = theme.useToken()
+  const actionSheet = useActionSheet()
   const isMobile = useIsMobile()
   const { modal, message } = App.useApp()
   const [modalOpen, setModalOpen] = useState(false)
@@ -80,6 +83,26 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
     message.success(`${account.bank} set as default`)
   }
 
+  // An account's actions — the desktop "…" menu and the mobile action sheet.
+  function rowActions(a: BankAccountProfile): RowAction[] {
+    return [
+      { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit', onClick: () => { setEditingAccount(a); setModalOpen(true) } },
+      ...(a.isDefault ? [] : [{ key: 'default', icon: <Star size={16} strokeWidth={2.25} />, label: 'Set as default', onClick: () => handleSetDefault(a) }]),
+      {
+        key: 'remove',
+        danger: true,
+        icon: <Trash2 size={16} strokeWidth={2.25} />,
+        label: 'Remove',
+        onClick: () => modal.confirm({
+          title: 'Remove this bank account?',
+          okText: 'Remove',
+          okButtonProps: { danger: true },
+          onOk: () => handleRemove(a),
+        }),
+      },
+    ]
+  }
+
   const columns: ColumnsType<BankAccountProfile> = [
     {
       title: <span style={{ color: token.colorText }}>Bank</span>,
@@ -107,30 +130,7 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
       fixed: 'right' as const,
       align: 'right' as const,
       render: (_: unknown, a: BankAccountProfile) => (
-        <Dropdown
-          trigger={['click']}
-          placement="bottomRight"
-          menu={{
-            items: [
-              { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' },
-              ...(a.isDefault ? [] : [{ key: 'default', icon: <Star size={16} strokeWidth={2.25} />, label: 'Set as default' }]),
-              { type: 'divider' as const },
-              { key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' },
-            ],
-            onClick: ({ key }) => {
-              if (key === 'edit') { setEditingAccount(a); setModalOpen(true) }
-              if (key === 'default') handleSetDefault(a)
-              if (key === 'remove') {
-                modal.confirm({
-                  title: 'Remove this bank account?',
-                  okText: 'Remove',
-                  okButtonProps: { danger: true },
-                  onOk: () => handleRemove(a),
-                })
-              }
-            },
-          }}
-        >
+        <Dropdown trigger={['click']} placement="bottomRight" menu={rowActionMenu(rowActions(a))}>
           <Button type="text" size="small" icon={<MoreHorizontal size={16} strokeWidth={2.25} />} />
         </Dropdown>
       ),
@@ -138,9 +138,8 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
   ]
 
   // Mobile: bank (and Default) on top; account name and branch below, with
-  // the account number. No "…" menu — there's no detail page to send the
-  // row to, so tapping it opens the edit drawer instead, which also holds
-  // the default toggle.
+  // the account number. There's no detail page to open, so the row keeps
+  // its "…", and tapping the row or it opens the account's action sheet.
   const mobileRows = mobileColumns<BankAccountProfile>(a => (
     <MobileTableRow
       primary={a.bank}
@@ -151,6 +150,7 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
       ) : undefined}
       secondary={a.branch ? `${a.accountName} · ${a.branch}` : a.accountName}
       trailingSecondary={a.accountNumber}
+      onMore={canManage ? () => actionSheet.open(a.bank, rowActions(a)) : undefined}
     />
   ))
 
@@ -161,7 +161,7 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
       // gets a floor, like the app's other tables (see withColumnMinWidths).
       columns={isMobile ? mobileRows : withColumnMinWidths(columns, 'bank')}
       {...(isMobile ? MOBILE_TABLE_PROPS : {})}
-      onRow={isMobile && canManage ? a => ({ onClick: () => { setEditingAccount(a); setModalOpen(true) }, style: { cursor: 'pointer' } }) : undefined}
+      onRow={isMobile && canManage ? a => ({ onClick: () => actionSheet.open(a.bank, rowActions(a)), style: { cursor: 'pointer' } }) : undefined}
       dataSource={accounts}
       size="small"
       // Only when there's real data to scroll through — an empty table
@@ -264,6 +264,8 @@ export function BankAccountsTab({ merchant, canManage, onChanged, standalone }: 
           </div>
         </div>
       </ConfigProvider>
+
+      {actionSheet.sheet}
 
       <BankAccountModal
         open={modalOpen}
