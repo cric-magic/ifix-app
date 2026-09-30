@@ -2135,3 +2135,257 @@ label[for="password"]::after {
 .ifix-form-groups .ant-collapse-header:focus-visible .ant-collapse-expand-icon {
   color: var(--ant-color-icon-hover);
 }
+
+/* A radio as a selectable card (Create Contract's Branch step): the whole
+   card is the target, full width, and the chosen one takes the accent
+   border — easier to scan and tap than a bare radio list. */
+.ifix-choice-card.ant-radio-wrapper {
+  width: 100%;
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px;
+  align-items: center;
+  transition: border-color 0.15s ease;
+}
+
+.ifix-choice-card.ant-radio-wrapper:hover {
+  border-color: var(--ant-color-border);
+}
+
+.ifix-choice-card.ant-radio-wrapper-checked {
+  border-color: var(--ant-color-primary);
+}
+
+/* Price Check's results, listed in the modal under its search box (a
+   command palette, not a dropdown): scrolls on its own so the search stays
+   put, each row a button with the menu's hover fill. */
+.ifix-price-check-results {
+  display: flex;
+  flex-direction: column;
+  /* Rows run edge to edge, like a table's: out past the sheet's own side
+     padding (24px in the modal, 16px in the mobile drawer). */
+  margin: 0 calc(-1 * var(--ifix-sheet-pad, 16px));
+}
+
+/* Price Check's modal never outgrows the app window. antd's wrap is fixed
+   to the browser viewport, which in the desktop stage is bigger than the
+   simulated window — pinned to the window instead (its container is the
+   app window, see getContainer). The modal is then capped to it, 48px clear
+   top and bottom, and only its body scrolls: the search is sticky at the
+   top of that body and the quote's answer at the bottom (PriceCheckModal /
+   QuoteView). */
+.ifix-price-check-modal .ant-modal-mask,
+.ifix-price-check-modal .ant-modal-wrap {
+  position: absolute;
+}
+
+.ifix-price-check-modal .ant-modal {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - 96px);
+  padding-bottom: 0;
+}
+
+.ifix-price-check-modal .ant-modal-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* The side padding moves onto the header and body, so the body — the
+     scroll area — spans the modal's full width: its scrollbar sits on the
+     modal's edge, and the result rows can run edge to edge inside it
+     without overflowing sideways. */
+  padding-inline: 0;
+}
+
+.ifix-price-check-modal .ant-modal-container {
+  padding-top: 0;
+  /* Clips the pinned header's fill (it needs one — results scroll under
+     it) to the modal's rounded corners, which it otherwise squares off. */
+  overflow: hidden;
+}
+
+.ifix-price-check-modal .ant-modal-body {
+  --ifix-sheet-pad: 24px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-inline: var(--ifix-sheet-pad);
+}
+
+/* Price Check's header row — the search field itself, with the close
+   button — pinned at the top of the scrolling body, running edge to edge
+   over its hairline. The same row in the modal (24px sides) and the mobile
+   sheet (16px). The field sits flush with the row's padding, so its text
+   lines up with everything below. */
+.ifix-price-check-header {
+  position: sticky;
+  top: 0;
+  /* Above the fields scrolling under it (antd's addon inputs stack at 1–2). */
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* 56px, the same height as the app's own header bar. */
+  height: 56px;
+  margin: 0 calc(-1 * var(--ifix-sheet-pad, 16px));
+  padding: 0 var(--ifix-sheet-pad, 16px);
+}
+
+/* The mobile sheet's body starts at its own top padding; the header runs
+   up into it the way it runs out to the sides. */
+.ifix-price-check-sheet .ant-drawer-body {
+  --ifix-sheet-pad: 16px;
+  padding-top: 0 !important;
+}
+
+.ifix-price-check-item {
+  display: block;
+  width: 100%;
+  padding: 12px var(--ifix-sheet-pad, 16px);
+  text-align: left;
+  font: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.ifix-price-check-item[data-active] {
+  /* The tables' row hover (see --ifix-row-hover-bg in App.tsx). */
+  background: var(--ifix-row-hover-bg);
+}
+
+.ifix-price-check-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* The sidebar's Price Check row (AppLayout) — shaped like a search field
+   above the nav, since it opens a lookup over the current page rather than
+   going to one. Icon and text at the secondary tier, like every resting
+   icon; the shortcut hint a tier quieter. */
+.ifix-sidebar-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 8px);
+  /* 36px — the same as the nav items below it (Menu.itemHeight) and every
+     input (controlHeight). */
+  height: var(--ant-control-height);
+  margin: 0 4px 8px;
+  /* The nav items' own geometry, so icon and label line up with theirs: 4px
+     in, a 28px icon slot (.ifix-sidebar-action-icon), then the same 8px to
+     the label (see .ifix-main-nav above). */
+  padding: 0 4px;
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  color: var(--ant-color-text-secondary);
+  /* No fill — it sits on the sidebar like the nav items do; the outline
+     alone makes it read as a field. */
+  background: transparent;
+  /* The input family's own 1px stroke and colour (Input.colorBorder in
+     App.tsx is colorBorderSecondary; see Border in CLAUDE.md), drawn as an
+     inset ring rather than a border so it takes no width — a border shifted
+     the icon and label off the nav's. */
+  border: none;
+  box-shadow: inset 0 0 0 1px var(--ant-color-border-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ifix-sidebar-action:hover {
+  color: var(--ant-color-text);
+  /* The lightest hover fill, the tables' own (--ifix-row-hover-bg). */
+  background: var(--ifix-row-hover-bg);
+}
+
+.ifix-sidebar-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.ifix-sidebar-action .ifix-shortcut {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  /* Level with the right-hand chevrons' 8px inset (4px row padding + 4). */
+  margin-right: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.ifix-sidebar-action:hover .ifix-shortcut,
+.ifix-sidebar-action:focus-visible .ifix-shortcut {
+  opacity: 1;
+}
+
+/* One key per cap, outlined at the input's weight. */
+.ifix-sidebar-action kbd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--ant-color-text-tertiary);
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 4px;
+}
+
+/* Drawers and modals blur the page behind their tinted mask (the tint is
+   Drawer/Modal.colorBgMask in App.tsx) — the page stays recognisable, but
+   out of focus, so the open panel is clearly the thing to look at.
+   Inside the app window only: masks render there (getContainer), so the
+   desktop stage's own chrome is never blurred. */
+.ant-drawer-mask,
+.ant-modal-mask {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+/* TermChips — one chip per term, wrapping onto more rows rather than
+   squeezing: at least 72px each (room for "24 mo" at the chips' full
+   padding), sharing the row's width evenly. Outlined at the input family's
+   1px weight; the picked one takes the primary border, like
+   .ifix-choice-card. */
+.ifix-term-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+}
+
+.ifix-term-chip {
+  height: var(--ant-control-height);
+  padding: 0 12px;
+  font: inherit;
+  color: var(--ant-color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.ifix-term-chip:hover {
+  color: var(--ant-color-text);
+  border-color: var(--ant-color-border);
+}
+
+.ifix-term-chip[data-selected] {
+  color: var(--ant-color-text);
+  border-color: var(--ant-color-primary);
+}
+
+.ifix-term-chip:focus-visible {
+  outline: 2px solid var(--ant-color-primary);
+  outline-offset: 1px;
+}

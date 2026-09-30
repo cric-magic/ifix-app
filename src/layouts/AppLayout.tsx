@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Avatar, Button, Drawer, Dropdown, Layout, Menu, Typography, theme, Divider } from 'antd'
 import {
-  User, Package, FileText, Contact, Building2, Store,
+  User, Package, FileText, Calculator, Contact, Building2, Store,
   MoreHorizontal, LogOut, ChevronsUpDown, UserPlus,
   Settings, ChevronLeft, PanelLeftClose, PanelLeftOpen, ChevronRight,
 } from 'lucide-react'
@@ -24,6 +24,7 @@ import { getAvatarUrl, getWorkspaceAvatarUrl } from '../utils/avatar'
 import ifixLogoDark from '../assets/logo.png'
 import ifixLogoLight from '../assets/logo-light.png'
 import { TableScrollbars } from '../components/TableScrollbars'
+import { PriceCheckModal } from '../pages/priceCheck/PriceCheckModal'
 
 const { Header, Sider, Content } = Layout
 
@@ -276,6 +277,25 @@ export function AppLayout() {
   // on mobile the sidebar lives in a Drawer, so picking a destination
   // should also close it; on desktop mobileNavOpen never becomes true in
   // the first place, so the extra call is a no-op.
+  // Price Check (a modal over whatever page is open): from the sidebar's
+  // own row, the mobile header, or ⌘K / Ctrl+K. Super
+  // Admin has no merchant stock to price.
+  const [priceCheckOpen, setPriceCheckOpen] = useState(false)
+  const canPriceCheck = user.role !== 'super_admin'
+  const openPriceCheck = () => { setMobileNavOpen(false); setPriceCheckOpen(true) }
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+  useEffect(() => {
+    if (!canPriceCheck) return
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPriceCheckOpen(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [canPriceCheck])
+
   function go(path: string) {
     navigate(path)
     setMobileNavOpen(false)
@@ -374,6 +394,25 @@ export function AppLayout() {
             </div>
           </Dropdown>
 
+          {/* Price Check sits above the nav rather than in it: the nav's
+              items are places, and this opens over whichever one you're on.
+              Shaped like a search field (with its shortcut) so it reads as
+              "look something up", not another page. */}
+          {canPriceCheck && (
+            <button type="button" className="ifix-sidebar-action" onClick={openPriceCheck}>
+              <span className="ifix-sidebar-action-icon"><Calculator size={16} strokeWidth={2.25} /></span>
+              <span style={{ flex: 1 }}>Price check</span>
+              {/* Keycaps, shown on hover — a reminder for whoever's about
+                  to click, not clutter at rest. */}
+              {!isMobile && (
+                <span className="ifix-shortcut" aria-hidden>
+                  <kbd>{isMac ? '⌘' : 'Ctrl'}</kbd>
+                  <kbd>K</kbd>
+                </span>
+              )}
+            </button>
+          )}
+
           <div style={{ flex: 1, overflow: 'auto' }}>
             {inSettings ? (
               <div key="settings" className="ifix-nav-slide-fade">
@@ -381,7 +420,7 @@ export function AppLayout() {
                   mode="inline"
                   inlineIndent={16}
                   selectable={false}
-                  style={{ border: 'none', marginTop: 4, marginBottom: -4, background: 'transparent' }}
+                  style={{ border: 'none', marginBottom: -4, background: 'transparent' }}
                   items={[
                     {
                       key: 'back',
@@ -427,7 +466,7 @@ export function AppLayout() {
                   mode="inline"
                   inlineIndent={16}
                   selectable={false}
-                  style={{ border: 'none', marginTop: 4, marginBottom: -4, background: 'transparent' }}
+                  style={{ border: 'none', marginBottom: -4, background: 'transparent' }}
                   items={[
                     {
                       key: 'back',
@@ -467,7 +506,7 @@ export function AppLayout() {
                   mode="inline"
                   inlineIndent={16}
                   selectable={false}
-                  style={{ border: 'none', marginTop: 4, marginBottom: -4, background: 'transparent' }}
+                  style={{ border: 'none', marginBottom: -4, background: 'transparent' }}
                   items={[
                     {
                       key: 'back',
@@ -508,7 +547,7 @@ export function AppLayout() {
                   inlineIndent={16}
                   selectedKeys={[selectedKey]}
                   className="ifix-main-nav"
-                  style={{ border: 'none', marginTop: 4, background: 'transparent' }}
+                  style={{ border: 'none', background: 'transparent' }}
                   items={[
                     // Contracts, like Products/Branches below, is merchant-
                     // scoped business data — Super Admin (a platform-level
@@ -631,6 +670,9 @@ export function AppLayout() {
   return (
     <Layout style={{ height: '100%', background: 'transparent' }}>
       <TableScrollbars />
+      {canPriceCheck && (
+        <PriceCheckModal open={priceCheckOpen} actor={user} onClose={() => setPriceCheckOpen(false)} />
+      )}
       {!isMobile && (
         <Sider width={220} collapsedWidth={220} collapsed={false} trigger={null} style={{
           background: 'transparent',
@@ -787,7 +829,22 @@ export function AppLayout() {
               {headerContent.center}
             </div>
           )}
-          <div style={{ justifySelf: 'end' }}>{headerContent?.right}</div>
+          <div style={{ justifySelf: 'end', display: 'flex', alignItems: 'center', gap: 4 }}>
+            {/* On mobile the sidebar's Price Check row is behind the menu —
+                the header keeps it one tap away on every page (but not in
+                the contract wizard, whose header is its own steps bar). */}
+            {isMobile && canPriceCheck && !headerContent?.center && (
+              <Button
+                type="text"
+                size="small"
+                style={{ borderRadius: 6 }}
+                aria-label="Price check"
+                icon={<Calculator size={16} strokeWidth={2.25} />}
+                onClick={openPriceCheck}
+              />
+            )}
+            {headerContent?.right}
+          </div>
         </Header>
 
         <Content style={{ padding: 16, overflow: 'auto', background: isMobile ? 'transparent' : 'var(--ifix-wrapper-bg)' }}>

@@ -1,14 +1,17 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Card, Form, Input, Button, Space, Row, Col,
-  Typography, Divider, Alert, message,
+  Typography, Divider, Alert, Radio, message,
 } from 'antd'
 import { DatePicker } from '../../components/AppDatePicker'
 import { InputNumber } from '../../components/AppInputNumber'
 import dayjs from 'dayjs'
 import { Check, X } from 'lucide-react'
 import { Select } from '../../components/AppSelect'
+import { TermChips } from '../../components/TermChips'
+import { DownPaymentField } from '../../components/DownPaymentField'
+import { InterestField } from '../../components/InterestField'
 import { PhotoUpload } from '../../components/PhotoUpload'
 import { HeaderSteps } from '../../components/HeaderSteps'
 import { useIsMobile } from '../../components/useIsMobile'
@@ -16,25 +19,23 @@ import { useCurrentUser } from '../../contexts/AuthContext'
 import { useSetHeaderContent } from '../../contexts/HeaderContentContext'
 import { CurrencyDisplay } from '../../components/CurrencyDisplay'
 import { DetailDescriptions } from '../../components/DetailDescriptions'
-import { BRANCHES } from '../../constants/mockData'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
 import { MOCK_MERCHANTS } from '../../constants/mockMerchants'
-import { activeTemplatesFor } from '../../constants/mockContractTemplates'
 import { MOCK_CUSTOMERS, findCustomerByNationalId, generateCustomerId } from '../../constants/mockCustomers'
 import { MOCK_CONTRACTS, generateContractId } from '../../constants/mockContracts'
-import { calcFixRate } from '../../utils/calculator'
+import { FREE_RATE_TERMS, defaultTemplateOf, financingFor, preferredTermOf, clampDown, selectableTemplatesFor, type QuoteHandoff } from '../../utils/quote'
+import type { ContractTemplate } from '../../types/contractTemplate'
 import { generateContractNumber, submitContractForApproval } from '../../utils/contract'
-import { canCreateContract, isMerchantAdminOrAbove, scopedProductList } from '../../constants/roles'
+import { canCreateContract } from '../../constants/roles'
 import type { Contract } from '../../types/contract'
 import type { Customer } from '../../types/customer'
 import { normalizeSections } from '../../constants/contractSections'
+import { MOCK_BRANCHES } from '../../constants/mockBranches'
+import { BoxLabelNote } from './components/BoxLabelNote'
+import { SelectDevice, type DeviceChoice, type DeviceSource } from './components/SelectDevice'
 
-// Per the Contract doc's Free Rate terms ("pick a term: 3/6/10/12/18/24
-// months") — a different set from Fixed Rate's own per-template terms.
-const FREE_RATE_TERMS = [3, 6, 10, 12, 18, 24]
-
-interface DeviceValues { branch: string; productId: string; unitId: string }
+interface DeviceValues { branch: string; productId: string; unitId: string; source: DeviceSource }
 interface TemplateValues { templateId: string; termMonths: number; ratePercent: number; downPaymentPercent: number }
 interface DeviceInfoValues {
   imei1?: string
@@ -60,13 +61,32 @@ interface CustomerValues {
 
 export function CreateContractPage() {
   const navigate = useNavigate()
+  // Started from a Price Check quote: the branch, unit and terms arrive
+  // already chosen, and the flow opens at Device with them filled in.
+  const quote = (useLocation().state as { quote?: QuoteHandoff } | null)?.quote
   const isMobile = useIsMobile()
   const actor = useCurrentUser()
   const merchant = MOCK_MERCHANTS.find(m => m.id === actor.merchantId)
-  const canUseFreeRate = isMerchantAdminOrAbove(actor)
 
-  const [step, setStep] = useState(0)
-  const [deviceForm] = Form.useForm<DeviceValues>()
+  // Steps by name rather than index: Merchant Admin/Owner get a Branch step
+  // first (they manage several branches), which Staff and Branch Managers —
+  // always on their own branch — skip, so the positions differ by role.
+  type StepKey = 'branch' | 'device' | 'template' | 'deviceInfo' | 'customer' | 'preview'
+  const stepKeys: StepKey[] = [
+    ...(actor.branch ? [] : ['branch' as const]),
+    'device', 'template', 'deviceInfo', 'customer', 'preview',
+  ]
+  const [step, setStep] = useState(() => (quote ? stepKeys.indexOf('device') : 0))
+  const current = stepKeys[step]
+  const goTo = (key: StepKey) => setStep(stepKeys.indexOf(key))
+
+  // The contract's branch: the actor's own, or picked on the Branch step.
+  const [branch, setBranch] = useState<string | undefined>(actor.branch ?? quote?.branch)
+  // The unit picked on the Select Device step — kept here rather than in a
+  // Form, since the step's own picker holds it across its two paths.
+  const [deviceChoice, setDeviceChoice] = useState<DeviceChoice | null>(
+    quote ? { unitId: quote.unitId, productId: quote.productId, source: 'browse' } : null,
+  )
   const [templateForm] = Form.useForm<TemplateValues>()
   const [deviceInfoForm] = Form.useForm<DeviceInfoValues>()
   const [customerForm] = Form.useForm<CustomerValues>()
@@ -75,12 +95,13 @@ export function CreateContractPage() {
   // steps — captured into React state on each "Next" click instead of read
   // back off the (by-then-unmounted) Form.
   const [device, setDevice] = useState<DeviceValues | null>(null)
-  const [templateValues, setTemplateValues] = useState<TemplateValues | null>(null)
+  const [templateValues, setTemplateValues] = useState<TemplateValues | null>(
+    quote ? { templateId: quote.templateId, termMonths: quote.termMonths, ratePercent: quote.ratePercent, downPaymentPercent: quote.downPaymentPercent } : null,
+  )
   const [deviceInfo, setDeviceInfo] = useState<DeviceInfoValues | null>(null)
   const [customerValues, setCustomerValues] = useState<CustomerValues | null>(null)
   const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null)
 
-  const templates = actor.merchantId ? activeTemplatesFor(actor.merchantId) : []
   // Falls back to the snapshotted state once its own step's Form unmounts
   // (per the comment above — a watched field resets to undefined once its
   // Form is gone) — without it, `selectedTemplate` silently went undefined
@@ -89,31 +110,43 @@ export function CreateContractPage() {
   // with zero visible feedback (no toast, no error boundary) since it's a
   // plain event-handler exception. Matches EditContractPage's own already-
   // correct version of these three.
-  const selectedBranch = Form.useWatch('branch', deviceForm) ?? device?.branch ?? actor.branch
-  const selectedProductId = Form.useWatch('productId', deviceForm) ?? device?.productId
   const selectedTemplateId = Form.useWatch('templateId', templateForm) ?? templateValues?.templateId
-  const selectedTemplate = templates.find(t => t.id === selectedTemplateId)
+  // The chosen term, for the rate shown under the term chips.
+  const watchedTerm = Form.useWatch('termMonths', templateForm) as number | undefined
+  // The unit's price and the down payment being set — what the down
+  // payment's amount and a Free Rate profit are worked out against.
+  const termsUnit = device ? MOCK_PRODUCT_UNITS.find(u => u.id === device.unitId) : undefined
+  const termsProduct = termsUnit ? MOCK_PRODUCTS.find(p => p.id === termsUnit.productId) : undefined
+  const termsDevicePrice = termsUnit && termsProduct ? termsUnit.customPrice ?? termsProduct.salesPrice : 0
+  const watchedDown = Form.useWatch('downPaymentPercent', templateForm) as number | undefined
+  const selectableTemplates = selectableTemplatesFor(actor)
+  const selectedTemplate = selectableTemplates.find(t => t.id === selectedTemplateId)
 
-  // Per the doc, "the default template for the selected type is pre-selected
-  // when creating a contract." This step picks a template directly rather
-  // than a type first, so the Fixed Rate default wins where both exist —
-  // Free Rate is the Easy Mode path and only Admin/Owner can reach it.
-  const selectableTemplates = templates.filter(t => t.type === 'fixed_rate' || canUseFreeRate)
-  const defaultTemplateId = (
-    selectableTemplates.find(t => t.isDefault && t.type === 'fixed_rate')
-    ?? selectableTemplates.find(t => t.isDefault)
-  )?.id
+  const defaultTemplateId = defaultTemplateOf(selectableTemplates)?.id
+  const defaultTemplate = selectableTemplates.find(t => t.id === defaultTemplateId)
+  const defaultTerm = defaultTemplate ? preferredTermOf(defaultTemplate) : undefined
+  function applyPreferredTerm(template: ContractTemplate | undefined) {
+    const term = template ? preferredTermOf(template) : undefined
+    templateForm.setFieldsValue({
+      termMonths: term?.months,
+      ratePercent: term?.ratePercent,
+      // Kept, but pulled into the new template's allowed range.
+      downPaymentPercent: template ? clampDown(templateForm.getFieldValue('downPaymentPercent'), template) : undefined,
+    })
+  }
   // This step's Form unmounts when the user leaves it, so its initialValues
   // re-apply on the way back — seeding them from the captured templateValues
   // keeps an earlier selection instead of resetting it to the default.
 
-  const steps = [
-    { title: 'Device', description: 'Pick the branch, product, and available unit for this contract.' },
-    { title: 'Template & Terms', description: 'Choose a contract template and set the down payment and term.' },
-    { title: 'Device Info & Photos', description: "Confirm the unit's IMEI and serial number, then upload box photos." },
-    { title: 'Customer', description: 'Look up an existing customer by ID, or fill in a new one.' },
-    { title: 'Preview', description: 'Review the full contract summary before submitting.' },
-  ]
+  const STEP_META: Record<StepKey, { title: string; description: string }> = {
+    branch: { title: 'Branch', description: 'Choose the branch this contract belongs to — its inventory is what you can sell from.' },
+    device: { title: 'Device', description: 'Browse by model, or search the IMEI to find the unit.' },
+    template: { title: 'Template & Terms', description: 'Choose a contract template and set the down payment and term.' },
+    deviceInfo: { title: 'Device Info & Photos', description: "Confirm the unit's IMEI and serial number, then upload box photos." },
+    customer: { title: 'Customer', description: 'Look up an existing customer by ID, or fill in a new one.' },
+    preview: { title: 'Preview', description: 'Review the full contract summary before submitting.' },
+  }
+  const steps = stepKeys.map(key => STEP_META[key])
 
   // Replaces AppLayout's own breadcrumb/right-slot with this wizard's own
   // progress (a Steps bar, in place of the plain "Contracts" title) and its
@@ -141,7 +174,7 @@ export function CreateContractPage() {
         onClick={() => navigate('/contracts')}
       />
     ),
-  }, [step])
+  }, [step, stepKeys.length])
 
   if (!canCreateContract(actor)) {
     return (
@@ -154,34 +187,48 @@ export function CreateContractPage() {
     )
   }
 
-  const availableUnits = selectedProductId
-    ? MOCK_PRODUCT_UNITS.filter(u => u.productId === selectedProductId && u.branch === selectedBranch && u.availability === 'available')
-    : []
+  // Active branches of this merchant, each with how many units it has
+  // available — what the Branch step offers.
+  const merchantBranches = MOCK_BRANCHES.filter(b => b.merchantId === actor.merchantId && b.status === 'active')
+  const availableAt = (name: string) => MOCK_PRODUCT_UNITS.filter(u => u.branch === name && u.availability === 'available').length
 
-  function handleProductChange() {
-    deviceForm.setFieldValue('unitId', undefined)
+  function handleBranchNext() {
+    if (!branch) {
+      message.error('Choose a branch to continue')
+      return
+    }
+    goTo('device')
   }
 
   function handleDeviceNext() {
-    deviceForm.validateFields().then(values => {
-      setDevice(values)
-      setStep(1)
-    })
+    if (!branch || !deviceChoice) {
+      message.error('Pick a unit to continue')
+      return
+    }
+    setDevice({ branch, ...deviceChoice })
+    goTo('template')
   }
 
   function handleTemplateNext() {
     templateForm.validateFields().then(values => {
       setTemplateValues(values)
+      // From IMEI Search the unit's IMEI and Serial Number arrive filled in
+      // (and fixed); from Guided Browse they're entered from the box and
+      // matched against the unit — kept if already entered for this unit.
       const unit = MOCK_PRODUCT_UNITS.find(u => u.id === device!.unitId)!
-      deviceInfoForm.setFieldsValue({ serialNumber: unit.serialNumber, imei1: unit.imei1, imei2: unit.imei2 })
-      setStep(2)
+      if (device!.source === 'imei') {
+        deviceInfoForm.setFieldsValue({ serialNumber: unit.serialNumber, imei1: unit.imei1, imei2: unit.imei2 })
+      } else if (deviceInfo?.serialNumber !== unit.serialNumber) {
+        deviceInfoForm.setFieldsValue({ serialNumber: undefined, imei1: undefined, imei2: undefined })
+      }
+      goTo('deviceInfo')
     })
   }
 
   function handleDeviceInfoNext() {
     deviceInfoForm.validateFields().then(values => {
       setDeviceInfo(values)
-      setStep(3)
+      goTo('customer')
     })
   }
 
@@ -210,26 +257,19 @@ export function CreateContractPage() {
   function handleCustomerNext() {
     customerForm.validateFields().then(values => {
       setCustomerValues(values)
-      setStep(4)
+      goTo('preview')
     })
   }
 
   function computeFinancing() {
     const product = MOCK_PRODUCTS.find(p => p.id === device!.productId)!
     const unit = MOCK_PRODUCT_UNITS.find(u => u.id === device!.unitId)!
-    const devicePrice = unit.customPrice ?? product.salesPrice
-    const downPaymentAmount = Math.round(devicePrice * templateValues!.downPaymentPercent / 100)
-    const loanAmount = devicePrice - downPaymentAmount
-    const calc = calcFixRate(loanAmount, templateValues!.ratePercent, templateValues!.termMonths)
-    return {
-      devicePrice,
-      downPaymentPercent: templateValues!.downPaymentPercent,
-      downPaymentAmount,
-      ratePercent: templateValues!.ratePercent,
-      paymentTermMonths: templateValues!.termMonths,
-      installmentAmount: calc.monthlyInstallment,
-      totalContractValue: Math.round(downPaymentAmount + calc.totalPayable),
-    }
+    return financingFor(
+      unit.customPrice ?? product.salesPrice,
+      templateValues!.downPaymentPercent,
+      templateValues!.ratePercent,
+      templateValues!.termMonths,
+    )
   }
 
   function handleSubmit() {
@@ -383,142 +423,179 @@ export function CreateContractPage() {
         <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 4 }}>{steps[step].title}</Typography.Title>
         <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>{steps[step].description}</Typography.Text>
 
-        {step === 0 && (
-          <Form form={deviceForm} layout="vertical" initialValues={{ branch: actor.branch }}>
-            {!actor.branch && (
-              <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Required' }]}>
-                <Select placeholder="Select branch" options={BRANCHES.map(b => ({ value: b, label: b }))} />
-              </Form.Item>
-            )}
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item label="Product" name="productId" rules={[{ required: true, message: 'Required' }]}>
-                  <Select
-                    showSearch
-                    placeholder="Search brand or model"
-                    optionFilterProp="label"
-                    onChange={handleProductChange}
-                    options={scopedProductList(actor, MOCK_PRODUCTS).map(p => ({
-                      value: p.id,
-                      label: `${p.brand} ${p.name}${p.storage ? ` · ${p.storage}` : ''} · ${p.color} (${p.type === 'used' ? 'Used' : 'New'})`,
-                    }))}
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label="Unit" name="unitId" rules={[{ required: true, message: 'Required' }]}>
-                  <Select
-                    placeholder={selectedProductId ? 'Select an available unit' : 'Select a product first'}
-                    disabled={!selectedProductId}
-                    options={availableUnits.map(u => ({
-                      value: u.id,
-                      label: `${u.serialNumber}${u.imei1 ? ` · IMEI ${u.imei1}` : ''}${u.grade ? ` · Grade ${u.grade}` : ''}`,
-                    }))}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-            {selectedProductId && availableUnits.length === 0 && (
-              <Alert type="warning" showIcon message="No available units for this product at this branch." style={{ marginBottom: 16 }} />
-            )}
+        {current === 'branch' && (
+          <Form layout="vertical">
+            <Form.Item required label="Branch">
+              {/* A card per branch, with how much it has in stock — the
+                  choice that decides which inventory the contract sells. */}
+              <Radio.Group
+                value={branch}
+                onChange={e => {
+                  // A different branch means a different inventory: any
+                  // unit picked for the old one no longer applies.
+                  if (e.target.value !== branch) setDeviceChoice(null)
+                  setBranch(e.target.value)
+                }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}
+              >
+                {merchantBranches.map(b => (
+                  <Radio key={b.id} value={b.name} className="ifix-choice-card">
+                    <span style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span>{b.name}</span>
+                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                        {b.code} · {availableAt(b.name)} units available
+                      </Typography.Text>
+                    </span>
+                  </Radio>
+                ))}
+              </Radio.Group>
+            </Form.Item>
             <div className="ifix-wizard-actions">
-              <Button type="primary" onClick={handleDeviceNext}>Next: Template & Terms</Button>
+              <Button type="primary" onClick={handleBranchNext}>Next: Device</Button>
             </div>
           </Form>
         )}
 
-        {step === 1 && (
+        {current === 'device' && branch && (
+          <Form layout="vertical">
+            <SelectDevice actor={actor} branch={branch} value={deviceChoice} onChange={setDeviceChoice} />
+            <Space className="ifix-wizard-actions">
+              {stepKeys[0] === 'branch' && <Button onClick={() => goTo('branch')}>Back</Button>}
+              <Button type="primary" onClick={handleDeviceNext}>Next: Template & Terms</Button>
+            </Space>
+          </Form>
+        )}
+
+        {current === 'template' && (
           <Form
             form={templateForm}
             layout="vertical"
-            initialValues={{ ...templateValues, templateId: templateValues?.templateId ?? defaultTemplateId }}
+            initialValues={templateValues ?? {
+              templateId: defaultTemplateId,
+              // A term already chosen, the way Price Check's quote opens —
+              // the default template's preferred term (and its rate).
+              termMonths: defaultTerm?.months,
+              ratePercent: defaultTerm?.ratePercent,
+              // The template's smallest down payment, as a quote opens on.
+              downPaymentPercent: defaultTemplate?.minDownPaymentPercent,
+            }}
           >
             <Form.Item label="Contract Template" name="templateId" rules={[{ required: true, message: 'Required' }]}>
               <Select
+                // A different template has its own terms: move to its
+                // preferred one rather than keep a term it may not offer.
+                onChange={id => applyPreferredTerm(selectableTemplates.find(t => t.id === id))}
                 placeholder="Select template"
                 options={selectableTemplates
                   .map(t => ({ value: t.id, label: `${t.name}${t.isDefault ? ' (Default)' : ''}` }))}
               />
             </Form.Item>
 
-            {selectedTemplate?.type === 'fixed_rate' && (
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item label="Payment Term" name="termMonths" rules={[{ required: true, message: 'Required' }]}>
-                    <Select
-                      placeholder="Select term"
-                      options={selectedTemplate.fixedRateTerms!.map(t => ({ value: t.months, label: `${t.months} months (${t.ratePercent}%/mo)` }))}
-                      onChange={months => {
-                        const rate = selectedTemplate.fixedRateTerms!.find(t => t.months === months)?.ratePercent
-                        templateForm.setFieldValue('ratePercent', rate)
-                      }}
+            {/* Terms as chips — the same control as Price Check's quote —
+                then the down payment (by % or amount), then, on a Free Rate
+                template, the interest (by rate or by profit). In that order:
+                a profit target depends on how much is financed. */}
+            {selectedTemplate && (
+              <>
+                <Form.Item
+                  label="Payment Term"
+                  name="termMonths"
+                  rules={[{ required: true, message: 'Required' }]}
+                  extra={selectedTemplate.type === 'fixed_rate' && watchedTerm !== undefined
+                    ? `${selectedTemplate.fixedRateTerms!.find(t => t.months === watchedTerm)?.ratePercent ?? '—'}% per month`
+                    : undefined}
+                >
+                  <TermChips
+                    months={selectedTemplate.type === 'fixed_rate' ? selectedTemplate.fixedRateTerms!.map(t => t.months) : FREE_RATE_TERMS}
+                    onChange={months => {
+                      if (selectedTemplate.type !== 'fixed_rate') return
+                      const rate = selectedTemplate.fixedRateTerms!.find(t => t.months === months)?.ratePercent
+                      templateForm.setFieldValue('ratePercent', rate)
+                    }}
+                  />
+                </Form.Item>
+                <Form.Item label="Down Payment" name="downPaymentPercent" rules={[{ required: true, message: 'Required' }]}>
+                  <DownPaymentField
+                    devicePrice={termsDevicePrice}
+                    min={selectedTemplate.minDownPaymentPercent}
+                    max={selectedTemplate.maxDownPaymentPercent}
+                  />
+                </Form.Item>
+                {selectedTemplate.type === 'free_rate' ? (
+                  <Form.Item label="Interest" name="ratePercent" rules={[{ required: true, message: 'Required' }]}>
+                    <InterestField
+                      loanAmount={termsDevicePrice - Math.round(termsDevicePrice * (watchedDown ?? 0) / 100)}
+                      months={watchedTerm}
                     />
                   </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item label="Down Payment (%)" name="downPaymentPercent" rules={[{ required: true, message: 'Required' }]}>
-                    <InputNumber
-                      style={{ width: '100%' }}
-                      min={selectedTemplate.minDownPaymentPercent}
-                      max={selectedTemplate.maxDownPaymentPercent}
-                      addonAfter="%"
-                    />
-                  </Form.Item>
-                </Col>
-                <Form.Item name="ratePercent" hidden><InputNumber /></Form.Item>
-              </Row>
-            )}
-
-            {selectedTemplate?.type === 'free_rate' && (
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item label="Payment Term" name="termMonths" rules={[{ required: true, message: 'Required' }]}>
-                    <Select placeholder="Select term" options={FREE_RATE_TERMS.map(m => ({ value: m, label: `${m} months` }))} />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item label="Rate (%/month)" name="ratePercent" rules={[{ required: true, message: 'Required' }]}>
-                    <InputNumber style={{ width: '100%' }} min={0} step={0.1} precision={2} addonAfter="%" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item label="Down Payment (%)" name="downPaymentPercent" rules={[{ required: true, message: 'Required' }]}>
-                    <InputNumber
-                      style={{ width: '100%' }}
-                      min={selectedTemplate.minDownPaymentPercent}
-                      max={selectedTemplate.maxDownPaymentPercent}
-                      addonAfter="%"
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
+                ) : (
+                  <Form.Item name="ratePercent" hidden><InputNumber /></Form.Item>
+                )}
+              </>
             )}
 
             <Space className="ifix-wizard-actions">
-              <Button onClick={() => setStep(0)}>Back</Button>
+              <Button onClick={() => goTo('device')}>Back</Button>
               <Button type="primary" onClick={handleTemplateNext} disabled={!selectedTemplate}>Next: Device Info</Button>
             </Space>
           </Form>
         )}
 
-        {step === 2 && (
+        {current === 'deviceInfo' && device && (() => {
+          // From IMEI Search: filled in and fixed — the scan already
+          // identified the unit. From Guided Browse: entered from the box
+          // label and checked against the chosen unit, so the paperwork
+          // matches the device actually handed over.
+          const unit = MOCK_PRODUCT_UNITS.find(u => u.id === device.unitId)!
+          const fromImei = device.source === 'imei'
+          const mustMatch = (expected: (string | undefined)[], what: string) => ({
+            validator: (_: unknown, value?: string) => (
+              !value || fromImei || expected.includes(value.trim())
+                ? Promise.resolve()
+                : Promise.reject(new Error(`Doesn't match this unit's ${what}`))
+            ),
+          })
+          const filledNote = fromImei ? 'Filled in from the IMEI search' : undefined
+          return (
           <Form form={deviceInfoForm} layout="vertical">
+            {!fromImei && (
+              <BoxLabelNote
+                unit={unit}
+                onFill={() => {
+                  deviceInfoForm.setFieldsValue({ serialNumber: unit.serialNumber, imei1: unit.imei1, imei2: unit.imei2 })
+                  deviceInfoForm.validateFields(['serialNumber', 'imei1', 'imei2'])
+                }}
+              />
+            )}
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item label="Serial Number" name="serialNumber" rules={[{ required: true, message: 'Required' }]}>
-                  <Input />
+                <Form.Item
+                  label="Serial Number"
+                  name="serialNumber"
+                  extra={filledNote}
+                  rules={[{ required: true, message: 'Required' }, mustMatch([unit.serialNumber], 'serial number')]}
+                >
+                  <Input disabled={fromImei} placeholder="From the box label" />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                {/* Optional: carried from the unit, and blank for devices
-                    that have no IMEI at all (laptops, accessories). */}
-                <Form.Item label="IMEI 1" name="imei1">
-                  <Input maxLength={15} placeholder="Optional" />
+                {/* Required when the unit has an IMEI (a phone); blank for
+                    devices that have none (laptops, accessories). */}
+                <Form.Item
+                  label="IMEI 1"
+                  name="imei1"
+                  extra={filledNote}
+                  rules={[
+                    ...(unit.imei1 ? [{ required: true, message: 'Required' }] : []),
+                    mustMatch([unit.imei1, unit.imei2], 'IMEI'),
+                  ]}
+                >
+                  <Input maxLength={15} inputMode="numeric" disabled={fromImei} placeholder={unit.imei1 ? '15 digits' : 'Optional'} />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item label="IMEI 2" name="imei2">
-                  <Input maxLength={15} placeholder="Optional" />
+                <Form.Item label="IMEI 2" name="imei2" extra={filledNote} rules={[mustMatch([unit.imei1, unit.imei2], 'IMEI')]}>
+                  <Input maxLength={15} inputMode="numeric" disabled={fromImei} placeholder="Optional" />
                 </Form.Item>
               </Col>
             </Row>
@@ -545,13 +622,14 @@ export function CreateContractPage() {
               </Col>
             </Row>
             <Space className="ifix-wizard-actions">
-              <Button onClick={() => setStep(1)}>Back</Button>
+              <Button onClick={() => goTo('template')}>Back</Button>
               <Button type="primary" onClick={handleDeviceInfoNext}>Next: Customer</Button>
             </Space>
           </Form>
-        )}
+          )
+        })()}
 
-        {step === 3 && (
+        {current === 'customer' && (
           <Form form={customerForm} layout="vertical">
             <Row gutter={16}>
               <Col span={16}>
@@ -630,13 +708,13 @@ export function CreateContractPage() {
               </Col>
             </Row>
             <Space className="ifix-wizard-actions">
-              <Button onClick={() => setStep(2)}>Back</Button>
+              <Button onClick={() => goTo('deviceInfo')}>Back</Button>
               <Button type="primary" onClick={handleCustomerNext}>Next: Preview</Button>
             </Space>
           </Form>
         )}
 
-        {step === 4 && device && templateValues && deviceInfo && customerValues && (() => {
+        {current === 'preview' && device && templateValues && deviceInfo && customerValues && (() => {
           const product = MOCK_PRODUCTS.find(p => p.id === device.productId)!
           const financing = computeFinancing()
 
@@ -680,7 +758,7 @@ export function CreateContractPage() {
               <Divider />
 
               <Space className="ifix-wizard-actions">
-                <Button onClick={() => setStep(3)}>Back</Button>
+                <Button onClick={() => goTo('customer')}>Back</Button>
                 <Button type="primary" icon={<Check size={16} strokeWidth={2.25} />} onClick={handleSubmit}>
                   {actor.role === 'staff' ? 'Submit for Approval' : 'Create Contract'}
                 </Button>

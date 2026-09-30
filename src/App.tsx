@@ -331,7 +331,7 @@ function buildTheme(variant: ThemeVariant) {
   // each one uses there. Dark mode keeps the original pairing.
   const wrapperBorder = algorithmName === 'light' ? baseToken.colorBorderSecondary : baseToken.colorSplit
   const panelBorder = algorithmName === 'light' ? baseToken.colorSplit : baseToken.colorBorderSecondary
-  // antd's default Drawer mask is a fixed black-alpha overlay regardless of
+  // antd's default Drawer/Modal mask is a fixed black-alpha overlay regardless of
   // algorithm, which reads oddly against a light page. Tint the mask from
   // this variant's own colorBgBase instead — black-alpha for the dark
   // variants (colorBgBase is near-black) and white-alpha for light
@@ -353,7 +353,13 @@ function AppThemed() {
   // nested-panel/wrapper backgrounds still need one, since those aren't
   // color/shadow AliasTokens antd exports a cssVar for on its own — re-run
   // whenever the theme variant changes so they stay in sync with it.
+  // A list row's hover/active fill — the tables' own (Table.rowHoverBg
+  // below), bridged to CSS for lists that aren't tables (Price Check's
+  // results), so every hoverable row in the app shades the same.
+  const rowHoverBg = VARIANT_SEEDS[themeVariant].algorithm === 'light' ? baseToken.colorFillQuaternary : baseToken.colorFillSecondary
+
   useLayoutEffect(() => {
+    document.documentElement.style.setProperty('--ifix-row-hover-bg', rowHoverBg)
     document.documentElement.style.setProperty('--ifix-panel-bg', panelBg)
     document.documentElement.style.setProperty('--ifix-wrapper-bg', wrapperBg)
     document.documentElement.style.setProperty('--ifix-wrapper-border', wrapperBorder)
@@ -373,7 +379,7 @@ function AppThemed() {
     // one place a variant name itself, not just its resolved tokens, needs
     // to reach a stylesheet.
     document.documentElement.setAttribute('data-ifix-theme', themeVariant)
-  }, [baseToken, seedTokens, panelBg, wrapperBg, wrapperBorder, panelBorder, themeVariant])
+  }, [baseToken, seedTokens, panelBg, wrapperBg, wrapperBorder, panelBorder, rowHoverBg, themeVariant])
 
   return (
     <ConfigProvider
@@ -396,6 +402,16 @@ function AppThemed() {
           // rest of the app's icon scale (17px in the sidebar nav, 15px in
           // the menu bar). 17px matches the sidebar.
           withDescriptionIconSize: 17,
+        },
+        // Same tinted mask as Drawer below — a modal and a drawer over the
+        // same page should dim (or, in light, whiten) it the same way.
+        Modal: {
+          colorBgMask: maskBg,
+          // A modal floats over the page like a dropdown does, and against
+          // the light theme's white-tinted mask it has nothing else to set
+          // it apart — so it takes the floating-overlay shadow (see the
+          // Shadow section in CLAUDE.md), which carries a hairline ring.
+          boxShadow: baseToken.boxShadowSecondary,
         },
         Drawer: {
           colorBgMask: maskBg,
@@ -561,7 +577,7 @@ function AppThemed() {
           // fill tier is visible, and Secondary (#e6e6e6) read heavy — the
           // same grey as the status tags, which lost their pill on a hovered
           // row. Light uses the lightest tier, Quaternary (#f0f0f0), instead.
-          rowHoverBg: VARIANT_SEEDS[themeVariant].algorithm === 'light' ? baseToken.colorFillQuaternary : baseToken.colorFillSecondary,
+          rowHoverBg,
           bodySortBg: baseToken.colorBgElevated,
           headerSortActiveBg: baseToken.colorBgElevated,
           headerSortHoverBg: baseToken.colorBgElevated,

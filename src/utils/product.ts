@@ -59,3 +59,13 @@ export function countProductsUsingAttribute(
 ): number {
   return products.filter(p => !p.deletedAt && p[field] === value).length
 }
+
+// A unit's selling price: its own custom price, or its SKU's.
+export function unitPrice(unit: ProductUnit, product: Product): number {
+  return unit.customPrice ?? product.salesPrice
+}
+
+// A SKU's variant in words — "256GB · Cosmic Orange".
+export function variantOf(product: Product): string {
+  return [product.storage, product.color].filter(Boolean).join(' · ')
+}

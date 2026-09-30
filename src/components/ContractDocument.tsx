@@ -440,13 +440,19 @@ function Logo({ url }: { url?: string }) {
   )
 }
 
+// An ID card's own shape (85.6 × 54 mm), and the photo fitted inside it
+// rather than cropped to fill: the copy is there as evidence, so the ID
+// number, name and portrait must never be cut off. A real card photo fills
+// the slot; any other shape shows grey bars instead of losing an edge.
 function PhotoSlot({ url, token }: { url?: string, token: Token }) {
   return (
     <div style={{
-      height: 96,
-      border: `1px dashed ${token.colorTextTertiary}`,
+      aspectRatio: '85.6 / 54',
+      border: url ? undefined : `1px dashed ${token.colorTextTertiary}`,
       borderRadius: token.borderRadiusLG,
-      background: token.colorBgContainer,
+      background: url ? token.colorFillSecondary : token.colorBgContainer,
+      printColorAdjust: 'exact',
+      WebkitPrintColorAdjust: 'exact',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -454,7 +460,7 @@ function PhotoSlot({ url, token }: { url?: string, token: Token }) {
       color: token.colorTextTertiary,
     }}>
       {url
-        ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         : <ImageOff size={18} strokeWidth={2.25} />}
     </div>
   )
