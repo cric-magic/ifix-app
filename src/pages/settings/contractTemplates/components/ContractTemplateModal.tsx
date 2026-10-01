@@ -48,6 +48,7 @@ interface FormValues {
 // The form's collapsible groups, and which fields live in each — for
 // opening the group a failed Save's errors are in, and marking it.
 type FormGroup = 'details' | 'penalty' | 'content' | 'sections'
+const ALL_GROUPS: FormGroup[] = ['details', 'penalty', 'content', 'sections']
 
 const GROUP_FIELDS: Record<FormGroup, (keyof FormValues)[]> = {
   details: ['name', 'description', 'type', 'minDownPaymentPercent', 'maxDownPaymentPercent', 'maxLoanAmount', 'maxPaymentAmount', 'fixedRateTerms'],
@@ -107,9 +108,18 @@ export function ContractTemplateModal({ open, template, merchantId, onClose, onS
   const sections = Form.useWatch('sections', form) as ContractSection[] | undefined
   const commissionOn = normalizeSections(sections).some(s => s.key === 'commission' && s.visible)
 
-  // Which groups are open. Details to start: it's where a new template
-  // begins, and the rest is a click away.
-  const [openGroups, setOpenGroups] = useState<FormGroup[]>(['details'])
+  // Which groups are open. All of them to start, so the whole template is
+  // in view and scrollable; any can be folded away. Reset every time the
+  // editor opens — this component stays mounted between opens, so a group
+  // folded last time would otherwise still be folded. (Adjusted during
+  // render when `open` flips, rather than in an effect or on the drawer's
+  // close animation.)
+  const [openGroups, setOpenGroups] = useState<FormGroup[]>(ALL_GROUPS)
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) setOpenGroups(ALL_GROUPS)
+  }
   const groupsWithErrors = [...new Set(
     form.getFieldsError()
       .filter(f => f.errors.length > 0)
