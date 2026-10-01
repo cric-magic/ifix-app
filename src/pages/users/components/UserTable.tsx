@@ -124,13 +124,13 @@ export function UserTable({ actor, accounts, search, onEdit, onToggleSuspend, on
       title: 'Created Contracts',
       key: 'createdContracts',
       align: 'right',
-      render: (_, r) => mockCreatedContracts(r.id),
+      render: (_, r) => (r.activatedAt ? mockCreatedContracts(r.id) : 0),
     },
     {
       title: 'MTD Collection',
       key: 'mtdCollection',
       align: 'right',
-      render: (_, r) => formatter.format(mockMonthlyCollection(r.id)),
+      render: (_, r) => formatter.format(r.activatedAt ? mockMonthlyCollection(r.id) : 0),
     },
     { title: 'Status', key: 'status', fixed: 'right', render: (_, r) => <UserStatusTag status={r.status} /> },
     {

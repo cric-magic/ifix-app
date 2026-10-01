@@ -7,6 +7,8 @@ function hash(seed: string): number {
 }
 
 // Illustrative-only figures derived deterministically from the user id.
+// Only for accounts that have activated — one still in `created` has never
+// signed in, so it has no contracts or collections (see UserTable).
 export function mockCreatedContracts(userId: string): number {
   return hash(userId + 'contracts') % 24
 }
