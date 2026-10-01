@@ -47,9 +47,10 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ 
 
 // Two stages behind one entry point. A merchant with no SKUs of their own
 // starts from the platform's standard catalog; one who already has their own
-// skips straight to the blank form. Adopting copies the catalog entry rather
-// than linking to it, so everything stays editable afterward — including the
-// name, which is the point for merchants who name SKUs their own way.
+// skips straight to the blank form. Adopting copies the catalog entry, and
+// its specification (name, brand, model, storage, color…) stays as the
+// catalog defines it — the merchant edits only the SKU code and their own
+// prices, status and photos. Creating from scratch leaves everything open.
 export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
   const [form] = Form.useForm<FormValues>()
   const { token } = theme.useToken()
@@ -61,6 +62,10 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
   const [stage, setStage] = useState<'pick' | 'form'>('pick')
   const [source, setSource] = useState<CatalogProduct | null>(null)
   const [search, setSearch] = useState('')
+  // Adopted from the standard catalog: its specification is the catalog's
+  // and stays as-is; the merchant sets only what's theirs (SKU code,
+  // prices, status, photos).
+  const fromCatalog = !!source
 
   useEffect(() => {
     if (!open) return
@@ -219,38 +224,38 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
                 Back to catalog
               </Button>
               <Typography.Text style={{ display: 'block', fontSize: 12, color: token.colorTextTertiary }}>
-                Started from {source.name} in the standard catalog. Everything below is yours to change.
+                From {source.name} in the standard catalog — its details are fixed. Set your own SKU code, prices, status and photos.
               </Typography.Text>
             </div>
           )}
           <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Required' }]}>
-            <Input placeholder="e.g. iPhone 17 Pro" />
+            <Input disabled={fromCatalog} placeholder="e.g. iPhone 17 Pro" />
           </Form.Item>
           <Form.Item label="Brand" name="brand" rules={[{ required: true, message: 'Required' }]}>
-            <Input placeholder="e.g. Apple" />
+            <Input disabled={fromCatalog} placeholder="e.g. Apple" />
           </Form.Item>
           <Form.Item label="Category" name="category" rules={[{ required: true, message: 'Required' }]}>
-            <Select placeholder="Select category" options={CATEGORY_OPTIONS} />
+            <Select disabled={fromCatalog} placeholder="Select category" options={CATEGORY_OPTIONS} />
           </Form.Item>
           <Form.Item label="Model" name="model" rules={[{ required: true, message: 'Required' }]}>
-            <Input placeholder="e.g. iPhone 17 Pro" />
+            <Input disabled={fromCatalog} placeholder="e.g. iPhone 17 Pro" />
           </Form.Item>
           <Form.Item label="Model Number" name="modelNumber" rules={[{ required: true, message: 'Required' }]}>
-            <Input placeholder="e.g. A2890" />
+            <Input disabled={fromCatalog} placeholder="e.g. A2890" />
           </Form.Item>
           {/* Storage/Color are SuperAdmin master data and RAM/Connection are
               fixed lists — all four are selects, never free text. */}
           <Form.Item label="Storage" name="storage">
-            <Select placeholder="Select storage" allowClear options={optionsWithCurrent(enabledAttributeValues('storage'), source?.storage)} />
+            <Select disabled={fromCatalog} placeholder="Select storage" allowClear options={optionsWithCurrent(enabledAttributeValues('storage'), source?.storage)} />
           </Form.Item>
           <Form.Item label="RAM" name="ram">
-            <Select placeholder="Select RAM" allowClear options={optionsWithCurrent(RAM_OPTIONS, source?.ram)} />
+            <Select disabled={fromCatalog} placeholder="Select RAM" allowClear options={optionsWithCurrent(RAM_OPTIONS, source?.ram)} />
           </Form.Item>
           <Form.Item label="Color" name="color" rules={[{ required: true, message: 'Required' }]}>
-            <Select placeholder="Select color" options={optionsWithCurrent(enabledAttributeValues('color'), source?.color)} />
+            <Select disabled={fromCatalog} placeholder="Select color" options={optionsWithCurrent(enabledAttributeValues('color'), source?.color)} />
           </Form.Item>
           <Form.Item label="Connection" name="connection">
-            <Select placeholder="Select connection" allowClear options={optionsWithCurrent(CONNECTION_OPTIONS, source?.connection)} />
+            <Select disabled={fromCatalog} placeholder="Select connection" allowClear options={optionsWithCurrent(CONNECTION_OPTIONS, source?.connection)} />
           </Form.Item>
           <Form.Item label="SKU Code" name="sku" rules={[{ required: true, message: 'Required' }]}>
             <Input placeholder="e.g. IP17P-256-COR" />
@@ -262,7 +267,7 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
             <InputNumber min={0} style={{ width: '100%' }} addonBefore="฿" />
           </Form.Item>
           <Form.Item label="Type" name="type" rules={[{ required: true, message: 'Required' }]}>
-            <Select options={TYPE_OPTIONS} />
+            <Select disabled={fromCatalog} options={TYPE_OPTIONS} />
           </Form.Item>
           <Form.Item label="Status" name="status" rules={[{ required: true, message: 'Required' }]}>
             <Select options={STATUS_OPTIONS} />

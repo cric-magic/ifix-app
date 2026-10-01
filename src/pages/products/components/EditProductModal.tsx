@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Drawer, Button, Space, Form, Input } from 'antd'
+import { Drawer, Button, Space, Form, Input, Typography, theme } from 'antd'
 import { InputNumber } from '../../../components/AppInputNumber'
 import { Select } from '../../../components/AppSelect'
 import { PhotoUpload } from '../../../components/PhotoUpload'
@@ -41,9 +41,14 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ 
 
 export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
   const [form] = Form.useForm<FormValues>()
+  const { token } = theme.useToken()
   const type = Form.useWatch('type', form)
   const isNew = type !== 'used'
   const appWindow = useAppWindowContainer()
+  // Adopted from the standard catalog: the specification stays the
+  // catalog's — only the SKU code and the merchant's own prices, status and
+  // photos can change. A product created from scratch is editable in full.
+  const fromCatalog = !!product?.sourceCatalogId
 
   useEffect(() => {
     if (product) {
@@ -89,35 +94,40 @@ export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
       }
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false}>
+        {fromCatalog && (
+          <Typography.Text style={{ display: 'block', marginBottom: 16, fontSize: 12, color: token.colorTextTertiary }}>
+            From the standard catalog — its details are fixed. You can change the SKU code, prices, status and photos.
+          </Typography.Text>
+        )}
         <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Required' }]}>
-          <Input />
+          <Input disabled={fromCatalog} />
         </Form.Item>
         <Form.Item label="Brand" name="brand" rules={[{ required: true, message: 'Required' }]}>
-          <Input />
+          <Input disabled={fromCatalog} />
         </Form.Item>
         <Form.Item label="Category" name="category" rules={[{ required: true, message: 'Required' }]}>
-          <Select options={CATEGORY_OPTIONS} />
+          <Select disabled={fromCatalog} options={CATEGORY_OPTIONS} />
         </Form.Item>
         <Form.Item label="Model" name="model" rules={[{ required: true, message: 'Required' }]}>
-          <Input />
+          <Input disabled={fromCatalog} />
         </Form.Item>
         <Form.Item label="Model Number" name="modelNumber" rules={[{ required: true, message: 'Required' }]}>
-          <Input />
+          <Input disabled={fromCatalog} />
         </Form.Item>
         {/* Selects, not free text — Storage/Color come from SuperAdmin master
             data, RAM/Connection from fixed lists. optionsWithCurrent keeps a
             value that has since been disabled upstream from silently blanking. */}
         <Form.Item label="Storage" name="storage">
-          <Select placeholder="Select storage" allowClear options={optionsWithCurrent(enabledAttributeValues('storage'), product?.storage)} />
+          <Select disabled={fromCatalog} placeholder="Select storage" allowClear options={optionsWithCurrent(enabledAttributeValues('storage'), product?.storage)} />
         </Form.Item>
         <Form.Item label="RAM" name="ram">
-          <Select placeholder="Select RAM" allowClear options={optionsWithCurrent(RAM_OPTIONS, product?.ram)} />
+          <Select disabled={fromCatalog} placeholder="Select RAM" allowClear options={optionsWithCurrent(RAM_OPTIONS, product?.ram)} />
         </Form.Item>
         <Form.Item label="Color" name="color" rules={[{ required: true, message: 'Required' }]}>
-          <Select placeholder="Select color" options={optionsWithCurrent(enabledAttributeValues('color'), product?.color)} />
+          <Select disabled={fromCatalog} placeholder="Select color" options={optionsWithCurrent(enabledAttributeValues('color'), product?.color)} />
         </Form.Item>
         <Form.Item label="Connection" name="connection">
-          <Select placeholder="Select connection" allowClear options={optionsWithCurrent(CONNECTION_OPTIONS, product?.connection)} />
+          <Select disabled={fromCatalog} placeholder="Select connection" allowClear options={optionsWithCurrent(CONNECTION_OPTIONS, product?.connection)} />
         </Form.Item>
         <Form.Item label="SKU Code" name="sku" rules={[{ required: true, message: 'Required' }]}>
           <Input />
@@ -129,7 +139,7 @@ export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
           <InputNumber min={0} style={{ width: '100%' }} addonBefore="฿" />
         </Form.Item>
         <Form.Item label="Type" name="type" rules={[{ required: true, message: 'Required' }]}>
-          <Select options={TYPE_OPTIONS} />
+          <Select disabled={fromCatalog} options={TYPE_OPTIONS} />
         </Form.Item>
         <Form.Item label="Status" name="status" rules={[{ required: true, message: 'Required' }]}>
           <Select options={STATUS_OPTIONS} />

@@ -184,8 +184,10 @@ export function canManageCollectionFeeSettings(user: AuthUser): boolean {
   return isMerchantAdminOrAbove(user)
 }
 
-// User management permissions — per the invite hierarchy (see MANAGEABLE_ROLES):
-// Owner and Admin can invite/manage Admin, BM, Staff; BM can invite/manage Staff only.
+// User management permissions — per the User Account doc's matrix (see
+// MANAGEABLE_ROLES): Owner manages Owner/Admin/BM/Staff, Admin manages
+// BM/Staff. Branch Manager and Staff manage no one — a BM only views their
+// own branch's users (canViewUserList / scopedUserList).
 export function canManageUsers(user: AuthUser): boolean {
   return MANAGEABLE_ROLES[user.role].length > 0
 }

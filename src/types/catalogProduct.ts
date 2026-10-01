@@ -11,9 +11,10 @@ import type { ProductCategory, ProductType } from './product'
 // price it independently.
 //
 // Adoption copies these fields; it does not link. The merchant's Product
-// records where it came from via sourceCatalogId, but later edits here never
-// propagate to merchants who already adopted, which is the trade that lets
-// them rename freely afterward.
+// records where it came from via sourceCatalogId; later edits here don't
+// propagate to merchants who already adopted. The adopted specification is
+// read-only for the merchant — only the SKU code and their own prices,
+// status and photos are editable (see Create/EditProductModal).
 export interface CatalogProduct {
   id: string
   name: string
