@@ -1,4 +1,49 @@
 import type { Product, ProductUnit } from '../types/product'
+import { GRADE_LABELS, TYPE_LABELS } from '../constants/products'
+
+// A SKU's full name, the way staff and customers say it: product name,
+// color, storage, then condition — "iPhone 17 Black 256GB New". The bare
+// name alone can't tell a unit's SKU apart from its siblings.
+export function fullSkuName(product: Pick<Product, 'name' | 'color' | 'storage' | 'type'>): string {
+  return [product.name, product.color, product.storage, TYPE_LABELS[product.type]].filter(Boolean).join(' ')
+}
+
+// A unit's condition in words: its SKU's condition, plus the grade that
+// tells one Used unit from another — "Used · Grade A".
+export function unitConditionLabel(unit: ProductUnit, product: Product | undefined): string {
+  if (!product) return unit.grade ? GRADE_LABELS[unit.grade] : '—'
+  return product.type === 'used' && unit.grade
+    ? `${TYPE_LABELS.used} · ${GRADE_LABELS[unit.grade]}`
+    : TYPE_LABELS[product.type]
+}
+
+// The condition a contract records for its device: a Used unit's grade
+// letter, as contracts always have, otherwise its SKU's condition.
+export function contractConditionOf(unit: ProductUnit, product: Product): string {
+  return product.type === 'used' && unit.grade ? unit.grade : TYPE_LABELS[product.type]
+}
+
+// Only an Available unit of a live New SKU can be marked Opened: a Reserved
+// one is committed to a contract at its New price, and a Sold one is gone.
+export function canMarkOpened(unit: ProductUnit, product: Product | undefined): boolean {
+  return unit.availability === 'available' && !!product && !product.deletedAt && product.type === 'new'
+}
+
+// The Opened SKU for the same device as a New one — same merchant and the
+// same spec, differing only in condition. Where a New unit goes once its
+// box has been opened.
+export function openedSiblingOf(product: Product, products: Product[]): Product | undefined {
+  return products.find(p =>
+    !p.deletedAt
+    && p.type === 'opened'
+    && p.merchantId === product.merchantId
+    && p.brand === product.brand
+    && p.model === product.model
+    && p.storage === product.storage
+    && p.ram === product.ram
+    && p.color === product.color
+    && p.connection === product.connection)
+}
 
 // Serial Number and both IMEIs must be unique across the merchant — not just
 // within one SKU — so these check every unit belonging to the merchant's own

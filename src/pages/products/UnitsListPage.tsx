@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { App, Alert, ConfigProvider, Table, Button, Dropdown, Avatar, theme } from 'antd'
-import { Pencil, Trash2, ChevronLeft, ChevronRight, MoreHorizontal, ImageOff, Printer, Smartphone } from 'lucide-react'
+import { Pencil, Trash2, ChevronLeft, ChevronRight, MoreHorizontal, ImageOff, Printer, Smartphone, PackageOpen } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
@@ -17,6 +17,8 @@ import { CreateUnitModal } from './components/CreateUnitModal'
 import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 import { TableEmptyState } from '../../components/TableEmptyState'
 import { UnitProductName } from './components/UnitProductName'
+import { MarkOpenedModal } from './components/MarkOpenedModal'
+import { canMarkOpened, fullSkuName } from '../../utils/product'
 import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../constants/paginationIcons'
 import { useIsMobile } from '../../components/useIsMobile'
 import { MobileTableRow } from '../../components/MobileTableRow'
@@ -53,6 +55,7 @@ export function UnitsListPage() {
   const [editingUnit, setEditingUnit] = useState<ProductUnit | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [printingUnit, setPrintingUnit] = useState<ProductUnit | null>(null)
+  const [openingUnit, setOpeningUnit] = useState<ProductUnit | null>(null)
   const [search, setSearch] = useState('')
   const [availability, setAvailability] = useState<AvailabilityFilter>('all')
 
@@ -114,6 +117,7 @@ export function UnitsListPage() {
       // including after it's sold, for a replacement sticker.
       ...(canPrintUnitCodes(user) ? [{ key: 'print', icon: <Printer size={16} strokeWidth={2.25} />, label: 'Print label', onClick: () => setPrintingUnit(u) }] : []),
       ...(canManage && !isSold ? [{ key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit', onClick: () => setEditingUnit(u) }] : []),
+      ...(canManage && canMarkOpened(u, productById.get(u.productId)) ? [{ key: 'mark-opened', icon: <PackageOpen size={16} strokeWidth={2.25} />, label: 'Mark as Opened', onClick: () => setOpeningUnit(u) }] : []),
       ...(canManage && u.availability === 'available' ? [{
         key: 'remove',
         danger: true,
@@ -208,7 +212,7 @@ export function UnitsListPage() {
         leading={thumbnail(u, 44)}
         primary={u.serialNumber}
         trailing={<UnitAvailabilityTag availability={u.availability} />}
-        secondary={product ? `${product.name}${product.deletedAt ? ' · Removed' : ''}` : '—'}
+        secondary={product ? `${fullSkuName(product)}${product.deletedAt ? ' · Removed' : ''}` : '—'}
         // Just the amount — desktop's "Sales price" note (the unit has no
         // custom price) doesn't fit beside the product name here.
         trailingSecondary={price != null ? priceFormatter.format(price) : undefined}
@@ -297,6 +301,18 @@ export function UnitsListPage() {
         products={products}
         onClose={() => setCreateOpen(false)}
         onCreated={handleCreate}
+      />
+
+      <MarkOpenedModal
+        actor={user}
+        unit={openingUnit}
+        product={openingUnit ? productById.get(openingUnit.productId) ?? null : null}
+        onClose={() => setOpeningUnit(null)}
+        onMoved={opened => {
+          setOpeningUnit(null)
+          refresh()
+          message.success(`Moved to ${fullSkuName(opened)}`)
+        }}
       />
 
       {printingUnit && (

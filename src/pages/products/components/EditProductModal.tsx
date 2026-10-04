@@ -2,11 +2,12 @@ import { useEffect } from 'react'
 import { Drawer, Button, Space, Form, Input, Typography, theme } from 'antd'
 import { InputNumber } from '../../../components/AppInputNumber'
 import { Select } from '../../../components/AppSelect'
+import { CONDITION_OPTIONS, renderConditionOption } from './conditionOptions'
 import { PhotoUpload } from '../../../components/PhotoUpload'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { Product, ProductCategory, ProductType, ProductStatus } from '../../../types/product'
 import {
-  CATEGORY_LABELS, TYPE_LABELS, STATUS_LABELS,
+  CATEGORY_LABELS, STATUS_LABELS,
   RAM_OPTIONS, CONNECTION_OPTIONS, enabledAttributeValues, optionsWithCurrent,
 } from '../../../constants/products'
 
@@ -36,7 +37,6 @@ interface FormValues {
 }
 
 const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label }))
-const TYPE_OPTIONS = Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }))
 const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))
 
 export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
@@ -138,8 +138,8 @@ export function EditProductModal({ open, product, onClose, onUpdated }: Props) {
         <Form.Item label="Sales Price" name="salesPrice" rules={[{ required: true, message: 'Required' }]}>
           <InputNumber min={0} style={{ width: '100%' }} addonBefore="฿" />
         </Form.Item>
-        <Form.Item label="Type" name="type" rules={[{ required: true, message: 'Required' }]}>
-          <Select disabled={fromCatalog} options={TYPE_OPTIONS} />
+        <Form.Item label="Condition" name="type" rules={[{ required: true, message: 'Required' }]}>
+          <Select disabled={fromCatalog} options={CONDITION_OPTIONS} optionRender={renderConditionOption} />
         </Form.Item>
         <Form.Item label="Status" name="status" rules={[{ required: true, message: 'Required' }]}>
           <Select options={STATUS_OPTIONS} />

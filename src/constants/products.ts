@@ -12,7 +12,16 @@ export const CATEGORY_LABELS: Record<ProductCategory, string> = {
 
 export const TYPE_LABELS: Record<ProductType, string> = {
   new: 'New',
+  opened: 'Opened',
   used: 'Used',
+}
+
+// What each condition means, for the pickers that set it — Opened is the
+// one that needs saying.
+export const TYPE_DESCRIPTIONS: Record<ProductType, string> = {
+  new: 'Sealed in its box',
+  opened: 'First-hand — box opened or returned by a customer, never used',
+  used: 'Second-hand',
 }
 
 export const STATUS_LABELS: Record<ProductStatus, string> = {

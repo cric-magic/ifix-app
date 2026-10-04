@@ -34,6 +34,7 @@ import type { Customer } from '../../types/customer'
 import type { Contract } from '../../types/contract'
 import { PageEmptyState } from '../../components/PageEmptyState'
 import { normalizeSections } from '../../constants/contractSections'
+import { contractConditionOf } from '../../utils/product'
 
 // Per the Contract doc's Free Rate terms ("pick a term: 3/6/10/12/18/24
 // months") — a different set from Fixed Rate's own per-template terms.
@@ -328,7 +329,7 @@ export function EditContractPage() {
       model: product.model,
       storage: product.storage,
       color: product.color,
-      condition: unit.grade ?? 'New',
+      condition: contractConditionOf(unit, product),
       imei1: deviceInfo.imei1 || undefined,
       imei2: deviceInfo.imei2 || undefined,
       serialNumber: deviceInfo.serialNumber,

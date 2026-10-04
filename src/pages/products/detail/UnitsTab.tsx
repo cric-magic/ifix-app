@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { App, Avatar, Button, ConfigProvider, Dropdown, Table, Typography, theme } from 'antd'
-import { Plus, Pencil, Printer, Trash2, MoreHorizontal, Smartphone, ImageOff } from 'lucide-react'
+import { Plus, Pencil, Printer, Trash2, MoreHorizontal, Smartphone, ImageOff, PackageOpen } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import type { AuthUser } from '../../../types/installment'
 import type { Product, ProductUnit } from '../../../types/product'
@@ -12,6 +12,8 @@ import { UnitAvailabilityTag } from '../components/UnitAvailabilityTag'
 import { CreateUnitModal } from '../components/CreateUnitModal'
 import { EditUnitModal } from '../components/EditUnitModal'
 import { PrintUnitLabelModal } from '../components/PrintUnitLabelModal'
+import { MarkOpenedModal } from '../components/MarkOpenedModal'
+import { canMarkOpened, fullSkuName } from '../../../utils/product'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { UnitPrice } from '../components/UnitPrice'
 import { useColumnPicker } from '../../../components/useColumnPicker'
@@ -38,6 +40,7 @@ export function UnitsTab({ actor, product }: Props) {
   const [version, setVersion] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
   const [editingUnit, setEditingUnit] = useState<ProductUnit | null>(null)
+  const [openingUnit, setOpeningUnit] = useState<ProductUnit | null>(null)
   const [printingUnit, setPrintingUnit] = useState<ProductUnit | null>(null)
 
   void version
@@ -94,11 +97,13 @@ export function UnitsTab({ actor, product }: Props) {
               items: [
                 ...(canPrint ? [{ key: 'print', icon: <Printer size={16} strokeWidth={2.25} />, label: 'Print label' }] : []),
                 ...(canManage && !isSold ? [{ key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit' }] : []),
+                ...(canManage && canMarkOpened(u, product) ? [{ key: 'mark-opened', icon: <PackageOpen size={16} strokeWidth={2.25} />, label: 'Mark as Opened' }] : []),
                 ...(canManage && u.availability === 'available' ? [{ key: 'remove', danger: true, icon: <Trash2 size={16} strokeWidth={2.25} />, label: 'Remove' }] : []),
               ],
               onClick: ({ key }) => {
                 if (key === 'print') setPrintingUnit(u)
                 if (key === 'edit') setEditingUnit(u)
+                if (key === 'mark-opened') setOpeningUnit(u)
                 if (key === 'remove') {
                   modal.confirm({
                     title: 'Remove this unit?',
@@ -222,6 +227,20 @@ export function UnitsTab({ actor, product }: Props) {
           setEditingUnit(null)
           refresh()
           message.success('Unit updated')
+        }}
+      />
+
+      {/* The unit leaves this SKU for its Opened sibling, so it drops off
+          this list once moved. */}
+      <MarkOpenedModal
+        actor={actor}
+        unit={openingUnit}
+        product={openingUnit ? product : null}
+        onClose={() => setOpeningUnit(null)}
+        onMoved={opened => {
+          setOpeningUnit(null)
+          refresh()
+          message.success(`Moved to ${fullSkuName(opened)}`)
         }}
       />
 

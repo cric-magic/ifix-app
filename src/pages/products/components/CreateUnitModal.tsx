@@ -9,7 +9,7 @@ import { GRADE_LABELS, TAX_LABELS } from '../../../constants/products'
 import { BRANCHES } from '../../../constants/mockData'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
-import { isImeiTaken, isSerialNumberTaken } from '../../../utils/product'
+import { fullSkuName, isImeiTaken, isSerialNumberTaken } from '../../../utils/product'
 
 interface Props {
   open: boolean
@@ -23,6 +23,7 @@ interface Props {
 interface FormValues {
   productId?: string
   serialNumber: string
+  modelNumber?: string
   imei1?: string
   imei2?: string
   branch: string
@@ -52,6 +53,7 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
       id: `unit-${Date.now()}`,
       productId: activeProduct.id,
       serialNumber: values.serialNumber,
+      modelNumber: values.modelNumber?.trim() || undefined,
       imei1: values.imei1 || undefined,
       imei2: values.imei2 || undefined,
       branch: lockedBranch ?? values.branch,
@@ -86,14 +88,21 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
       }
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false} initialValues={{ tax: 'vat', branch: lockedBranch }}>
-        {showProductPicker && (
+        {/* The full SKU name — "iPhone 17 Black 256GB New" — in the list and
+            once picked, since the bare name can't tell a model's SKUs apart.
+            Adding from a product's own page shows it fixed. */}
+        {showProductPicker ? (
           <Form.Item label="Product" name="productId" rules={[{ required: true, message: 'Required' }]}>
             <Select
               placeholder="Select product"
-              options={products!.map(p => ({ value: p.id, label: p.name }))}
+              options={products!.map(p => ({ value: p.id, label: fullSkuName(p) }))}
               showSearch
               optionFilterProp="label"
             />
+          </Form.Item>
+        ) : product && (
+          <Form.Item label="Product">
+            <Input value={fullSkuName(product)} disabled />
           </Form.Item>
         )}
         {/* Serial Number leads: it's the unit's required primary identifier.
@@ -113,6 +122,9 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
           ]}
         >
           <Input placeholder="e.g. SN-IP17P-256-COR-BKK" />
+        </Form.Item>
+        <Form.Item label="Model Number" name="modelNumber">
+          <Input placeholder={activeProduct?.modelNumber ? `Optional — e.g. ${activeProduct.modelNumber}` : 'Optional'} />
         </Form.Item>
         <Form.Item
           label="IMEI 1"

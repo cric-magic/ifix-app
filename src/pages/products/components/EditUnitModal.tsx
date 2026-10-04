@@ -8,6 +8,7 @@ import type { AuthUser } from '../../../types/installment'
 import type { Product, ProductUnit, UnitGrade, UnitTax } from '../../../types/product'
 import { GRADE_LABELS, TAX_LABELS } from '../../../constants/products'
 import { BRANCHES } from '../../../constants/mockData'
+import { fullSkuName } from '../../../utils/product'
 
 interface Props {
   open: boolean
@@ -19,6 +20,7 @@ interface Props {
 }
 
 interface FormValues {
+  modelNumber?: string
   branch: string
   grade?: UnitGrade
   batteryPercentage?: number
@@ -50,6 +52,7 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
   useEffect(() => {
     if (unit) {
       form.setFieldsValue({
+        modelNumber: unit.modelNumber,
         branch: unit.branch,
         grade: unit.grade,
         batteryPercentage: unit.batteryPercentage,
@@ -70,6 +73,7 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
       unit.tax = values.tax
       unit.customPrice = values.customPrice
     }
+    unit.modelNumber = values.modelNumber?.trim() || undefined
     unit.notes = values.notes
     unit.conditionPhotos = values.conditionPhotos
     onUpdated()
@@ -105,12 +109,17 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
             type="info"
             showIcon
             message="This unit is reserved"
-            description="It's committed to a contract, so branch, condition, tax and price are locked. Notes and condition photos can still be updated."
+            description="It's committed to a contract, so branch, condition, tax and price are locked. Model number, notes and condition photos can still be updated."
             style={{ marginBottom: 16 }}
           />
         )}
         {unit && (
           <>
+            {product && (
+              <Form.Item label="Product">
+                <Input value={fullSkuName(product)} disabled />
+              </Form.Item>
+            )}
             <Form.Item label="Serial Number">
               <Input value={unit.serialNumber} disabled />
             </Form.Item>
@@ -122,6 +131,11 @@ export function EditUnitModal({ open, actor, product, unit, onClose, onUpdated }
             </Form.Item>
           </>
         )}
+        {/* Describes the device rather than the deal, so it stays editable on
+            a reserved unit, like Notes. */}
+        <Form.Item label="Model Number" name="modelNumber">
+          <Input placeholder={product?.modelNumber ? `Optional — e.g. ${product.modelNumber}` : 'Optional'} />
+        </Form.Item>
         <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Required' }]}>
           <Select
             placeholder="Select branch"

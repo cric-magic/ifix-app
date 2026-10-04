@@ -7,8 +7,8 @@ import { useIsMobile } from '../../../components/useIsMobile'
 import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 import { MOCK_CONTRACTS } from '../../../constants/mockContracts'
-import { GRADE_LABELS } from '../../../constants/products'
 import { scopedAllUnits, scopedProductList } from '../../../constants/roles'
+import { unitConditionLabel } from '../../../utils/product'
 import type { AuthUser } from '../../../types/installment'
 import type { Product, ProductUnit } from '../../../types/product'
 
@@ -41,10 +41,6 @@ const priceFormatter = new Intl.NumberFormat('th-TH', { style: 'currency', curre
 const IMEI_LENGTH = 15
 // Typed digits before matching units are suggested.
 const MIN_QUERY = 3
-
-function conditionLabel(unit: ProductUnit) {
-  return unit.grade ? GRADE_LABELS[unit.grade] : 'New'
-}
 
 // Step 2 of the Contract Creation Flow, per the Contract doc — two ways to
 // pick the unit:
@@ -225,7 +221,7 @@ function GuidedBrowse({ products, isPickable, value, onChange }: {
           }}
           options={units.map(({ unit, product }) => ({
             value: unit.id,
-            label: `${unit.serialNumber} · ${conditionLabel(unit)} · ${priceFormatter.format(unit.customPrice ?? product.salesPrice)}`,
+            label: `${unit.serialNumber} · ${unitConditionLabel(unit, product)} · ${priceFormatter.format(unit.customPrice ?? product.salesPrice)}`,
           }))}
         />
       </Form.Item>
@@ -304,7 +300,7 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange, onBrowse
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontFamily: token.fontFamilyCode }}>{u.imei1?.startsWith(digits) ? u.imei1 : u.imei2}</div>
                     <Typography.Text type="secondary" style={{ fontSize: 12 }} ellipsis>
-                      {product ? `${product.name}${product.storage ? ` · ${product.storage}` : ''} · ${product.color}` : '—'} · {conditionLabel(u)}
+                      {product ? `${product.name}${product.storage ? ` · ${product.storage}` : ''} · ${product.color}` : '—'} · {unitConditionLabel(u, product)}
                     </Typography.Text>
                   </div>
                   {reason && <Tag style={{ margin: 0, flexShrink: 0 }}>{reason}</Tag>}
@@ -363,7 +359,7 @@ function SelectedUnit({ unit, product, source }: { unit: ProductUnit; product: P
     ['Model', `${product.brand} ${product.model}`],
     ...(product.storage ? [['Storage', product.storage] as [string, string]] : []),
     ['Color', product.color],
-    ['Condition', conditionLabel(unit)],
+    ['Condition', unitConditionLabel(unit, product)],
     ['Serial Number', unit.serialNumber],
     ...(unit.imei1 ? [['IMEI', unit.imei1] as [string, string]] : []),
     ['Price', priceFormatter.format(unit.customPrice ?? product.salesPrice)],

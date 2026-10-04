@@ -152,7 +152,7 @@ export function GlobalCatalogPage() {
     { title: 'RAM', key: 'ram', render: (_, c) => c.ram ?? dash },
     { title: 'Color', dataIndex: 'color', key: 'color' },
     { title: 'Connection', key: 'connection', render: (_, c) => c.connection ?? dash },
-    { title: 'Type', key: 'type', fixed: 'right', render: (_, c) => TYPE_LABELS[c.type] },
+    { title: 'Condition', key: 'type', fixed: 'right', render: (_, c) => TYPE_LABELS[c.type] },
     {
       title: '',
       key: 'actions',

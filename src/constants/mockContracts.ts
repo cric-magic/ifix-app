@@ -9,6 +9,7 @@ import { MOCK_CUSTOMERS } from './mockCustomers'
 import { MOCK_CONTRACT_TEMPLATES } from './mockContractTemplates'
 import { sampleSignedContract } from './sampleSignedCopy'
 import { normalizeSections } from './contractSections'
+import { contractConditionOf } from '../utils/product'
 
 function deviceSnapshotFor(unitId: string): DeviceSnapshot {
   const unit = MOCK_PRODUCT_UNITS.find(u => u.id === unitId)!
@@ -21,7 +22,7 @@ function deviceSnapshotFor(unitId: string): DeviceSnapshot {
     model: product.model,
     storage: product.storage,
     color: product.color,
-    condition: unit.grade ?? 'New',
+    condition: contractConditionOf(unit, product),
     serialNumber: unit.serialNumber,
     imei1: unit.imei1,
     imei2: unit.imei2,

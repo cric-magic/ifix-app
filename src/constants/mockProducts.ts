@@ -21,6 +21,12 @@ const USED_PRICES: Record<string, number> = {
   'Galaxy S25': 23900,
 }
 
+// Opened stock sells a little under new: first-hand, but the box is open.
+const OPENED_PRICES: Record<string, number> = {
+  'iPhone 17': 27900,
+  'Galaxy S25': 29900,
+}
+
 // Roughly a 14% margin, rounded to the nearest hundred.
 function costFor(salesPrice: number): number {
   return Math.round(salesPrice * 0.86 / 100) * 100
@@ -37,7 +43,9 @@ export function productIdFor(sku: string): string {
 export const MOCK_PRODUCTS: Product[] = LINEUP_VARIANTS.map(v => {
   const salesPrice = v.type === 'used'
     ? USED_PRICES[v.line.model]
-    : PRICES[v.line.model][v.storage ?? '']
+    : v.type === 'opened'
+      ? OPENED_PRICES[v.line.model]
+      : PRICES[v.line.model][v.storage ?? '']
   return {
     id: productIdFor(v.skuCode),
     name: v.line.model,

@@ -34,6 +34,7 @@ import { normalizeSections } from '../../constants/contractSections'
 import { MOCK_BRANCHES } from '../../constants/mockBranches'
 import { BoxLabelNote } from './components/BoxLabelNote'
 import { SelectDevice, type DeviceChoice, type DeviceSource } from './components/SelectDevice'
+import { contractConditionOf } from '../../utils/product'
 
 interface DeviceValues { branch: string; productId: string; unitId: string; source: DeviceSource }
 interface TemplateValues { templateId: string; termMonths: number; ratePercent: number; downPaymentPercent: number }
@@ -337,7 +338,7 @@ export function CreateContractPage() {
         model: product.model,
         storage: product.storage,
         color: product.color,
-        condition: unit.grade ?? 'New',
+        condition: contractConditionOf(unit, product),
         imei1: deviceInfo.imei1 || undefined,
         imei2: deviceInfo.imei2 || undefined,
         serialNumber: deviceInfo.serialNumber,

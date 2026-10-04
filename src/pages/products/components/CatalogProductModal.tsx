@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { Drawer, Button, Space, Form, Input, Typography, theme } from 'antd'
 import { Select } from '../../../components/AppSelect'
+import { CONDITION_OPTIONS, renderConditionOption } from './conditionOptions'
 import { PhotoUpload } from '../../../components/PhotoUpload'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { CatalogProduct } from '../../../types/catalogProduct'
 import type { ProductCategory, ProductType } from '../../../types/product'
 import {
-  CATEGORY_LABELS, TYPE_LABELS,
+  CATEGORY_LABELS,
   RAM_OPTIONS, CONNECTION_OPTIONS, enabledAttributeValues, optionsWithCurrent,
 } from '../../../constants/products'
 import { MOCK_CATALOG_PRODUCTS } from '../../../constants/mockCatalogProducts'
@@ -36,7 +37,6 @@ interface FormValues {
 }
 
 const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label }))
-const TYPE_OPTIONS = Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }))
 
 export function CatalogProductModal({ open, product, onClose, onSaved }: Props) {
   const [form] = Form.useForm<FormValues>()
@@ -125,8 +125,8 @@ export function CatalogProductModal({ open, product, onClose, onSaved }: Props) 
         <Form.Item label="Connection" name="connection">
           <Select placeholder="Select connection" allowClear options={optionsWithCurrent(CONNECTION_OPTIONS, product?.connection)} />
         </Form.Item>
-        <Form.Item label="Type" name="type" rules={[{ required: true, message: 'Required' }]}>
-          <Select options={TYPE_OPTIONS} />
+        <Form.Item label="Condition" name="type" rules={[{ required: true, message: 'Required' }]}>
+          <Select options={CONDITION_OPTIONS} optionRender={renderConditionOption} />
         </Form.Item>
         {/* Generated to the standard format from Model/Storage/Color/Type,
             but editable — the abbreviation rules can't produce a sensible

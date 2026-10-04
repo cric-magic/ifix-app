@@ -27,6 +27,19 @@ const USED_STOCK: Record<string, { branch: string; grade: 'A' | 'B'; battery: nu
   ],
 }
 
+// Opened stock: one unit each at two branches, with a note on why it was
+// opened — no grade or battery, it's first-hand.
+const OPENED_STOCK: Record<string, { branch: string; notes: string }[]> = {
+  'iPhone 17': [
+    { branch: 'Bangkok HQ', notes: 'Customer return, unused — box opened' },
+    { branch: 'Chiang Mai', notes: 'Display unit, opened for demo' },
+  ],
+  'Galaxy S25': [
+    { branch: 'Bangkok HQ', notes: 'Box opened to check color' },
+    { branch: 'Phuket', notes: 'Customer return within 7 days, unused' },
+  ],
+}
+
 function conditionPhoto(sku: string, view?: string): string {
   // placehold.co breaks lines on a literal backslash-n.
   const text = view ? `${sku}\\n${view}` : sku
@@ -91,6 +104,9 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = LINEUP_VARIANTS.flatMap(v => {
         ? u.views.map(view => conditionPhoto(v.skuCode, view))
         : [conditionPhoto(v.skuCode)],
     }))
+  }
+  if (v.type === 'opened') {
+    return OPENED_STOCK[v.line.model].map(u => ({ ...base(u.branch), notes: u.notes }))
   }
   return BRANCHES.map(([branch]) => base(branch))
 })

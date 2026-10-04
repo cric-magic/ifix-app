@@ -45,6 +45,13 @@ export const USED_VARIANTS: { model: string; storage: string; color: string }[] 
   { model: 'Galaxy S25', storage: '256GB', color: 'Navy' },
 ]
 
+// Opened stock — first-hand, box opened or customer-returned — for a couple
+// of models, priced between new and used.
+export const OPENED_VARIANTS: { model: string; storage: string; color: string }[] = [
+  { model: 'iPhone 17', storage: '256GB', color: 'Black' },
+  { model: 'Galaxy S25', storage: '256GB', color: 'Navy' },
+]
+
 // In the platform catalog but not adopted by the demo merchant, so the
 // "Add from catalog" picker has something left to offer.
 const CATALOG_ONLY: LineupModel[] = [
@@ -78,20 +85,25 @@ function variantsOf(line: LineupModel): LineupVariant[] {
 }
 
 // Every variant the demo merchant carries: the full new lineup plus the
-// used ones. mockProducts.ts and mockProductUnits.ts both expand from this.
+// opened and used ones. mockProducts.ts and mockProductUnits.ts both expand from this.
 export const LINEUP_VARIANTS: LineupVariant[] = [
   ...LINEUP.flatMap(variantsOf),
-  ...USED_VARIANTS.map(v => {
+  ...conditionVariants(OPENED_VARIANTS, 'opened'),
+  ...conditionVariants(USED_VARIANTS, 'used'),
+]
+
+function conditionVariants(variants: { model: string; storage: string; color: string }[], type: ProductType): LineupVariant[] {
+  return variants.map(v => {
     const line = LINEUP.find(l => l.model === v.model)!
     return {
       line,
       storage: v.storage,
       color: v.color,
-      type: 'used' as const,
-      skuCode: generateCatalogSkuCode({ model: line.model, storage: v.storage, color: v.color, type: 'used' }),
+      type,
+      skuCode: generateCatalogSkuCode({ model: line.model, storage: v.storage, color: v.color, type }),
     }
-  }),
-]
+  })
+}
 
 export function photoFor(model: string): string {
   return `https://placehold.co/400x400/1a1a1a/999999?text=${encodeURIComponent(model).replace(/%20/g, '+')}`

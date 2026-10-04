@@ -12,11 +12,9 @@ import { unitPrice } from '../../utils/product'
 import type { AuthUser } from '../../types/installment'
 import type { ContractTemplate } from '../../types/contractTemplate'
 import type { Product, ProductUnit } from '../../types/product'
-import { conditionLabel, conditionOf, type Condition, type ModelGroup } from './models'
+import { CONDITION_ORDER, conditionLabel, conditionOf, typeOfCondition, type Condition, type ModelGroup } from './models'
 
 const priceFormatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
-
-const CONDITION_ORDER: Condition[] = ['new', 'A', 'B', 'C', 'D']
 
 interface Props {
   actor: AuthUser
@@ -75,15 +73,15 @@ export function QuoteView({ actor, group, units, preferredBranch, matchedUnitId,
     const p = productById.get(u.productId)!
     return (v.storage === undefined || p.storage === v.storage)
       && (v.color === undefined || p.color === v.color)
-      && (v.condition === undefined || conditionOf(u) === v.condition)
+      && (v.condition === undefined || conditionOf(u, p) === v.condition)
   }
-  // Every storage/color/condition the model comes in: new SKUs are "New";
-  // used SKUs' conditions are their units' grades.
+  // Every storage/color/condition the model comes in: new and opened SKUs
+  // are "New" and "Opened"; used SKUs' conditions are their units' grades.
   const storages = uniq(products.map(p => p.storage))
   const colorsFor = (storage?: string) => uniq(products.filter(p => storage === undefined || p.storage === storage).map(p => p.color))
   const conditionsFor = (storage?: string, color?: string) => {
     const fitting = products.filter(p => (storage === undefined || p.storage === storage) && p.color === color)
-    const found = fitting.flatMap(p => (p.type === 'new' ? ['new' as const] : units.filter(u => u.productId === p.id).map(conditionOf)))
+    const found = fitting.flatMap(p => (p.type !== 'used' ? [p.type] : units.filter(u => u.productId === p.id).map(u => conditionOf(u, p))))
     return CONDITION_ORDER.filter(c => found.includes(c))
   }
 
@@ -123,7 +121,7 @@ export function QuoteView({ actor, group, units, preferredBranch, matchedUnitId,
       .sort((a, b) => unitPrice(a, productById.get(a.productId)!) - unitPrice(b, productById.get(b.productId)!))[0]
     const p = start ? productById.get(start.productId) : undefined
     setBranch(startBranch)
-    setVariant(settle(p && start ? { storage: p.storage, color: p.color, condition: conditionOf(start) } : {}, startBranch))
+    setVariant(settle(p && start ? { storage: p.storage, color: p.color, condition: conditionOf(start, p) } : {}, startBranch))
     applyTemplate(defaultTemplateOf(templates))
     setFreeRate(null)
     // Only on opening — later choices are the user's.
@@ -140,7 +138,7 @@ export function QuoteView({ actor, group, units, preferredBranch, matchedUnitId,
     : products.find(p =>
         (variant.storage === undefined || p.storage === variant.storage)
         && p.color === variant.color
-        && (variant.condition === 'new') === (p.type === 'new'))
+        && (variant.condition === undefined || typeOfCondition(variant.condition) === p.type))
   const devicePrice = unit && product ? unitPrice(unit, product) : product?.salesPrice ?? 0
 
   // --- Money ------------------------------------------------------------

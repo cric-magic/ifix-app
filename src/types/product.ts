@@ -1,5 +1,9 @@
 export type ProductCategory = 'smartphone' | 'tablet' | 'accessory' | 'laptop' | 'other'
-export type ProductType = 'new' | 'used'
+// A SKU's condition. Opened is first-hand stock whose box has been opened
+// or that a customer returned — never used, so it's not second-hand and
+// carries no grade or battery reading. New, Opened and Used of the same
+// device are separate SKUs, each with its own price.
+export type ProductType = 'new' | 'opened' | 'used'
 export type ProductStatus = 'available' | 'unavailable'
 
 export interface Product {
@@ -49,6 +53,9 @@ export interface ProductUnit {
   serialNumber: string
   imei1?: string
   imei2?: string
+  // Optional, for when a unit's own model number is worth recording (a
+  // regional variant, say) — the SKU's Model Number is the default.
+  modelNumber?: string
   branch: string
   grade?: UnitGrade
   // Required when the SKU's type is Used; 0-100.

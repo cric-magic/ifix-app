@@ -12,6 +12,7 @@ import { useIconColors } from '../../../constants/iconColors'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { countAvailableUnits } from '../../../utils/product'
 import { ProductStatusTag } from './ProductStatusTag'
+import { ProductConditionTag } from './ProductConditionTag'
 import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
 import { useIsMobile } from '../../../components/useIsMobile'
 import { MobileTableRow } from '../../../components/MobileTableRow'
@@ -130,6 +131,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {thumbnail(p, 28)}
           <span style={{ color: token.colorText }}>{name}</span>
+          <ProductConditionTag type={p.type} />
         </div>
       ),
     },
@@ -163,7 +165,6 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
       align: 'right',
       render: (_, p) => countAvailableUnits(scopedUnitList(actor, p.id, MOCK_PRODUCT_UNITS)),
     },
-    { title: 'Type', key: 'type', render: (_, p) => TYPE_LABELS[p.type] },
     { title: 'Status', key: 'status', fixed: 'right', render: (_, p) => <ProductStatusTag status={p.status} /> },
     ...(canManage ? [{
       title: '',
@@ -177,8 +178,8 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
     }] : []),
   ]
   const columns = isMobile
-    // Mobile: name and status on top; type (New/Used — what clients look
-    // for first) and SKU below, with the sales price.
+    // Mobile: name and status on top; condition (New/Opened/Used — what
+    // clients look for first) and SKU below, with the sales price.
     ? mobileColumns<Product>(p => (
         <MobileTableRow
           leading={thumbnail(p, 44)}

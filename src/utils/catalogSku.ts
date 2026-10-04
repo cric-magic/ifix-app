@@ -54,10 +54,12 @@ function colorToken(color: string): string {
   return token.slice(0, 4)
 }
 
-// The standard catalog SKU code: model, storage, colour, and a -U suffix for
-// used stock. Callers preview this live while the form is filled and may
-// overwrite it before saving, so it's a starting point rather than a
-// guarantee — uniqueness is enforced on the field itself.
+const CONDITION_SUFFIX: Record<ProductType, string> = { new: '', opened: '-O', used: '-U' }
+
+// The standard catalog SKU code: model, storage, colour, and a -O suffix for
+// opened stock or -U for used. Callers preview this live while the form is
+// filled and may overwrite it before saving, so it's a starting point rather
+// than a guarantee — uniqueness is enforced on the field itself.
 export function generateCatalogSkuCode(input: {
   model: string
   storage?: string
@@ -67,5 +69,5 @@ export function generateCatalogSkuCode(input: {
   const parts = [modelToken(input.model), storageToken(input.storage), colorToken(input.color)]
     .filter((p): p is string => !!p)
   const base = parts.join('-')
-  return input.type === 'used' ? `${base}-U` : base
+  return base + CONDITION_SUFFIX[input.type]
 }

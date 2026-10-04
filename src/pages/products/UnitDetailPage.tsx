@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button, Image, Typography, message, theme } from 'antd'
-import { ImageOff, Pencil, Printer, Lock, Smartphone } from 'lucide-react'
+import { ImageOff, Pencil, Printer, Lock, Smartphone, PackageOpen } from 'lucide-react'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
@@ -17,6 +17,9 @@ import { EditUnitModal } from './components/EditUnitModal'
 import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 import { UnitProductName } from './components/UnitProductName'
 import { UnitPrice } from './components/UnitPrice'
+import { ProductConditionTag } from './components/ProductConditionTag'
+import { MarkOpenedModal } from './components/MarkOpenedModal'
+import { canMarkOpened, fullSkuName } from '../../utils/product'
 import { PageEmptyState } from '../../components/PageEmptyState'
 import { MobileActionBar } from '../../components/MobileActionBar'
 import { useIsMobile } from '../../components/useIsMobile'
@@ -32,6 +35,7 @@ export function UnitDetailPage() {
   const isMobile = useIsMobile()
   const [editOpen, setEditOpen] = useState(false)
   const [printOpen, setPrintOpen] = useState(false)
+  const [markOpenedOpen, setMarkOpenedOpen] = useState(false)
   const [version, setVersion] = useState(0)
   const [thumbnailHovered, setThumbnailHovered] = useState(false)
 
@@ -63,6 +67,7 @@ export function UnitDetailPage() {
   const canEdit = canManageUnits(user)
   const canPrint = canPrintUnitCodes(user)
   const canEditUnit = canEdit && unit.availability !== 'sold'
+  const canOpen = canEdit && canMarkOpened(unit, product)
   const soldByUser = unit.soldAt ? MOCK_USER_ACCOUNTS.find(a => a.id === unit.soldBy) : undefined
 
   const allPhotos = (unit.conditionPhotos ?? []).map((src, i) => ({ src, label: `Condition ${i + 1}` }))
@@ -73,7 +78,19 @@ export function UnitDetailPage() {
       label: 'Product',
       children: <UnitProductName product={product} color={token.colorText} />,
     },
+    {
+      key: 'condition',
+      label: 'Condition',
+      children: product
+        ? <ProductConditionTag type={product.type} />
+        : <span style={{ color: token.colorTextDisabled }}>—</span>,
+    },
     { key: 'serialNumber', label: 'Serial Number', children: unit.serialNumber },
+    {
+      key: 'modelNumber',
+      label: 'Model Number',
+      children: unit.modelNumber ?? product?.modelNumber ?? <span style={{ color: token.colorTextDisabled }}>—</span>,
+    },
     { key: 'imei1', label: 'IMEI 1', children: unit.imei1 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
     { key: 'imei2', label: 'IMEI 2', children: unit.imei2 ?? <span style={{ color: token.colorTextDisabled }}>—</span> },
     { key: 'branch', label: 'Branch', children: unit.branch },
@@ -185,6 +202,9 @@ export function UnitDetailPage() {
           tags={<UnitAvailabilityTag availability={unit.availability} />}
           actions={(canPrint || canEditUnit) && (
             <>
+              {canOpen && (
+                <Button icon={<PackageOpen size={16} strokeWidth={2.25} />} onClick={() => setMarkOpenedOpen(true)}>Mark as Opened</Button>
+              )}
               {canPrint && (
                 <Button icon={<Printer size={16} strokeWidth={2.25} />} onClick={() => setPrintOpen(true)}>Print label</Button>
               )}
@@ -232,9 +252,10 @@ export function UnitDetailPage() {
           label itself for someone who can't edit (or once it's sold). */}
       {isMobile && (canPrint || canEditUnit) && (
         <MobileActionBar
-          more={canEditUnit && canPrint
-            ? [{ key: 'print', label: 'Print label', icon: <Printer size={16} strokeWidth={2.25} />, onClick: () => setPrintOpen(true) }]
-            : []}
+          more={[
+            ...(canOpen ? [{ key: 'mark-opened', label: 'Mark as Opened', icon: <PackageOpen size={16} strokeWidth={2.25} />, onClick: () => setMarkOpenedOpen(true) }] : []),
+            ...(canEditUnit && canPrint ? [{ key: 'print', label: 'Print label', icon: <Printer size={16} strokeWidth={2.25} />, onClick: () => setPrintOpen(true) }] : []),
+          ]}
         >
           {canEditUnit ? (
             <Button type="primary" icon={<Pencil size={16} strokeWidth={2.25} />} onClick={() => setEditOpen(true)}>Edit</Button>
@@ -254,6 +275,18 @@ export function UnitDetailPage() {
           setEditOpen(false)
           setVersion(v => v + 1)
           message.success('Unit updated')
+        }}
+      />
+
+      <MarkOpenedModal
+        actor={user}
+        unit={markOpenedOpen ? unit : null}
+        product={markOpenedOpen ? product ?? null : null}
+        onClose={() => setMarkOpenedOpen(false)}
+        onMoved={opened => {
+          setMarkOpenedOpen(false)
+          setVersion(v => v + 1)
+          message.success(`Moved to ${fullSkuName(opened)}`)
         }}
       />
 

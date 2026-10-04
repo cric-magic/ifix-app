@@ -9,11 +9,12 @@ import { useIconColors } from '../../constants/iconColors'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
 import { MOCK_CONTRACTS } from '../../constants/mockContracts'
+import { TYPE_LABELS } from '../../constants/products'
 import { scopedAllUnits, scopedProductList } from '../../constants/roles'
 import { defaultTemplateOf, financingFor, selectableTemplatesFor, termsOf } from '../../utils/quote'
 import { unitPrice, variantOf } from '../../utils/product'
 import type { AuthUser } from '../../types/installment'
-import type { ProductUnit } from '../../types/product'
+import type { ProductType, ProductUnit } from '../../types/product'
 import { conditionLabel, conditionOf, groupByModel, type ModelGroup } from './models'
 import { QuoteView } from './QuoteView'
 
@@ -132,7 +133,13 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
       const monthlyFrom = defaultTemplate && longestTerm?.ratePercent != null
         ? financingFor(priceFrom, defaultTemplate.minDownPaymentPercent, longestTerm.ratePercent, longestTerm.months).installmentAmount
         : undefined
-      return { group, stock: units.length, priceFrom, monthlyFrom }
+      // The conditions it comes in — New, Opened, Used — the in-stock ones
+      // when there are any, so the list says up front what can be offered.
+      const typesSeen = new Set(units.length
+        ? units.map(u => group.products.find(p => p.id === u.productId)!.type)
+        : group.products.map(p => p.type))
+      const conditions = (Object.keys(TYPE_LABELS) as ProductType[]).filter(t => typesSeen.has(t)).map(t => TYPE_LABELS[t])
+      return { group, stock: units.length, priceFrom, monthlyFrom, conditions }
     })
     // In stock first, then by brand and model.
     .sort((a, b) =>
@@ -182,7 +189,7 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
             <MobileTableRow
               primary={imei}
               trailing={reason ? <Tag style={{ margin: 0 }}>{reason}</Tag> : undefined}
-              secondary={[product.model, variantOf(product), conditionLabel(conditionOf(u)), u.branch].filter(Boolean).join(' · ')}
+              secondary={[product.model, variantOf(product), conditionLabel(conditionOf(u, product)), u.branch].filter(Boolean).join(' · ')}
             />
           ),
         }
@@ -197,7 +204,7 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
             trailing={r.stock > 0
               ? <DotTag dotColor={token.colorSuccess}>{r.stock} in stock</DotTag>
               : <DotTag dotColor={token.colorTextQuaternary} textColor={token.colorTextTertiary}>Out of stock</DotTag>}
-            secondary={`${r.group.brand} · from ${priceFormatter.format(r.priceFrom)}`}
+            secondary={`${r.group.brand} · ${r.conditions.join(', ')} · from ${priceFormatter.format(r.priceFrom)}`}
             trailingSecondary={r.monthlyFrom != null ? `${priceFormatter.format(r.monthlyFrom)}/mo` : undefined}
           />
         ),
