@@ -84,13 +84,19 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
   )
 
   const query = search.trim().toLowerCase()
-  const catalog = MOCK_CATALOG_PRODUCTS.filter(c => !c.deletedAt).filter(c =>
+  const matches = MOCK_CATALOG_PRODUCTS.filter(c => !c.deletedAt).filter(c =>
     !query
     || c.name.toLowerCase().includes(query)
     || c.brand.toLowerCase().includes(query)
     || c.model.toLowerCase().includes(query)
     || c.skuCode.toLowerCase().includes(query),
   )
+  // Entries still available to adopt come first; ones already added sink
+  // below them, each group keeping the catalog's own order.
+  const catalog = [
+    ...matches.filter(c => !adoptedIds.has(c.id)),
+    ...matches.filter(c => adoptedIds.has(c.id)),
+  ]
 
   function startFromCatalog(entry: CatalogProduct) {
     setSource(entry)
