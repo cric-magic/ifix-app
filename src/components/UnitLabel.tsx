@@ -101,6 +101,7 @@ const SAFE_MARGIN_MM = 2
 // as part of the QR image (white on the white sticker), so the clear space
 // goes wherever the code does.
 const QR_QUIET_ZONE_MODULES = 4
+const QR_MODULE_DOTS = 2
 
 // How much larger than true size the preview shows the label, at most.
 const PREVIEW_ZOOM = 2
@@ -157,8 +158,6 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
 
   const showBarcode = settings.codeTypes === 'barcode' || settings.codeTypes === 'both'
   const showQr = settings.codeTypes === 'qr' || settings.codeTypes === 'both'
-  // A 30mm-tall sticker has less height to share between the stacked rows.
-  const short = size.height < 40
 
   const price = unit.customPrice ?? product.salesPrice
 
@@ -287,7 +286,7 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
         // The QR image carries its own quiet zone, so it sits right at the
         // safe margin and needs only the usual gap from the text.
         <div style={{ display: 'flex', alignItems: 'center', gap: '1mm', flexShrink: 0 }}>
-          {showQr && <QrCode value={value} ink={ink} paper={paper} moduleDots={short ? 2 : 3} />}
+          {showQr && <QrCode value={value} ink={ink} paper={paper} moduleDots={QR_MODULE_DOTS} />}
           {reference.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3mm', minWidth: 0 }}>
               {reference.map((line, i) => (
@@ -390,8 +389,8 @@ function barcodeModules(value: string): number {
 }
 
 // Each QR module is a whole number of printer dots, like the barcode's bars
-// — 2 dots (0.25mm) on a 30mm-tall sticker, 3 on a taller one — so every
-// module prints square and the same size. Drawn as vector squares, not a
+// — two (0.25mm), which leaves a 30mm-tall sticker room for the barcode's
+// full height — so every module prints square and the same size. Drawn as vector squares, not a
 // bitmap: an image gets resampled on its way to the printer and its edges
 // smear into grey a thermal head can't print. It sits on the dot grid too:
 // at the safe margin on the left, and on the bottom row, whose bottom edge

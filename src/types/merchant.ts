@@ -32,9 +32,9 @@ export type BarcodeCodeTypes = 'barcode' | 'qr' | 'both'
 export type BarcodeEncodedValue = 'serialNumber' | 'unitId'
 
 // The physical sticker, width × height in mm. 40 × 30 is the smallest
-// commonly used thermal label; 50 × 30 gives longer values more width; 50 ×
-// 40 prints a larger QR Code (see constants/labelSizes).
-export type LabelSize = '40x30' | '50x30' | '50x40'
+// commonly used thermal label and the default; 50 × 30's extra width prints
+// the barcode's bars thicker (see constants/labelSizes).
+export type LabelSize = '40x30' | '50x30'
 
 export interface BarcodeSettings {
   codeTypes: BarcodeCodeTypes

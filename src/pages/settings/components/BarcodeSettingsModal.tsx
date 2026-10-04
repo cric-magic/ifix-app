@@ -99,7 +99,7 @@ export function BarcodeSettingsModal({ open, merchant, sampleUnit, sampleProduct
             <Form.Item
               label="Sticker size"
               name="labelSize"
-              extra="Every size fits both codes with every field on. A long encoded value needs a 50 mm wide sticker for its barcode, and 50 × 40 mm prints the largest QR Code."
+              extra="Both sizes fit both codes with every field on. 50 × 30 mm prints the barcode's bars thicker, for scanners that struggle with fine bars."
             >
               <Radio.Group
                 options={(Object.keys(LABEL_SIZES) as LabelSize[]).map(value => ({ value, label: LABEL_SIZES[value].label }))}

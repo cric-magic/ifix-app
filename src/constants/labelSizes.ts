@@ -6,7 +6,6 @@ import type { LabelSize } from '../types/merchant'
 export const LABEL_SIZES: Record<LabelSize, { width: number; height: number; label: string }> = {
   '40x30': { width: 40, height: 30, label: '40 × 30 mm' },
   '50x30': { width: 50, height: 30, label: '50 × 30 mm' },
-  '50x40': { width: 50, height: 40, label: '50 × 40 mm' },
 }
 
 // One dot of a 203 dpi thermal printer, the common label-printer
