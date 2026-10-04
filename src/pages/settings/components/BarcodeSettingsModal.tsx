@@ -4,7 +4,7 @@ import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import { useDevTools } from '../../../contexts/DevToolsContext'
 import { UnitLabelPreview } from '../../../components/UnitLabel'
 import type { BarcodeSettings, LabelSize, Merchant } from '../../../types/merchant'
-import { BOTH_CODES_LABEL_SIZE, LABEL_SIZES } from '../../../constants/labelSizes'
+import { LABEL_SIZES } from '../../../constants/labelSizes'
 import type { Product, ProductUnit } from '../../../types/product'
 
 interface Props {
@@ -66,19 +66,7 @@ export function BarcodeSettingsModal({ open, merchant, sampleUnit, sampleProduct
     >
       <div style={sideBySide ? { display: 'flex', height: '100%' } : undefined}>
         <div style={sideBySide ? { flex: '0 0 380px', minWidth: 0, overflowY: 'auto', height: '100%', padding: 16 } : undefined}>
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleSubmit}
-            requiredMark={false}
-            // Turning on both codes moves a 30mm-tall sticker up to the size
-            // that stacks them — still changeable after.
-            onValuesChange={changed => {
-              if (changed.codeTypes === 'both' && LABEL_SIZES[form.getFieldValue('labelSize') as LabelSize].height < LABEL_SIZES[BOTH_CODES_LABEL_SIZE].height) {
-                form.setFieldValue('labelSize', BOTH_CODES_LABEL_SIZE)
-              }
-            }}
-          >
+          <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false}>
             <Form.Item
               label="Code types"
               name="codeTypes"
@@ -111,7 +99,7 @@ export function BarcodeSettingsModal({ open, merchant, sampleUnit, sampleProduct
             <Form.Item
               label="Sticker size"
               name="labelSize"
-              extra="50 × 40 mm fits the Barcode and QR Code on their own rows with every field on. On a 30 mm sticker, printing both may need some fields off."
+              extra="Every size fits both codes with every field on. A long encoded value needs a 50 mm wide sticker for its barcode, and 50 × 40 mm prints the largest QR Code."
             >
               <Radio.Group
                 options={(Object.keys(LABEL_SIZES) as LabelSize[]).map(value => ({ value, label: LABEL_SIZES[value].label }))}
@@ -166,7 +154,7 @@ export function BarcodeSettingsModal({ open, merchant, sampleUnit, sampleProduct
                 product={sampleProduct}
                 settings={previewSettings}
                 fill={sideBySide}
-                fitHint={previewSettings.labelSize === BOTH_CODES_LABEL_SIZE ? 'Turn off a field.' : `Turn off a field, or use ${LABEL_SIZES[BOTH_CODES_LABEL_SIZE].label}.`}
+                fitHint="Turn off a field, or use a larger sticker."
               />
             </div>
             {sideBySide && (

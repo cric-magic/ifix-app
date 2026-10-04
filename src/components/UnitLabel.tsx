@@ -79,10 +79,15 @@ export function UnitLabelPreview({ unit, product, settings, fill, fitHint }: Omi
   )
 }
 
-// Every line of text on the sticker: 6.5pt, readable on a thermal print,
-// and small enough that each line fits a 40mm sticker's width.
-const TEXT_SIZE = '6.5pt'
-const TEXT_LINE_HEIGHT = 1.15
+// Text sizes, in three steps down the sticker's hierarchy — each sized for
+// a 203 dpi thermal printer (about 2.8 dots per point). 5.5pt is the floor:
+// its strokes are still ~1.5 dots thick; below 5pt letters start to break
+// up. The name and price, what people read first, stay a step larger.
+const TEXT_PRIMARY = '6.5pt'
+const TEXT_SECONDARY = '6pt'
+// The barcode's value and the reference details — fine print, read up close.
+const TEXT_FINE = '5.5pt'
+const TEXT_LINE_HEIGHT = 1.1
 
 // The sticker's safe margin, on every side: nothing prints within it, so a
 // die-cut that lands a little off still never clips text or a code. The
@@ -239,17 +244,17 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
           {(showName || showPrice) && (
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '1.5mm', flexShrink: 0 }}>
               {showName && (
-                <span data-one-line style={{ ...oneLine, fontSize: TEXT_SIZE, lineHeight: TEXT_LINE_HEIGHT, fontWeight: 700 }}>{product.name}</span>
+                <span data-one-line style={{ ...oneLine, fontSize: TEXT_PRIMARY, lineHeight: TEXT_LINE_HEIGHT, fontWeight: 700 }}>{product.name}</span>
               )}
               {showPrice && (
-                <span style={{ fontSize: TEXT_SIZE, lineHeight: TEXT_LINE_HEIGHT, fontWeight: 700, flexShrink: 0 }}>฿{price.toLocaleString()}</span>
+                <span style={{ fontSize: TEXT_PRIMARY, lineHeight: TEXT_LINE_HEIGHT, fontWeight: 700, flexShrink: 0 }}>฿{price.toLocaleString()}</span>
               )}
             </div>
           )}
 
           {/* Which variant — storage, color and grade. */}
           {variant.length > 0 && (
-            <div data-one-line style={{ ...oneLine, fontSize: TEXT_SIZE, lineHeight: TEXT_LINE_HEIGHT, flexShrink: 0 }}>
+            <div data-one-line style={{ ...oneLine, fontSize: TEXT_SECONDARY, lineHeight: TEXT_LINE_HEIGHT, flexShrink: 0 }}>
               {variant.join(' · ')}
             </div>
           )}
@@ -261,8 +266,8 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
           Nothing else shares the row, so its quiet zones stay clear. */}
       {showBarcode && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5mm', flexShrink: 0 }}>
-          <Barcode value={value} ink={ink} paper={paper} heightMm={short ? 7 : 9} labelWidthMm={size.width} />
-          <div data-one-line style={{ ...oneLine, maxWidth: '100%', fontFamily: token.fontFamilyCode, fontSize: TEXT_SIZE, lineHeight: TEXT_LINE_HEIGHT }}>
+          <Barcode value={value} ink={ink} paper={paper} heightMm={short ? 5 : 8} labelWidthMm={size.width} />
+          <div data-one-line style={{ ...oneLine, maxWidth: '100%', fontFamily: token.fontFamilyCode, fontSize: TEXT_FINE, lineHeight: TEXT_LINE_HEIGHT }}>
             {value}
           </div>
         </div>
@@ -275,11 +280,11 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
         // The QR image carries its own quiet zone, so it sits right at the
         // safe margin and needs only the usual gap from the text.
         <div style={{ display: 'flex', alignItems: 'center', gap: '1mm', flexShrink: 0 }}>
-          {showQr && <QrCode value={value} ink={ink} paper={paper} codeMm={short ? 8 : 10} />}
+          {showQr && <QrCode value={value} ink={ink} paper={paper} moduleDots={short ? 2 : 3} />}
           {reference.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3mm', minWidth: 0 }}>
               {reference.map((line, i) => (
-                <div key={i} data-one-line style={{ ...oneLine, fontFamily: i === 0 && !serialUnderBarcode ? token.fontFamilyCode : undefined, fontSize: TEXT_SIZE, lineHeight: TEXT_LINE_HEIGHT }}>
+                <div key={i} data-one-line style={{ ...oneLine, fontFamily: i === 0 && !serialUnderBarcode ? token.fontFamilyCode : undefined, fontSize: TEXT_FINE, lineHeight: TEXT_LINE_HEIGHT }}>
                   {line}
                 </div>
               ))}
@@ -357,6 +362,11 @@ function Barcode({ value, ink, paper, heightMm, labelWidthMm }: {
         alignSelf: 'flex-start',
         flexShrink: 0,
         shapeRendering: 'crispEdges',
+        // Chrome clips an SVG to its box rounded to whole CSS pixels, which
+        // at these sub-pixel mm widths trimmed the final bar of the stop
+        // pattern — enough to fail a scan. The bars stay where they're
+        // drawn; only the clip goes.
+        overflow: 'visible',
       }}
     />
   )
@@ -369,26 +379,43 @@ function barcodeModules(value: string): number {
   return (encoded.encodings ?? []).reduce((sum, e) => sum + e.data.length, 0)
 }
 
-// `codeMm` is the code itself, edge module to edge module; the image is
-// that plus its quiet zone all round.
-function QrCode({ value, ink, paper, codeMm }: { value: string, ink: string, paper: string, codeMm: number }) {
-  const [src, setSrc] = useState<string>()
-  const modules = useMemo(() => QRCode.create(value).modules.size, [value])
-  const sizeMm = codeMm * (modules + 2 * QR_QUIET_ZONE_MODULES) / modules
+// Each QR module is a whole number of printer dots, like the barcode's bars
+// — 2 dots (0.25mm) on a 30mm-tall sticker, 3 on a taller one — so every
+// module prints square and the same size. Drawn as vector squares, not a
+// bitmap: an image gets resampled on its way to the printer and its edges
+// smear into grey a thermal head can't print. It sits on the dot grid too:
+// at the safe margin on the left, and on the bottom row, whose bottom edge
+// is the safe margin.
+function QrCode({ value, ink, paper, moduleDots }: { value: string, ink: string, paper: string, moduleDots: number }) {
+  const path = useMemo(() => qrPath(value), [value])
+  const sizeMm = (path.size + 2 * QR_QUIET_ZONE_MODULES) * moduleDots * PRINTER_DOT_MM
+  const box = path.size + 2 * QR_QUIET_ZONE_MODULES
 
-  useEffect(() => {
-    let live = true
-    QRCode.toDataURL(value, {
-      margin: QR_QUIET_ZONE_MODULES,
-      // Rendered well above its printed size so the modules stay crisp on a
-      // thermal printer (203–300 dpi) and in the enlarged preview.
-      width: Math.round(sizeMm * PX_PER_MM * 4),
-      color: { dark: ink, light: paper },
-    }).then(url => { if (live) setSrc(url) })
-    return () => { live = false }
-  }, [value, ink, paper, sizeMm])
+  return (
+    <svg
+      viewBox={`${-QR_QUIET_ZONE_MODULES} ${-QR_QUIET_ZONE_MODULES} ${box} ${box}`}
+      // Not clipped to its pixel-rounded box — see Barcode.
+      style={{ width: `${sizeMm}mm`, height: `${sizeMm}mm`, flexShrink: 0, background: paper, overflow: 'visible' }}
+      shapeRendering="crispEdges"
+    >
+      <path d={path.d} fill={ink} />
+    </svg>
+  )
+}
 
-  const style = { width: `${sizeMm}mm`, height: `${sizeMm}mm`, flexShrink: 0 }
-  if (!src) return <div style={style} />
-  return <img src={src} alt="" style={style} />
+// A QR symbol as one SVG path, one unit square per dark module — merged
+// into horizontal runs, so a row of modules is a single rectangle.
+function qrPath(value: string): { size: number; d: string } {
+  const { size, data } = QRCode.create(value).modules
+  let d = ''
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (!data[y * size + x]) continue
+      let run = 1
+      while (x + run < size && data[y * size + x + run]) run++
+      d += `M${x} ${y}h${run}v1h${-run}z`
+      x += run - 1
+    }
+  }
+  return { size, d }
 }
