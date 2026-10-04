@@ -9,13 +9,12 @@ import { useIconColors } from '../../constants/iconColors'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
 import { MOCK_CONTRACTS } from '../../constants/mockContracts'
-import { TYPE_LABELS } from '../../constants/products'
 import { scopedAllUnits, scopedProductList } from '../../constants/roles'
 import { defaultTemplateOf, financingFor, selectableTemplatesFor, termsOf } from '../../utils/quote'
-import { UNIT_NUMBER_LENGTH, codeMatching, findUnitByCode, unitPrice, variantOf } from '../../utils/product'
+import { UNIT_NUMBER_LENGTH, codeMatching, findUnitByCode, fullSkuName, unitPrice, variantOf } from '../../utils/product'
 import type { AuthUser } from '../../types/installment'
-import type { ProductType, ProductUnit } from '../../types/product'
-import { conditionLabel, conditionOf, groupByModel, type ModelGroup } from './models'
+import type { Product, ProductUnit, UnitAvailability } from '../../types/product'
+import { conditionLabel, conditionOf, groupByModel, type Condition } from './models'
 import { QuoteView } from './QuoteView'
 
 const priceFormatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
@@ -23,6 +22,18 @@ const priceFormatter = new Intl.NumberFormat('th-TH', { style: 'currency', curre
 const IMEI_LENGTH = 15
 // Typed digits before IMEI matches are suggested.
 const MIN_IMEI_QUERY = 3
+
+// One row of results: units alike in SKU, branch, price, condition and
+// availability.
+interface UnitRow {
+  key: string
+  product: Product
+  branch: string
+  price: number
+  condition: Condition
+  availability: UnitAvailability
+  units: ProductUnit[]
+}
 
 interface Props {
   open: boolean
@@ -35,9 +46,12 @@ interface Props {
 // you're on. Opened from the sidebar.
 //
 // One screen, like a command palette: the search box on top, and under it
-// the models (with stock and "from" prices) — or units, when the text is an
-// IMEI. Picking one swaps the list for its quote; typing again brings the
-// list back, so "and the Pro?" is just another search.
+// the stock itself, a row per kind of unit — name, branch, price and status
+// (see unitRows) — or single units, when the text is an IMEI or a unit ID.
+// Picking one swaps the list for its quote (the selling price and the
+// monthly), and Start contract carries that unit into a new contract;
+// typing again brings the list back, so "and the Pro?" is just another
+// search.
 // A desktop modal; a full-screen sheet on mobile, like the app's other
 // drawers there.
 export function PriceCheckModal({ open, actor, onClose }: Props) {
@@ -111,41 +125,53 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
 
   // --- Suggestions ------------------------------------------------------
 
-  const stockOf = (group: ModelGroup) => {
-    const ids = new Set(group.products.map(p => p.id))
-    return availableUnits.filter(u => ids.has(u.productId))
-  }
+  // Units grouped into rows: one per SKU, branch, price and condition (a
+  // Used unit's grade), and availability — so two units that would be
+  // quoted alike share a row with a count, and any difference in price or
+  // condition gets a row of its own. Available and Reserved both show (a
+  // reserved one says which contract holds it, and can't be picked); Sold
+  // units are gone from stock and left out.
+  const unitRows = useMemo(() => {
+    const rows = new Map<string, UnitRow>()
+    for (const unit of scopedUnits) {
+      if (unit.availability === 'sold') continue
+      const product = MOCK_PRODUCTS.find(p => p.id === unit.productId)
+      if (!product || product.deletedAt || product.status !== 'available') continue
+      const price = unitPrice(unit, product)
+      const condition = conditionOf(unit, product)
+      // Each reserved unit is held by its own contract, so its own row.
+      const key = unit.availability === 'reserved'
+        ? unit.id
+        : [product.id, unit.branch, price, condition].join('|')
+      const row = rows.get(key)
+      if (row) row.units.push(unit)
+      else rows.set(key, { key, product, branch: unit.branch, price, condition, availability: unit.availability, units: [unit] })
+    }
+    return [...rows.values()]
+  }, [scopedUnits])
 
-  const modelOptions = models
-    .filter(group => {
+  const monthlyFor = (price: number) => defaultTemplate && longestTerm?.ratePercent != null
+    // The lowest monthly the default template reaches: its smallest down
+    // payment over its longest term — the "from ฿X/mo" customers ask for.
+    ? financingFor(price, defaultTemplate.minDownPaymentPercent, longestTerm.ratePercent, longestTerm.months).installmentAmount
+    : undefined
+
+  const rowOptions = unitRows
+    .filter(row => {
       if (!query || digits) return !digits
-      const text = group.products.flatMap(p => [p.brand, p.model, p.name, p.storage, p.color, p.sku]).join(' ').toLowerCase()
+      const p = row.product
+      const text = [p.brand, p.model, p.name, p.storage, p.color, p.sku, fullSkuName(p), conditionLabel(row.condition), row.branch]
+        .join(' ').toLowerCase()
       return query.split(/\s+/).every(word => text.includes(word))
     })
-    .map(group => {
-      const units = stockOf(group)
-      const prices = units.length
-        ? units.map(u => unitPrice(u, group.products.find(p => p.id === u.productId)!))
-        : group.products.map(p => p.salesPrice)
-      const priceFrom = Math.min(...prices)
-      // The lowest monthly the default template reaches: its smallest down
-      // payment over its longest term — the "from ฿X/mo" customers ask for.
-      const monthlyFrom = defaultTemplate && longestTerm?.ratePercent != null
-        ? financingFor(priceFrom, defaultTemplate.minDownPaymentPercent, longestTerm.ratePercent, longestTerm.months).installmentAmount
-        : undefined
-      // The conditions it comes in — New, Opened, Used — the in-stock ones
-      // when there are any, so the list says up front what can be offered.
-      const typesSeen = new Set(units.length
-        ? units.map(u => group.products.find(p => p.id === u.productId)!.type)
-        : group.products.map(p => p.type))
-      const conditions = (Object.keys(TYPE_LABELS) as ProductType[]).filter(t => typesSeen.has(t)).map(t => TYPE_LABELS[t])
-      return { group, stock: units.length, priceFrom, monthlyFrom, conditions }
-    })
-    // In stock first, then by brand and model.
+    // The viewer's own branch first, sellable before reserved, then by
+    // product and price.
     .sort((a, b) =>
-      Number(b.stock > 0) - Number(a.stock > 0)
-      || a.group.brand.localeCompare(b.group.brand)
-      || a.group.model.localeCompare(b.group.model))
+      Number(b.branch === actor.branch) - Number(a.branch === actor.branch)
+      || Number(a.availability !== 'available') - Number(b.availability !== 'available')
+      || fullSkuName(a.product).localeCompare(fullSkuName(b.product))
+      || a.price - b.price
+      || a.branch.localeCompare(b.branch))
 
   // Part of an IMEI: the units it could be, whatever their state — one
   // that can't be sold says why rather than going missing.
@@ -153,7 +179,7 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
     ? scopedUnits.filter(u => codeMatching(u, digits)).slice(0, 8)
     : []
 
-  const unavailableReason = (u: ProductUnit) => {
+  function unavailableReason(u: ProductUnit) {
     if (u.availability === 'sold') return 'Sold'
     if (u.availability === 'reserved') {
       const holder = MOCK_CONTRACTS.find(c => c.device.unitId === u.id)
@@ -162,13 +188,13 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
     return undefined
   }
 
-  const thumbnail = (group: ModelGroup) => (
+  const thumbnail = (product: Product) => (
     // 44px, the height of the row's two lines together (the list rows'
     // own size, see MobileTableRow) — at 36 it floated small beside them.
     <Avatar
       shape="square"
       size={44}
-      src={group.products.find(p => p.photos?.length)?.photos?.[0]}
+      src={product.photos?.[0]}
       icon={<ImageOff size={16} strokeWidth={2.25} />}
       style={{ backgroundColor: token.colorFillSecondary, color: iconColors.secondary, flexShrink: 0 }}
     />
@@ -194,21 +220,33 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
           ),
         }
       })
-    : modelOptions.map(r => ({
-        key: r.group.key,
-        pick: () => pickModel(r.group),
-        content: (
-          <MobileTableRow
-            leading={thumbnail(r.group)}
-            primary={r.group.model}
-            trailing={r.stock > 0
-              ? <DotTag dotColor={token.colorSuccess}>{r.stock} in stock</DotTag>
-              : <DotTag dotColor={token.colorTextQuaternary} textColor={token.colorTextTertiary}>Out of stock</DotTag>}
-            secondary={`${r.group.brand} · ${r.conditions.join(', ')} · from ${priceFormatter.format(r.priceFrom)}`}
-            trailingSecondary={r.monthlyFrom != null ? `${priceFormatter.format(r.monthlyFrom)}/mo` : undefined}
-          />
-        ),
-      }))
+    : rowOptions.map(row => {
+        const reserved = row.availability === 'reserved'
+        const monthly = monthlyFor(row.price)
+        // Name, then condition where the name doesn't say it all (a Used
+        // unit's grade); branch and, for a reserved unit, what holds it.
+        const name = row.product.type === 'used'
+          ? `${fullSkuName(row.product)} · ${conditionLabel(row.condition).replace(/^Used · /, '')}`
+          : fullSkuName(row.product)
+        return {
+          key: row.key,
+          disabled: reserved,
+          pick: () => pickUnit(row.units[0], fullSkuName(row.product)),
+          content: (
+            <MobileTableRow
+              leading={thumbnail(row.product)}
+              primary={name}
+              trailing={reserved
+                ? <DotTag dotColor={token.colorWarning} textColor={token.colorTextTertiary}>Reserved</DotTag>
+                : <DotTag dotColor={token.colorSuccess}>{row.units.length > 1 ? `Available · ${row.units.length}` : 'Available'}</DotTag>}
+              secondary={reserved
+                ? `${row.branch} · ${unavailableReason(row.units[0])}`
+                : `${row.branch}${monthly != null ? ` · from ${priceFormatter.format(monthly)}/mo` : ''}`}
+              trailingSecondary={<span style={{ color: reserved ? token.colorTextTertiary : token.colorText, fontWeight: 600 }}>{priceFormatter.format(row.price)}</span>}
+            />
+          ),
+        }
+      })
 
   // --- Picking ----------------------------------------------------------
 
@@ -217,12 +255,6 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
   // wherever the old one was scrolled to.
   const rootRef = useRef<HTMLDivElement>(null)
   const scrollToTop = () => rootRef.current?.closest('.ant-modal-body, .ant-drawer-body')?.scrollTo({ top: 0 })
-
-  function pickModel(group: ModelGroup) {
-    scrollToTop()
-    setPicked({ modelKey: group.key })
-    setSearch(group.model)
-  }
 
   function pickUnit(unit: ProductUnit, text: string) {
     scrollToTop()
@@ -327,7 +359,7 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
           </div>
         ) : (
           <Typography.Text type="secondary" style={{ display: 'block', marginTop: 16, textAlign: 'center' }}>
-            {digits ? 'No units match these digits yet.' : 'No models match. Try a brand, or scan the IMEI.'}
+            {digits ? 'No units match these digits yet.' : 'No units match. Try a brand, model, color or branch, or scan the barcode.'}
           </Typography.Text>
         )
       )}
