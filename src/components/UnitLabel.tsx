@@ -66,12 +66,12 @@ export function UnitLabelPreview({ unit, product, settings, fill, fitHint }: Omi
         // Not a field to turn off: the value itself is too long for bars a
         // scanner can read at this width. A QR Code holds it at any length.
         <Typography.Text type="warning" style={{ display: 'block', fontSize: 13, marginTop: 8 }}>
-          This value is too long for a scannable barcode on a {LABEL_SIZES[settings.labelSize].label} sticker. Use QR Code only for it, or a shorter value.
+          This value is too long for a scannable barcode on a {LABEL_SIZES[settings.labelSize].label} sticker, so the barcode is left off. Use QR Code only, or a shorter value.
         </Typography.Text>
       )}
       {!fit.textFits && (
         <Typography.Text type="warning" style={{ display: 'block', fontSize: 13, marginTop: 8 }}>
-          Some text doesn't fit on a {LABEL_SIZES[settings.labelSize].label} sticker and is cut off.
+          Not everything fits on a {LABEL_SIZES[settings.labelSize].label} sticker inside its safe margin, so some of it is cut off.
           {fitHint ? ` ${fitHint}` : ''}
         </Typography.Text>
       )}
@@ -84,14 +84,16 @@ export function UnitLabelPreview({ unit, product, settings, fill, fitHint }: Omi
 const TEXT_SIZE = '6.5pt'
 const TEXT_LINE_HEIGHT = 1.15
 
-// The sticker's side margin. A barcode's quiet zones sit inside the space
-// between them, so the bars never run to the edge of the roll.
-const LABEL_PADDING_X_MM = 2
+// The sticker's safe margin, on every side: nothing prints within it, so a
+// die-cut that lands a little off still never clips text or a code. The
+// codes' own quiet zones (the blank a scanner needs around them) are
+// inside the safe area, on top of this — so they survive the cut too.
+const SAFE_MARGIN_MM = 2
 
-// Clear space between the QR Code and anything beside it — the QR Code's
-// own quiet zone, which a scanner needs to find its corners. On a white
-// sticker the paper itself is the quiet zone, so it's kept as a gap.
-const QR_QUIET_ZONE_MM = 2
+// A QR Code's quiet zone, in its own modules — the standard's four. Drawn
+// as part of the QR image (white on the white sticker), so the clear space
+// goes wherever the code does.
+const QR_QUIET_ZONE_MODULES = 4
 
 // How much larger than true size the preview shows the label, at most.
 const PREVIEW_ZOOM = 2
@@ -207,7 +209,7 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
         // The sticker at its real size (mm), so the print matches the roll.
         width: `${size.width}mm`,
         height: `${size.height}mm`,
-        padding: `1.5mm ${LABEL_PADDING_X_MM}mm`,
+        padding: `${SAFE_MARGIN_MM}mm`,
         boxSizing: 'border-box',
         overflow: 'hidden',
         background: paper,
@@ -270,16 +272,10 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
           — never beside the barcode. Without a QR Code they're the last row.
           The serial is here when the codes encode the internal unit id. */}
       {(showQr || reference.length > 0) && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: `${QR_QUIET_ZONE_MM}mm`,
-          // Under the barcode, the row's own top margin tops the 1mm gap up
-          // to the QR Code's full quiet zone above it.
-          marginTop: showBarcode && showQr ? `${QR_QUIET_ZONE_MM - 1}mm` : undefined,
-          flexShrink: 0,
-        }}>
-          {showQr && <QrCode value={value} ink={ink} paper={paper} sizeMm={short ? 9 : 10} />}
+        // The QR image carries its own quiet zone, so it sits right at the
+        // safe margin and needs only the usual gap from the text.
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1mm', flexShrink: 0 }}>
+          {showQr && <QrCode value={value} ink={ink} paper={paper} codeMm={short ? 8 : 10} />}
           {reference.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3mm', minWidth: 0 }}>
               {reference.map((line, i) => (
@@ -304,8 +300,9 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
 // two dots, with a quiet zone of ten modules either side (Code 128's
 // minimum) left blank. A longer value gets narrower modules, never a
 // squeezed image — and once even one-dot modules don't fit, the barcode is
-// marked as cut off (data-too-long) so the fit check warns, rather than
-// printing something a scanner can't read.
+// left off the sticker and marked (data-too-long) so the fit check warns,
+// rather than printing bars that run into the safe margin with no quiet
+// zone — which a scanner can't rely on and a cut can clip.
 const BARCODE_QUIET_ZONE_MODULES = 10
 const BARCODE_MAX_DOTS = 2
 
@@ -318,7 +315,7 @@ function Barcode({ value, ink, paper, heightMm, labelWidthMm }: {
 }) {
   const ref = useRef<SVGSVGElement>(null)
   const modules = useMemo(() => barcodeModules(value), [value])
-  const maxWidthMm = labelWidthMm - 2 * LABEL_PADDING_X_MM
+  const maxWidthMm = labelWidthMm - 2 * SAFE_MARGIN_MM
   const fitDots = Math.floor(maxWidthMm / ((modules + 2 * BARCODE_QUIET_ZONE_MODULES) * PRINTER_DOT_MM))
   const dots = Math.max(1, Math.min(BARCODE_MAX_DOTS, fitDots))
   const moduleMm = dots * PRINTER_DOT_MM
@@ -346,16 +343,17 @@ function Barcode({ value, ink, paper, heightMm, labelWidthMm }: {
     ref.current.setAttribute('preserveAspectRatio', 'none')
   }, [value, ink, paper])
 
+  if (fitDots < 1) return <span data-too-long />
+
   return (
     <svg
       ref={ref}
-      data-too-long={fitDots < 1 || undefined}
       style={{
         width: `${barsMm}mm`,
         height: `${heightMm}mm`,
         // Measured from the sticker's edge, so less the side padding the
         // row already starts at. The quiet zones are the blank either side.
-        marginLeft: `${leftMm - LABEL_PADDING_X_MM}mm`,
+        marginLeft: `${leftMm - SAFE_MARGIN_MM}mm`,
         alignSelf: 'flex-start',
         flexShrink: 0,
         shapeRendering: 'crispEdges',
@@ -371,13 +369,17 @@ function barcodeModules(value: string): number {
   return (encoded.encodings ?? []).reduce((sum, e) => sum + e.data.length, 0)
 }
 
-function QrCode({ value, ink, paper, sizeMm }: { value: string, ink: string, paper: string, sizeMm: number }) {
+// `codeMm` is the code itself, edge module to edge module; the image is
+// that plus its quiet zone all round.
+function QrCode({ value, ink, paper, codeMm }: { value: string, ink: string, paper: string, codeMm: number }) {
   const [src, setSrc] = useState<string>()
+  const modules = useMemo(() => QRCode.create(value).modules.size, [value])
+  const sizeMm = codeMm * (modules + 2 * QR_QUIET_ZONE_MODULES) / modules
 
   useEffect(() => {
     let live = true
     QRCode.toDataURL(value, {
-      margin: 0,
+      margin: QR_QUIET_ZONE_MODULES,
       // Rendered well above its printed size so the modules stay crisp on a
       // thermal printer (203–300 dpi) and in the enlarged preview.
       width: Math.round(sizeMm * PX_PER_MM * 4),
