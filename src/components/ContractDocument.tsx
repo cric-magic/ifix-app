@@ -123,7 +123,7 @@ function SectionOutline({ indicator }: { indicator: SectionIndicator }) {
 
 function DocumentBody({ data, indicator }: { data: ContractDocumentData; indicator?: SectionIndicator }) {
   const { token } = theme.useToken()
-  const { merchant, contract, customer, schedule, content } = data
+  const { schedule, content } = data
 
   // Each configurable section's markup. The Payment system section also
   // governs the PromptPay QR beside the signatures — it's the same payment
@@ -134,8 +134,8 @@ function DocumentBody({ data, indicator }: { data: ContractDocumentData; indicat
   // between. Most sections are one unit, kept whole; the two that can run
   // long break more finely: the legal text between paragraphs, and the
   // installment schedule between rows (each page's part of the table
-  // repeating the column headings). The full signing block closes the run.
-  const units = buildUnits(data, token, showPaymentSystem)
+  // repeating the column headings).
+  const units = buildUnits(data, token)
 
   // Every unit's height at the true page width, measured off-screen and
   // laid into pages below. Re-measured whenever the content changes size
@@ -179,7 +179,7 @@ function DocumentBody({ data, indicator }: { data: ContractDocumentData; indicat
 
   const header = <DocumentHeader data={data} token={token} />
   const footer = (page: number, total: number) => (
-    <DocumentFooter merchantName={merchant.name} customerName={customer.name} createdAt={contract.createdAt} page={page} total={total} token={token} />
+    <DocumentFooter data={data} showPaymentSystem={showPaymentSystem} page={page} total={total} token={token} />
   )
 
   return (
@@ -267,8 +267,8 @@ function DocumentBody({ data, indicator }: { data: ContractDocumentData; indicat
               ))}
             </div>
 
-            {/* The same footer on every page: the buyer's signature, so
-                every sheet is signed, and the page number. */}
+            {/* The same footer on every page: the full signing block, so
+                every sheet is signed by both parties, and the page number. */}
             <div style={{ display: 'flow-root', flexShrink: 0 }}>{footer(i + 1, pages.length)}</div>
           </div>
         ))}
@@ -372,7 +372,7 @@ const FIT_SLACK = 4
 // shown at.
 const RULER_PX = 1000
 
-function buildUnits(data: ContractDocumentData, token: Token, showPaymentSystem: boolean): Unit[] {
+function buildUnits(data: ContractDocumentData, token: Token): Unit[] {
   const { merchant, customer, product, financials, schedule, payment, content } = data
   const commission = content.commission
   const units: Unit[] = []
@@ -519,26 +519,6 @@ function buildUnits(data: ContractDocumentData, token: Token, showPaymentSystem:
     }
   }
 
-  // The full signing block closes the contract: both parties' signatures and
-  // the two QR codes the doc puts side by side. Top-aligned: bottom alignment
-  // let a taller caption push its QR upward and a wrapped name push its
-  // signature rule upward, so no two columns lined up. Each column starts at
-  // the same y and reserves the same signing space, which puts the rules and
-  // the QR captions on shared baselines.
-  block('signatures', 'signatures', () => (
-    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-      <Signature name={customer.name} role="ผู้เช่าซื้อ" token={token} />
-      <Signature name={merchant.name} role="ผู้ให้เช่าซื้อ" token={token} />
-      <QrSlot url={merchant.lineQrUrl} title="LINE OA • แจ้งชำระ" caption="สแกนเพื่อยืนยันสลิป" token={token} />
-      {showPaymentSystem && <QrSlot
-        url={payment.promptPayQrUrl}
-        title="PromptPay • โอนเงิน"
-        caption={`${payment.accountName} • ${payment.accountNumber}`}
-        token={token}
-      />}
-    </div>
-  ))
-
   return units
 }
 
@@ -564,39 +544,39 @@ function DocumentHeader({ data, token }: { data: ContractDocumentData; token: To
   )
 }
 
-// Footer — the buyer signs every page here (the full signing block, with
-// the seller and the QR codes, closes the last page's content), beside the
-// document's provenance and the page number.
-function DocumentFooter({ merchantName, customerName, createdAt, page, total, token }: {
-  merchantName: string
-  customerName: string
-  createdAt: string
+// Footer — the full signing block on every page: both parties' signatures
+// and the two QR codes the doc puts side by side, so every sheet is signed
+// by both and carries the payment channels. Under it, the document's
+// provenance and the page number.
+//
+// Top-aligned: bottom alignment let a taller caption push its QR upward and
+// a wrapped name push its signature rule upward, so no two columns lined up.
+// Each column starts at the same y and reserves the same signing space,
+// which puts the rules and the QR captions on shared baselines.
+function DocumentFooter({ data, showPaymentSystem, page, total, token }: {
+  data: ContractDocumentData
+  showPaymentSystem: boolean
   page: number
   total: number
   token: Token
 }) {
+  const { merchant, customer, contract, payment } = data
   return (
-    <div style={{
-      marginTop: 16,
-      paddingTop: 8,
-      borderTop: `1px solid ${token.colorTextTertiary}`,
-      display: 'flex',
-      alignItems: 'flex-end',
-      justifyContent: 'space-between',
-      gap: 16,
-      fontSize: 11,
-    }}>
-      <div style={{ color: token.colorTextTertiary, minWidth: 0 }}>
-        เอกสารนี้จัดทำโดยระบบ {merchantName} — {createdAt} · ผู้เช่าซื้อลงลายมือชื่อทุกหน้า
-        <div>หน้า {page} / {total}</div>
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${token.colorTextTertiary}` }}>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <Signature name={customer.name} role="ผู้เช่าซื้อ" token={token} />
+        <Signature name={merchant.name} role="ผู้ให้เช่าซื้อ" token={token} />
+        <QrSlot url={merchant.lineQrUrl} title="LINE OA • แจ้งชำระ" caption="สแกนเพื่อยืนยันสลิป" token={token} />
+        {showPaymentSystem && <QrSlot
+          url={payment.promptPayQrUrl}
+          title="PromptPay • โอนเงิน"
+          caption={`${payment.accountName} • ${payment.accountNumber}`}
+          token={token}
+        />}
       </div>
-      <div style={{ flexShrink: 0, textAlign: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>
-          ลงชื่อ
-          <span style={{ display: 'inline-block', width: 160, height: 32, borderBottom: `1px solid ${token.colorTextTertiary}` }} />
-          ผู้เช่าซื้อ
-        </div>
-        <div style={{ color: token.colorTextSecondary }}>({customerName})</div>
+      <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', gap: 16, color: token.colorTextTertiary, fontSize: 11 }}>
+        <span style={{ minWidth: 0 }}>เอกสารนี้จัดทำโดยระบบ {merchant.name} — {contract.createdAt} · ทุกหน้าต้องลงลายมือชื่อทั้งสองฝ่าย</span>
+        <span style={{ flexShrink: 0 }}>หน้า {page} / {total}</span>
       </div>
     </div>
   )
