@@ -102,6 +102,10 @@ const SAFE_MARGIN_MM = 2
 // goes wherever the code does.
 const QR_QUIET_ZONE_MODULES = 4
 const QR_MODULE_DOTS = 2
+// With QR Code only, the QR takes the row the barcode would have had, so
+// its modules grow — still whole dots — as big as that space allows, up to
+// four (0.5mm): past that a phone camera gains nothing.
+const QR_MAX_MODULE_DOTS = 4
 
 // How much larger than true size the preview shows the label, at most.
 const PREVIEW_ZOOM = 2
@@ -158,6 +162,13 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
 
   const showBarcode = settings.codeTypes === 'barcode' || settings.codeTypes === 'both'
   const showQr = settings.codeTypes === 'qr' || settings.codeTypes === 'both'
+  // QR Code only: the sticker is laid out around the code instead — centred
+  // text above, the QR Code big in the middle, the details centred under it.
+  const qrOnly = showQr && !showBarcode
+  // With one code, it's the sticker's centre line, so all the text centres on
+  // it too. With both, the QR Code sits at the left with the details beside
+  // it, and the text keeps to the left edge to match.
+  const centered = showBarcode !== showQr
 
   const price = unit.customPrice ?? product.salesPrice
 
@@ -240,10 +251,10 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
     >
       {(showName || showPrice || variant.length > 0) && (
         // The top group: what it is, then which variant.
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6mm', flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: centered ? 'center' : undefined, textAlign: centered ? 'center' : undefined, gap: '0.6mm', flexShrink: 0, minWidth: 0, maxWidth: '100%' }}>
           {/* What it is — the name, and the price opposite it. */}
           {(showName || showPrice) && (
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '1.5mm', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: centered ? 'center' : 'space-between', gap: '1.5mm', flexShrink: 0, maxWidth: '100%' }}>
               {showName && (
                 <span data-one-line style={{ ...oneLine, fontSize: TEXT_PRIMARY, lineHeight: TEXT_LINE_HEIGHT, fontWeight: 700 }}>{product.name}</span>
               )}
@@ -255,7 +266,7 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
 
           {/* Which variant — storage, color and grade. */}
           {variant.length > 0 && (
-            <div data-one-line style={{ ...oneLine, fontSize: TEXT_SECONDARY, lineHeight: TEXT_LINE_HEIGHT, flexShrink: 0 }}>
+            <div data-one-line style={{ ...oneLine, maxWidth: '100%', fontSize: TEXT_SECONDARY, lineHeight: TEXT_LINE_HEIGHT, flexShrink: 0 }}>
               {variant.join(' · ')}
             </div>
           )}
@@ -282,13 +293,28 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
       {/* The QR Code on the next row, with the reference details beside it
           — never beside the barcode. Without a QR Code they're the last row.
           The serial is here when the codes encode the internal unit id. */}
-      {(showQr || reference.length > 0) && (
+      {qrOnly && (
+        <>
+          <FittedQrCode value={value} ink={ink} paper={paper} labelBoxRef={boxRef} labelWidthMm={size.width} />
+          {reference.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3mm', flexShrink: 0, maxWidth: '100%' }}>
+              {reference.map((line, i) => (
+                <div key={i} data-one-line style={{ ...oneLine, maxWidth: '100%', fontFamily: i === 0 ? token.fontFamilyCode : undefined, fontSize: TEXT_FINE, lineHeight: TEXT_LINE_HEIGHT }}>
+                  {line}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {!qrOnly && (showQr || reference.length > 0) && (
         // The QR image carries its own quiet zone, so it sits right at the
         // safe margin and needs only the usual gap from the text.
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1mm', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: centered ? 'center' : undefined, gap: '1mm', flexShrink: 0 }}>
           {showQr && <QrCode value={value} ink={ink} paper={paper} moduleDots={QR_MODULE_DOTS} />}
           {reference.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3mm', minWidth: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: centered ? 'center' : undefined, gap: '0.3mm', minWidth: 0, maxWidth: '100%' }}>
               {reference.map((line, i) => (
                 <div key={i} data-one-line style={{ ...oneLine, fontFamily: i === 0 && !serialUnderBarcode ? token.fontFamilyCode : undefined, fontSize: TEXT_FINE, lineHeight: TEXT_LINE_HEIGHT }}>
                   {line}
@@ -409,6 +435,50 @@ function QrCode({ value, ink, paper, moduleDots }: { value: string, ink: string,
     >
       <path d={path.d} fill={ink} />
     </svg>
+  )
+}
+
+// The QR Code on a QR-only sticker: it takes whatever height the text above
+// and below leaves, centred, at the largest whole-dot module size that fits
+// it. The space is measured against the sticker's own box, so the preview's
+// zoom cancels out and the result is in real mm.
+function FittedQrCode({ value, ink, paper, labelBoxRef, labelWidthMm }: {
+  value: string
+  ink: string
+  paper: string
+  labelBoxRef: React.RefObject<HTMLDivElement | null>
+  labelWidthMm: number
+}) {
+  const areaRef = useRef<HTMLDivElement>(null)
+  const [availableMm, setAvailableMm] = useState<number | null>(null)
+  const modules = useMemo(() => qrPath(value).size + 2 * QR_QUIET_ZONE_MODULES, [value])
+
+  useLayoutEffect(() => {
+    const area = areaRef.current
+    const box = labelBoxRef.current
+    if (!area || !box) return
+    const measure = () => {
+      const mmPerPx = labelWidthMm / box.getBoundingClientRect().width
+      const rect = area.getBoundingClientRect()
+      setAvailableMm(Math.min(rect.width, rect.height) * mmPerPx)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(area)
+    return () => observer.disconnect()
+  }, [labelBoxRef, labelWidthMm])
+
+  const fitDots = availableMm == null ? QR_MODULE_DOTS : Math.floor(availableMm / (modules * PRINTER_DOT_MM))
+  const dots = Math.max(QR_MODULE_DOTS, Math.min(QR_MAX_MODULE_DOTS, fitDots))
+
+  return (
+    // Its height is the space left over, not the code's (a zero basis), so
+    // the measurement never feeds back into itself. The QR image's own quiet
+    // zone is blank already, so it reaches into the 1mm gaps either side
+    // rather than adding them on top — room for one more dot per module.
+    <div ref={areaRef} style={{ flex: '1 1 0', minHeight: 0, marginBlock: '-1mm', alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <QrCode value={value} ink={ink} paper={paper} moduleDots={dots} />
+    </div>
   )
 }
 
