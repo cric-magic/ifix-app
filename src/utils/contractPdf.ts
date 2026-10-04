@@ -49,39 +49,24 @@ async function withInlinedImages<T>(root: HTMLElement, run: () => Promise<T>): P
   }
 }
 
-export async function downloadContractPdf(element: HTMLElement, fileName: string): Promise<void> {
-  const canvas = await withInlinedImages(element, () => html2canvas(element, {
-    // 2x so the text survives the trip through a raster at print size.
-    scale: 2,
-    useCORS: true,
-    // html2canvas paints transparent as black; the page is white paper.
-    backgroundColor: '#ffffff',
-    logging: false,
-  }))
-
+// One PDF page per sheet: ContractDocument has already laid the contract out
+// into whole Legal pages (header, content, footer), so each is captured and
+// placed as it is — the PDF matches the preview and the print page for page.
+export async function downloadContractPdf(pages: HTMLElement[], fileName: string): Promise<void> {
+  if (pages.length === 0) throw new Error('No contract pages to export')
   const pdf = new jsPDF({ unit: 'pt', format: 'legal', orientation: 'portrait' })
 
-  // Fit the capture to the sheet width, then walk down it one page-height
-  // at a time — a contract runs past a single sheet and has to break across
-  // pages rather than being squashed onto one.
-  const scale = PAGE_WIDTH_PT / canvas.width
-  const scaledHeight = canvas.height * scale
-  const pageCount = Math.max(1, Math.ceil(scaledHeight / PAGE_HEIGHT_PT))
-
-  for (let page = 0; page < pageCount; page++) {
-    if (page > 0) pdf.addPage()
-    // Each page shows the same image shifted up by one page height, with
-    // the page's own clipping doing the cropping.
-    pdf.addImage(
-      canvas.toDataURL('image/png'),
-      'PNG',
-      0,
-      -page * PAGE_HEIGHT_PT,
-      PAGE_WIDTH_PT,
-      scaledHeight,
-      undefined,
-      'FAST',
-    )
+  for (const [i, page] of pages.entries()) {
+    const canvas = await withInlinedImages(page, () => html2canvas(page, {
+      // 2x so the text survives the trip through a raster at print size.
+      scale: 2,
+      useCORS: true,
+      // html2canvas paints transparent as black; the page is white paper.
+      backgroundColor: '#ffffff',
+      logging: false,
+    }))
+    if (i > 0) pdf.addPage()
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, PAGE_WIDTH_PT, PAGE_HEIGHT_PT, undefined, 'FAST')
   }
 
   pdf.save(fileName)

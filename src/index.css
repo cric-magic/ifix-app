@@ -1688,68 +1688,104 @@ label[for="password"]::after {
 }
 
 /* The printed contract. Hidden-by-visibility like the unit label, so the
-   app shell keeps its layout boxes, but the page itself can't simply be
-   pinned: it sits under half a dozen ancestors that clip (overflow:hidden
+   app shell keeps its layout boxes, but the pages themselves can't simply be
+   pinned: they sit under half a dozen ancestors that clip (overflow:hidden
    on the panel, the layout, the app-window chrome) and one that carries a
-   transform, which together clipped an absolutely-positioned page out of
+   transform, which together clipped absolutely-positioned pages out of
    existence. :has() reaches every one of those ancestors and neutralises
    the clipping, the transform and the positioning for print only, so the
-   page can anchor to the document origin and break across sheets. */
+   pages can anchor to the document origin.
+
+   ContractDocument lays the contract out as whole sheets itself — header,
+   content and footer, each exactly the paper's size with its margin inside
+   — so print just puts one sheet on each page: no browser margin (the
+   sheet has its own), a break after every sheet, and nothing reflowed. */
 @media print {
-  /* Legal (8.5 x 14in), matching the layout the contract is built for and
-     the format utils/contractPdf.ts exports — so Print and Download PDF
-     produce the same sheet rather than one reflowing against A4. */
+  /* Legal (8.5 x 14in), the size every sheet is laid out at (PAGE_WIDTH/
+     PAGE_HEIGHT in ContractDocument), and the format utils/contractPdf.ts
+     exports — so Print and Download PDF produce the same pages. */
   @page {
     size: legal portrait;
+    margin: 0;
   }
 
-  body:has(.ifix-contract-page) * {
+  body:has(.ifix-contract-pages) * {
     visibility: hidden !important;
   }
 
-  :has(.ifix-contract-page) {
+  /* Everything that neither holds the sheets nor is part of them leaves
+     the layout altogether. Hidden-but-laid-out, the app shell around them
+     re-laid at the paper's width came out a few pixels taller than a page
+     and printed a blank sheet after a one-page contract. */
+  body:has(.ifix-contract-pages) *:not(:has(.ifix-contract-pages)):not(.ifix-contract-pages, .ifix-contract-pages *) {
+    display: none !important;
+  }
+
+  :has(.ifix-contract-pages) {
     overflow: visible !important;
     height: auto !important;
+    min-height: 0 !important;
     max-height: none !important;
+    /* Nor any width of their own (the preview window's frame is wider than
+       the paper), which had the browser shrink every sheet to fit it. */
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
     transform: none !important;
-    /* FitToWidth scales the on-screen page to fit a narrow panel;
-       the printed sheet is always full size. */
+    /* FitToWidth scales the on-screen pages to fit a narrow panel;
+       the printed sheets are always full size. */
     zoom: 1 !important;
     position: static !important;
   }
 
-  body:has(.ifix-contract-page) .ifix-contract-page,
-  body:has(.ifix-contract-page) .ifix-contract-page * {
+  body:has(.ifix-contract-pages) .ifix-contract-pages,
+  body:has(.ifix-contract-pages) .ifix-contract-pages * {
     visibility: visible !important;
+  }
+
+  /* The measuring layer is for laying the pages out, never for paper. */
+  .ifix-contract-measure {
+    display: none !important;
+  }
+
+  .ifix-contract-pages {
+    position: absolute !important;
+    inset-inline-start: 0 !important;
+    top: 0 !important;
+    gap: 0 !important;
   }
 
   .ifix-contract-page {
     border-radius: 0 !important;
-    position: absolute !important;
-    inset-inline-start: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
     box-shadow: none !important;
-    aspect-ratio: auto !important;
+    margin: 0 !important;
+    break-after: page;
+  }
+
+  .ifix-contract-page:last-child {
+    break-after: auto;
   }
 }
 
 /* The header's Print Contract renders its own copy of the document (see
-   ContractPrintCopy) — invisible on screen, the one that prints. If the
+   ContractPrintCopy) — off-screen and invisible, the one that prints. It's
+   laid out rather than display: none so its pages can be measured. If the
    Contract Preview tab's copy is on the page too, that one steps aside so
-   the two don't print stacked on the same sheet. */
+   the two don't print stacked on the same sheets. */
 .ifix-print-copy {
-  display: none;
+  position: fixed;
+  left: -100000px;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 @media print {
   .ifix-print-copy {
-    display: block;
+    position: static;
   }
 
-  body:has(.ifix-print-copy) .ifix-contract-page:not(.ifix-print-copy .ifix-contract-page) {
+  body:has(.ifix-print-copy) .ifix-contract-pages:not(.ifix-print-copy .ifix-contract-pages) {
     display: none !important;
   }
 }

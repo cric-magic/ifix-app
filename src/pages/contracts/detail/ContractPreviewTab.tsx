@@ -57,11 +57,22 @@ export function ContractPreviewTab({ contract }: Props) {
 
   useEffect(() => {
     if (!exporting) return
-    const page = exportRef.current?.querySelector<HTMLElement>('.ifix-contract-page')
-    if (!page) return
-    downloadContractPdf(page, `${contract.contractNumber}.pdf`)
-      .catch(() => message.error('Could not generate the PDF'))
-      .finally(() => setExporting(false))
+    // The copy lays its pages out after measuring them, a frame or so after
+    // it mounts — so wait for them rather than capturing an empty copy.
+    let frame = 0
+    let tries = 0
+    const capture = () => {
+      const pages = [...(exportRef.current?.querySelectorAll<HTMLElement>('.ifix-contract-page') ?? [])]
+      if (pages.length === 0 && tries++ < 30) {
+        frame = requestAnimationFrame(capture)
+        return
+      }
+      downloadContractPdf(pages, `${contract.contractNumber}.pdf`)
+        .catch(() => message.error('Could not generate the PDF'))
+        .finally(() => setExporting(false))
+    }
+    capture()
+    return () => cancelAnimationFrame(frame)
   }, [exporting, contract.contractNumber])
 
   function handleDownloadSigned() {
@@ -170,7 +181,7 @@ export function ContractPreviewTab({ contract }: Props) {
           style={isMobile ? { cursor: 'zoom-in' } : undefined}
         >
           <FitToWidth width={CONTRACT_DESK_WIDTH}>
-            <ContractDocument data={data} fixedWidth />
+            <ContractDocument data={data} />
           </FitToWidth>
           {isMobile && (
             <Typography.Text type="secondary" style={{ display: 'block', textAlign: 'center', fontSize: token.fontSizeSM, padding: '12px 16px' }}>
@@ -189,13 +200,13 @@ export function ContractPreviewTab({ contract }: Props) {
         styles={{ body: { padding: 0, overflow: 'auto' } }}
       >
         <div style={{ width: CONTRACT_DESK_WIDTH }}>
-          <ContractDocument data={data} fixedWidth />
+          <ContractDocument data={data} />
         </div>
       </Drawer>
 
       {exporting && (
         <div ref={exportRef} style={{ position: 'fixed', left: -10000, top: 0, width: CONTRACT_DESK_WIDTH }} aria-hidden>
-          <ContractDocument data={data} fixedWidth />
+          <ContractDocument data={data} />
         </div>
       )}
     </div>

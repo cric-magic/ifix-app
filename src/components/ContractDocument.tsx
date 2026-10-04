@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import { ConfigProvider, Typography, theme } from 'antd'
 import { PAPER_THEME } from '../constants/paperTheme'
 import { ImageOff } from 'lucide-react'
@@ -77,18 +78,18 @@ export interface ContractDocumentData {
 // in — so the whole document renders under PAPER_THEME (see its own file for
 // why resetting the app's seeds is required, not just the algorithm).
 //
-// fixedWidth holds the sheet at its true page width instead of letting it
-// narrow to fit (and reflow into a long strip) — for a caller that scales
-// the whole page down itself, like a document viewer (ContractPreviewTab),
-// or captures it at print size (the PDF export).
+// The contract is laid out as whole Legal sheets, each at its true size —
+// the same pages on screen, on paper and in the PDF export. A caller with
+// less room scales the sheets down whole (FitToWidth), like a document
+// viewer, rather than narrowing and reflowing them.
 //
 // `indicator` outlines one section — the template editor's way of showing
 // which section a row in its list is, and where a moved one landed. Screen
 // only: nothing that prints or exports passes it.
-export function ContractDocument({ data, fixedWidth, indicator }: { data: ContractDocumentData; fixedWidth?: boolean; indicator?: SectionIndicator }) {
+export function ContractDocument({ data, indicator }: { data: ContractDocumentData; indicator?: SectionIndicator }) {
   return (
     <ConfigProvider theme={PAPER_THEME}>
-      <DocumentBody data={data} fixedWidth={fixedWidth} indicator={indicator} />
+      <DocumentBody data={data} indicator={indicator} />
     </ConfigProvider>
   )
 }
@@ -120,21 +121,270 @@ function SectionOutline({ indicator }: { indicator: SectionIndicator }) {
   )
 }
 
-function DocumentBody({ data, fixedWidth, indicator }: { data: ContractDocumentData; fixedWidth?: boolean; indicator?: SectionIndicator }) {
+function DocumentBody({ data, indicator }: { data: ContractDocumentData; indicator?: SectionIndicator }) {
   const { token } = theme.useToken()
-  const { merchant, contract, customer, product, financials, schedule, payment, content } = data
-
+  const { merchant, contract, customer, schedule, content } = data
 
   // Each configurable section's markup. The Payment system section also
   // governs the PromptPay QR beside the signatures — it's the same payment
   // channel — while the LINE QR stays either way.
   const showPaymentSystem = content.sections.some(section => section.key === 'paymentSystem' && section.visible)
-  const commission = content.commission
 
-  function renderSection(key: ContractSectionKey) {
+  // The document as a flat run of units — the pieces a page break may fall
+  // between. Most sections are one unit, kept whole; the two that can run
+  // long break more finely: the legal text between paragraphs, and the
+  // installment schedule between rows (each page's part of the table
+  // repeating the column headings). The full signing block closes the run.
+  const units = buildUnits(data, token, showPaymentSystem)
+
+  // Every unit's height at the true page width, measured off-screen and
+  // laid into pages below. Re-measured whenever the content changes size
+  // (a font arriving, a template edit), so the pages always match.
+  const measureRef = useRef<HTMLDivElement>(null)
+  const [measured, setMeasured] = useState<Measurements | null>(null)
+  const unitKey = units.map(u => u.id).join('|')
+
+  useLayoutEffect(() => {
+    const layer = measureRef.current
+    if (!layer) return
+    const measure = () => {
+      // Heights in the page's own px whatever zoom the preview is shown at
+      // (FitToWidth scales it down): divided by the ruler's known height.
+      const ruler = layer.querySelector<HTMLElement>('[data-measure="ruler"]')
+      const scale = ruler ? ruler.getBoundingClientRect().height / RULER_PX : 1
+      // Hidden for print (display: none) measures as zero — keep what's
+      // already laid out rather than collapsing every page.
+      if (!scale) return
+      const height = (key: string) => {
+        const el = layer.querySelector<HTMLElement>(`[data-measure="${key}"]`)
+        return el ? el.getBoundingClientRect().height / scale : 0
+      }
+      const next: Measurements = {
+        header: height('header'),
+        footer: height('footer'),
+        tableHead: height('table-head'),
+        units: Object.fromEntries(units.map(u => [u.id, height(u.id)])),
+      }
+      setMeasured(prev => (prev && sameMeasurements(prev, next) ? prev : next))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(layer)
+    return () => observer.disconnect()
+    // unitKey stands in for `units`, which is rebuilt every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unitKey])
+
+  const pages = measured ? paginate(units, measured) : null
+
+  const header = <DocumentHeader data={data} token={token} />
+  const footer = (page: number, total: number) => (
+    <DocumentFooter merchantName={merchant.name} customerName={customer.name} createdAt={contract.createdAt} page={page} total={total} token={token} />
+  )
+
+  return (
+    // The surface the sheets sit on — a neutral canvas like a document
+    // viewer's, so the white pages read as paper rather than as other
+    // panels. Both colours come from the light theme this renders inside,
+    // so the pages stay white on a grey desk in every app variant.
+    <div style={{ position: 'relative', background: token.colorBgLayout, padding: 32, minHeight: '100%' }}>
+      {/* The measuring layer: every unit, the header and the footer at the
+          content's true width, invisible. Not printed (index.css). */}
+      <div
+        ref={measureRef}
+        className="ifix-contract-measure"
+        aria-hidden
+        style={{ position: 'absolute', top: 0, left: 0, width: CONTENT_WIDTH, visibility: 'hidden', pointerEvents: 'none', ...SHEET_TYPE }}
+      >
+        <div data-measure="ruler" style={{ height: RULER_PX }} />
+        <div data-measure="header" style={{ display: 'flow-root' }}>{header}</div>
+        <div data-measure="footer" style={{ display: 'flow-root' }}>{footer(1, 1)}</div>
+        <div data-measure="table-head" style={{ display: 'flow-root' }}>
+          <ScheduleTable rows={[]} token={token} />
+        </div>
+        {units.map(unit => (
+          <div key={unit.id} data-measure={unit.id} style={{ display: 'flow-root' }}>
+            {unit.kind === 'row' ? <ScheduleTable rows={[schedule[unit.index]]} token={token} bodyOnly /> : unit.render()}
+          </div>
+        ))}
+      </div>
+
+      <div className="ifix-contract-pages" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {pages?.map((page, i) => (
+          <div key={i} className="ifix-contract-page" style={{
+            background: token.colorBgContainer,
+            color: token.colorText,
+            // Every sheet is exactly the paper — Legal at 96dpi — with the
+            // margin inside it, so the screen shows the page the printer
+            // prints. A narrower panel scales the whole sheet (FitToWidth)
+            // rather than reflowing it.
+            width: PAGE_WIDTH,
+            height: PAGE_HEIGHT,
+            margin: '0 auto',
+            padding: PAGE_MARGIN,
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            // The project's second elevation — the page floats above the canvas
+            // the way any detached surface does, rather than inventing a third
+            // level for this one component.
+            boxShadow: token.boxShadowSecondary,
+            // Rounded like the app's other surfaces (LG, the panel radius) on
+            // screen; the printed sheet is square (index.css's print rules).
+            borderRadius: token.borderRadiusLG,
+            // Print the blocks' grey fills (Panel) rather than letting the
+            // browser strip backgrounds; also keeps the table header's fill.
+            printColorAdjust: 'exact',
+            WebkitPrintColorAdjust: 'exact',
+            ...SHEET_TYPE,
+          }}>
+            {/* The same header on every page. */}
+            <div style={{ display: 'flow-root', flexShrink: 0 }}>{header}</div>
+
+            {/* This page's share of the content. */}
+            <div style={{ flex: 1, minHeight: 0 }}>
+              {page.map(group => (
+                <div
+                  key={group.id}
+                  data-contract-section={group.sectionKey}
+                  style={{ position: 'relative', display: 'flow-root', marginTop: group.gap }}
+                >
+                  {group.sectionKey === 'schedule' && group.rows.length > 0 ? (
+                    <>
+                      {group.units.filter(u => u.kind === 'block').map(u => (
+                        <div key={u.id} style={{ display: 'flow-root' }}>{u.render()}</div>
+                      ))}
+                      <ScheduleTable rows={group.rows.map(i => schedule[i])} token={token} />
+                    </>
+                  ) : (
+                    group.units.map(u => u.kind === 'block' && (
+                      <div key={u.id} style={{ display: 'flow-root' }}>{u.render()}</div>
+                    ))
+                  )}
+                  {indicator?.key === group.sectionKey && <SectionOutline key={indicator.flashId ?? 'hover'} indicator={indicator} />}
+                </div>
+              ))}
+            </div>
+
+            {/* The same footer on every page: the buyer's signature, so
+                every sheet is signed, and the page number. */}
+            <div style={{ display: 'flow-root', flexShrink: 0 }}>{footer(i + 1, pages.length)}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// The type every sheet is set in, measuring layer included — so what's
+// measured is what's laid out.
+const SHEET_TYPE = { fontSize: 12, lineHeight: 1.6 } as const
+
+// --- Units and pagination --------------------------------------------------
+
+type Unit =
+  // A piece kept whole. `gap` is the space above it when it doesn't open a
+  // page; `keepWithNext` holds a heading on the same page as what follows.
+  | { kind: 'block'; id: string; sectionKey: string; gap: number; keepWithNext?: boolean; render: () => React.ReactNode }
+  // One installment schedule row.
+  | { kind: 'row'; id: string; sectionKey: 'schedule'; gap: number; index: number }
+
+interface Measurements {
+  header: number
+  footer: number
+  tableHead: number
+  units: Record<string, number>
+}
+
+function sameMeasurements(a: Measurements, b: Measurements): boolean {
+  const close = (x: number, y: number) => Math.abs(x - y) < 0.5
+  return close(a.header, b.header) && close(a.footer, b.footer) && close(a.tableHead, b.tableHead)
+    && Object.keys(b.units).length === Object.keys(a.units).length
+    && Object.entries(b.units).every(([k, v]) => a.units[k] !== undefined && close(a.units[k], v))
+}
+
+// A page's content: consecutive units of one section, drawn together (the
+// schedule's rows as one table, under its heading if that's on the page).
+interface Group {
+  id: string
+  sectionKey: string
+  gap: number
+  units: Unit[]
+  rows: number[]
+}
+
+// Lays the units into pages: each page's content area is what's left of
+// the sheet after its margins, header and footer (and the space between
+// them). A unit that doesn't fit the room left starts the next page — as
+// does a heading whose next unit wouldn't fit with it. A schedule row that
+// opens a page's part of the table also pays for the repeated column
+// headings. A single unit taller than a whole page gets a page to itself.
+function paginate(units: Unit[], m: Measurements): Group[][] {
+  const room = PAGE_HEIGHT - 2 * PAGE_MARGIN - m.header - m.footer - FIT_SLACK
+  const pages: Group[][] = [[]]
+  let used = 0
+
+  const costOf = (unit: Unit, page: Group[]): number => {
+    const last = page.at(-1)
+    const gap = !last ? 0 : last.sectionKey === unit.sectionKey ? (unit.kind === 'row' ? 0 : unit.gap) : unit.gap
+    const opensTable = unit.kind === 'row' && !(last?.sectionKey === 'schedule' && last.rows.length > 0)
+    return gap + (opensTable ? m.tableHead : 0) + (m.units[unit.id] ?? 0)
+  }
+
+  units.forEach((unit, i) => {
+    let page = pages.at(-1)!
+    let cost = costOf(unit, page)
+    const next = units[i + 1]
+    const withNext = unit.kind === 'block' && unit.keepWithNext && next
+      ? (next.kind === 'row' ? m.tableHead : 0) + (m.units[next.id] ?? 0)
+      : 0
+    if (page.length > 0 && used + cost + withNext > room) {
+      pages.push([])
+      page = pages.at(-1)!
+      used = 0
+      cost = costOf(unit, page)
+    }
+    used += cost
+
+    const last = page.at(-1)
+    if (last && last.sectionKey === unit.sectionKey) {
+      last.units.push(unit)
+      if (unit.kind === 'row') last.rows.push(unit.index)
+    } else {
+      page.push({
+        id: unit.id,
+        sectionKey: unit.sectionKey,
+        gap: page.length === 0 ? 0 : unit.gap,
+        units: [unit],
+        rows: unit.kind === 'row' ? [unit.index] : [],
+      })
+    }
+  })
+  return pages
+}
+
+// Height kept spare on every page, so sub-pixel rounding between the
+// measuring layer and the sheet can never push the last line off it.
+const FIT_SLACK = 4
+
+// The measuring layer's ruler — a known height, to read the zoom it's
+// shown at.
+const RULER_PX = 1000
+
+function buildUnits(data: ContractDocumentData, token: Token, showPaymentSystem: boolean): Unit[] {
+  const { merchant, customer, product, financials, schedule, payment, content } = data
+  const commission = content.commission
+  const units: Unit[] = []
+  const block = (sectionKey: string, id: string, render: () => React.ReactNode, extra?: { gap?: number; keepWithNext?: boolean }) =>
+    units.push({ kind: 'block', id, sectionKey, gap: extra?.gap ?? SECTION_GAP, keepWithNext: extra?.keepWithNext, render })
+  const paragraphs = (text?: string) => (text ?? '').split(/\n+/).map(p => p.trim()).filter(Boolean)
+
+  for (const section of content.sections.filter(s => s.visible)) {
+    const key = section.key
     switch (key) {
       case 'parties':
-        return (
+        block(key, key, () => (
           <Panel token={token}>
             <div style={{ display: 'flex', gap: 24 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -153,9 +403,10 @@ function DocumentBody({ data, fixedWidth, indicator }: { data: ContractDocumentD
             <Rule token={token} />
             <Block text={content.bindingStatement} empty="No binding statement yet." token={token} />
           </Panel>
-        )
+        ))
+        break
       case 'asset':
-        return (
+        block(key, key, () => (
           <Panel token={token}>
             <SectionTitle>รายละเอียดสินค้า • Asset Specification</SectionTitle>
             <div style={{ display: 'flex', gap: 24 }}>
@@ -175,9 +426,10 @@ function DocumentBody({ data, fixedWidth, indicator }: { data: ContractDocumentD
               </div>
             </div>
           </Panel>
-        )
+        ))
+        break
       case 'paymentTerms':
-        return (
+        block(key, key, () => (
           <Panel token={token} highlight>
             <SectionTitle>สรุปข้อมูลทางการเงิน • Contract Financial Summary</SectionTitle>
             <div style={{ display: 'flex', gap: 24 }}>
@@ -191,25 +443,29 @@ function DocumentBody({ data, fixedWidth, indicator }: { data: ContractDocumentD
               </div>
             </div>
           </Panel>
-        )
-      case 'legal':
-        return (
-          <div>
-            <Block text={content.legalDeclarations} empty="No legal declarations yet." token={token} />
-            {content.penaltyLegalText && <Block text={content.penaltyLegalText} token={token} />}
-          </div>
-        )
+        ))
+        break
+      case 'legal': {
+        // One unit per paragraph, so long terms break between paragraphs.
+        const texts = [...paragraphs(content.legalDeclarations), ...paragraphs(content.penaltyLegalText)]
+        if (texts.length === 0) {
+          block(key, `${key}-empty`, () => <Block empty="No legal declarations yet." token={token} />)
+        }
+        texts.forEach((text, i) => block(key, `${key}-${i}`, () => <Block text={text} token={token} />, { gap: i === 0 ? SECTION_GAP : 0 }))
+        break
+      }
       case 'schedule':
-        return (
-          <>
-            <SectionTitle>
-              ตารางชำระเงิน • Installment Schedule ({financials.termMonths} งวด • รวมงวดดาวน์)
-            </SectionTitle>
-            <ScheduleTable rows={schedule} token={token} />
-          </>
-        )
+        block(key, `${key}-title`, () => (
+          <SectionTitle>
+            ตารางชำระเงิน • Installment Schedule ({financials.termMonths} งวด • รวมงวดดาวน์)
+          </SectionTitle>
+        ), { keepWithNext: true })
+        schedule.forEach((_, index) => units.push({ kind: 'row', id: `${key}-row-${index}`, sectionKey: 'schedule', gap: 0, index }))
+        // No schedule yet (a draft): the column headings alone, as before.
+        if (schedule.length === 0) block(key, `${key}-empty`, () => <ScheduleTable rows={[]} token={token} />, { gap: 0 })
+        break
       case 'nationalId':
-        return (
+        block(key, key, () => (
           <>
             <SectionTitle>รูปบัตรประชาชน &amp; ยืนยันตัวตน • Customer E-KYC Block</SectionTitle>
             <Panel token={token}>
@@ -228,9 +484,10 @@ function DocumentBody({ data, fixedWidth, indicator }: { data: ContractDocumentD
               </div>
             </Panel>
           </>
-        )
+        ))
+        break
       case 'paymentSystem':
-        return (
+        block(key, key, () => (
           <Panel token={token}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
               <span>Payment Channel <strong>{payment.bankName}</strong></span>
@@ -238,11 +495,12 @@ function DocumentBody({ data, fixedWidth, indicator }: { data: ContractDocumentD
               <span style={{ color: token.colorTextSecondary }}>ชื่อบัญชี {payment.accountName}</span>
             </div>
           </Panel>
-        )
+        ))
+        break
       case 'commission': {
         const rate = commission?.ratePercent ?? 0
         const amount = Math.round(financials.total * rate / 100)
-        return (
+        block(key, key, () => (
           <Panel token={token}>
             <SectionTitle>ค่าคอมมิชชั่น • Commission</SectionTitle>
             <div style={{ display: 'flex', gap: 24 }}>
@@ -255,99 +513,90 @@ function DocumentBody({ data, fixedWidth, indicator }: { data: ContractDocumentD
             </div>
             {commission?.text && <Block text={commission.text} token={token} />}
           </Panel>
-        )
+        ))
+        break
       }
     }
   }
 
+  // The full signing block closes the contract: both parties' signatures and
+  // the two QR codes the doc puts side by side. Top-aligned: bottom alignment
+  // let a taller caption push its QR upward and a wrapped name push its
+  // signature rule upward, so no two columns lined up. Each column starts at
+  // the same y and reserves the same signing space, which puts the rules and
+  // the QR captions on shared baselines.
+  block('signatures', 'signatures', () => (
+    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+      <Signature name={customer.name} role="ผู้เช่าซื้อ" token={token} />
+      <Signature name={merchant.name} role="ผู้ให้เช่าซื้อ" token={token} />
+      <QrSlot url={merchant.lineQrUrl} title="LINE OA • แจ้งชำระ" caption="สแกนเพื่อยืนยันสลิป" token={token} />
+      {showPaymentSystem && <QrSlot
+        url={payment.promptPayQrUrl}
+        title="PromptPay • โอนเงิน"
+        caption={`${payment.accountName} • ${payment.accountNumber}`}
+        token={token}
+      />}
+    </div>
+  ))
+
+  return units
+}
+
+// Header — merchant identity left, contract identity and the template's own
+// title right. The same on every page.
+function DocumentHeader({ data, token }: { data: ContractDocumentData; token: Token }) {
+  const { merchant, contract, content } = data
   return (
-    // The surface the sheet sits on — a neutral canvas like a document
-    // viewer's, so the white page reads as paper rather than as another
-    // panel. Both colours come from the light theme this renders inside,
-    // so the page stays white on a grey desk in every app variant.
-    <div style={{ background: token.colorBgLayout, padding: 32, minHeight: '100%' }}>
-      <div className="ifix-contract-page" style={{
-        background: token.colorBgContainer,
-        color: token.colorText,
-        // maxWidth caps it at true page width where there's room, and the
-        // aspect ratio holds the sheet's proportions where there isn't — a
-        // fixed height would have made a squeezed page a long strip, which
-        // reads less like paper than no constraint at all. Content longer
-        // than one page grows past the ratio, as a real one would spill
-        // onto a second sheet.
-        maxWidth: PAGE_WIDTH,
-        ...(fixedWidth ? { width: PAGE_WIDTH } : {}),
-        aspectRatio: `${PAGE_WIDTH} / ${PAGE_HEIGHT}`,
-        margin: '0 auto',
-        padding: 48,
-        // The project's second elevation — the page floats above the canvas
-        // the way any detached surface does, rather than inventing a third
-        // level for this one component.
-        boxShadow: token.boxShadowSecondary,
-        // Rounded like the app's other surfaces (LG, the panel radius) on
-        // screen; the printed sheet is square (index.css's print rules).
-        borderRadius: token.borderRadiusLG,
-        // Print the blocks' grey fills (Panel) rather than letting the
-        // browser strip backgrounds; also keeps the table header's fill.
-        printColorAdjust: 'exact',
-        WebkitPrintColorAdjust: 'exact',
-        fontSize: 12,
-        lineHeight: 1.6,
-      }}>
-      {/* Header — merchant identity left, contract identity and the
-          template's own title right. */}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 24 }}>
-        <Logo url={merchant.logoUrl} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 600 }}>{merchant.name} ({merchant.branchName})</div>
-          <div style={{ color: token.colorTextSecondary }}>{merchant.legalAddress}</div>
-          <div style={{ color: token.colorTextSecondary }}>{merchant.phone}</div>
-        </div>
-        <div style={{ width: 200, flexShrink: 0 }}>
-          <Field label="วันที่เขียนสัญญา" value={contract.createdAt} token={token} />
-          <Field label="สัญญาเลขที่" value={contract.number} token={token} />
-          <Field label="สินค้าจากร้าน" value={`${merchant.name} (${merchant.branchName})`} token={token} />
-          <div style={{ marginTop: 8, fontWeight: 600, fontSize: 13 }}>{content.title}</div>
-        </div>
+    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 24 }}>
+      <Logo url={merchant.logoUrl} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600 }}>{merchant.name} ({merchant.branchName})</div>
+        <div style={{ color: token.colorTextSecondary }}>{merchant.legalAddress}</div>
+        <div style={{ color: token.colorTextSecondary }}>{merchant.phone}</div>
       </div>
-
-      {/* The middle sections, in the template's order — hidden ones
-          skipped. The header above and the signatures below never move. */}
-      {content.sections.filter(section => section.visible).map(section => (
-        // Each section's own wrapper carries the spacing below it, so its
-        // box is exactly the section — what the editor's indicator outlines.
-        <div key={section.key} data-contract-section={section.key} style={{ position: 'relative', marginBottom: SECTION_GAP }}>
-          {renderSection(section.key)}
-          {indicator?.key === section.key && <SectionOutline key={indicator.flashId ?? 'hover'} indicator={indicator} />}
-        </div>
-      ))}
-
-      {/* Signatures and the two QR codes the doc puts side by side. */}
-      {/* Top-aligned: bottom alignment let a taller caption push its QR
-          upward and a wrapped name push its signature rule upward, so no
-          two columns lined up. Each column now starts at the same y and
-          reserves the same signing space, which puts the rules and the QR
-          captions on shared baselines. */}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginTop: 8 }}>
-        <Signature name={customer.name} role="ผู้เช่าซื้อ" token={token} />
-        <Signature name={merchant.name} role="ผู้ให้เช่าซื้อ" token={token} />
-        <QrSlot
-          url={merchant.lineQrUrl}
-          title="LINE OA • แจ้งชำระ"
-          caption="สแกนเพื่อยืนยันสลิป"
-          token={token}
-        />
-        {showPaymentSystem && <QrSlot
-          url={payment.promptPayQrUrl}
-          title="PromptPay • โอนเงิน"
-          caption={`${payment.accountName} • ${payment.accountNumber}`}
-          token={token}
-        />}
+      <div style={{ width: 200, flexShrink: 0 }}>
+        <Field label="วันที่เขียนสัญญา" value={contract.createdAt} token={token} />
+        <Field label="สัญญาเลขที่" value={contract.number} token={token} />
+        <Field label="สินค้าจากร้าน" value={`${merchant.name} (${merchant.branchName})`} token={token} />
+        <div style={{ marginTop: 8, fontWeight: 600, fontSize: 13 }}>{content.title}</div>
       </div>
+    </div>
+  )
+}
 
-        <div style={{ marginTop: 16, color: token.colorTextTertiary, fontSize: 11 }}>
-          เอกสารนี้จัดทำโดยระบบ {merchant.name} — {contract.createdAt} · ทุกหน้าต้องลงลายมือชื่อทั้งสองฝ่าย
+// Footer — the buyer signs every page here (the full signing block, with
+// the seller and the QR codes, closes the last page's content), beside the
+// document's provenance and the page number.
+function DocumentFooter({ merchantName, customerName, createdAt, page, total, token }: {
+  merchantName: string
+  customerName: string
+  createdAt: string
+  page: number
+  total: number
+  token: Token
+}) {
+  return (
+    <div style={{
+      marginTop: 16,
+      paddingTop: 8,
+      borderTop: `1px solid ${token.colorTextTertiary}`,
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+      gap: 16,
+      fontSize: 11,
+    }}>
+      <div style={{ color: token.colorTextTertiary, minWidth: 0 }}>
+        เอกสารนี้จัดทำโดยระบบ {merchantName} — {createdAt} · ผู้เช่าซื้อลงลายมือชื่อทุกหน้า
+        <div>หน้า {page} / {total}</div>
+      </div>
+      <div style={{ flexShrink: 0, textAlign: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>
+          ลงชื่อ
+          <span style={{ display: 'inline-block', width: 160, height: 32, borderBottom: `1px solid ${token.colorTextTertiary}` }} />
+          ผู้เช่าซื้อ
         </div>
+        <div style={{ color: token.colorTextSecondary }}>({customerName})</div>
       </div>
     </div>
   )
@@ -359,10 +608,15 @@ function DocumentBody({ data, fixedWidth, indicator }: { data: ContractDocumentD
 // utils/contractPdf.ts's export format and the @page rule in index.css, so
 // all three have to move together.
 const PAGE_WIDTH = 816
+const PAGE_HEIGHT = 1344
+
+// The sheet's margin, all round: half an inch.
+const PAGE_MARGIN = 48
+// The content's width inside the margins.
+const CONTENT_WIDTH = PAGE_WIDTH - 2 * PAGE_MARGIN
 
 // Space between the contract's middle sections.
 const SECTION_GAP = 24
-const PAGE_HEIGHT = 1344
 
 // The document at its true size: the sheet plus the grey desk's 32px either
 // side — what a caller scaling the whole page down (FitToWidth) fits.
@@ -505,7 +759,10 @@ function QrSlot({ url, title, caption, token }: { url?: string, title: string, c
   )
 }
 
-function ScheduleTable({ rows, token }: { rows: ContractDocumentData['schedule'], token: Token }) {
+// `bodyOnly` drops the column headings — for measuring a row on its own
+// (the measuring layer), every row keeping its rule so it measures at the
+// height it takes mid-table.
+function ScheduleTable({ rows, token, bodyOnly }: { rows: ContractDocumentData['schedule'], token: Token, bodyOnly?: boolean }) {
   // The same light grey block as Panel — no outline, rounded — with the rows
   // parted by thin paper-white rules rather than dark gridlines, and the
   // header a shade darker. The fills print because the sheet opts into
@@ -522,19 +779,30 @@ function ScheduleTable({ rows, token }: { rows: ContractDocumentData['schedule']
       borderRadius: token.borderRadiusLG,
       overflow: 'hidden',
     }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ background: token.colorFillTertiary }}>
-            <th style={{ ...cell, width: '12%' }}>งวดที่</th>
-            <th style={{ ...cell, width: '22%' }}>จำนวนเงิน (บาท)</th>
-            <th style={{ ...cell, width: '30%' }}>รายการ</th>
-            <th style={{ ...cell, width: '22%' }}>กำหนดชำระ</th>
-            <th style={{ ...cell, width: '14%' }}>สถานะ</th>
-          </tr>
-        </thead>
+      {/* Fixed column widths, so a page's part of the table lines up with
+          the next page's and a row measures the same alone as in the table. */}
+      <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: '12%' }} />
+          <col style={{ width: '22%' }} />
+          <col style={{ width: '30%' }} />
+          <col style={{ width: '22%' }} />
+          <col style={{ width: '14%' }} />
+        </colgroup>
+        {!bodyOnly && (
+          <thead>
+            <tr style={{ background: token.colorFillTertiary }}>
+              <th style={cell}>งวดที่</th>
+              <th style={cell}>จำนวนเงิน (บาท)</th>
+              <th style={cell}>รายการ</th>
+              <th style={cell}>กำหนดชำระ</th>
+              <th style={cell}>สถานะ</th>
+            </tr>
+          </thead>
+        )}
         <tbody>
           {rows.map((r, i) => {
-            const rowCell = i === rows.length - 1 ? { ...cell, borderBottom: 'none' } : cell
+            const rowCell = i === rows.length - 1 && !bodyOnly ? { ...cell, borderBottom: 'none' } : cell
             return (
               <tr key={i}>
                 <td style={rowCell}>{r.period}</td>

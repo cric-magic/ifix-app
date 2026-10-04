@@ -82,7 +82,7 @@ export function ContractTemplatePreview({ values, merchantId, indicator }: Props
 
   return (
     <FitToWidth width={CONTRACT_DESK_WIDTH}>
-      <ContractDocument data={data} fixedWidth indicator={indicator} />
+      <ContractDocument data={data} indicator={indicator} />
     </FitToWidth>
   )
 }
