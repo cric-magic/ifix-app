@@ -50,11 +50,51 @@ function codeFor(branch: string): string {
   return BRANCHES.find(([name]) => name === branch)![1]
 }
 
-// A readable serial: SKU plus branch, e.g. SN-IP17P-256-COR-BKK. With one
-// unit of each SKU per branch that's already unique, and it says what and
-// where a unit is without opening it.
+// A realistic manufacturer serial: ten characters, the length of a current
+// iPhone's, from the alphabet those use (digits and consonants, no vowels
+// and none of the letters that read as digits) — e.g. "F4KPX3WRN1". Real
+// serials are this short, which is what decides whether one fits a Code 128
+// barcode on a small sticker (see UnitLabel): 10 characters prints on a
+// 40 × 30 sticker with one-dot bars and on 50 × 30 with two. The old
+// SKU-plus-branch samples (SN-IP17P-256-COR-BKK, 22 characters) were too
+// long for either.
+//
+// Deterministic — the same SKU and branch always get the same serial, so
+// links and tests stay stable across reloads — and unique: a clash (vanishingly
+// unlikely) just draws again.
+const SERIAL_ALPHABET = '0123456789CDFGHJKLMNPQRTVWXY'
+const SERIAL_LENGTH = 10
+const usedSerials = new Set<string>()
+
+function seededRandom(seed: number) {
+  // mulberry32: a small, fast, repeatable pseudo-random sequence.
+  let a = seed >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0
+    let t = a
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function hashOf(text: string): number {
+  // FNV-1a, to seed each SKU and branch's own sequence.
+  let h = 0x811c9dc5
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0
+  return h
+}
+
 export function serialFor(sku: string, branch: string): string {
-  return `SN-${sku}-${codeFor(branch)}`
+  const random = seededRandom(hashOf(`${sku}|${codeFor(branch)}`))
+  for (;;) {
+    let serial = ''
+    for (let i = 0; i < SERIAL_LENGTH; i++) serial += SERIAL_ALPHABET[Math.floor(random() * SERIAL_ALPHABET.length)]
+    if (!usedSerials.has(serial)) {
+      usedSerials.add(serial)
+      return serial
+    }
+  }
 }
 
 export function unitIdFor(sku: string, branch: string): string {

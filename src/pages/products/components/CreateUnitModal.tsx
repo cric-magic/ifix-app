@@ -122,7 +122,7 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
             },
           ]}
         >
-          <Input placeholder="e.g. SN-IP17P-256-COR-BKK" />
+          <Input placeholder="e.g. F4KPX3WRN1" />
         </Form.Item>
         <Form.Item label="Model Number" name="modelNumber">
           <Input placeholder={activeProduct?.modelNumber ? `Optional — e.g. ${activeProduct.modelNumber}` : 'Optional'} />

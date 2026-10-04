@@ -28,7 +28,7 @@ const SAMPLE = {
     brand: 'Apple',
     storage: '256GB',
     model: 'iPhone 17 Pro',
-    serialNumber: 'SN-IP17P-256-COR-BKK',
+    serialNumber: 'F4KPX3WRN1',
   },
 }
 
