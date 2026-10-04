@@ -2,14 +2,15 @@ import type { BarcodeSettings, Merchant } from '../types/merchant'
 import { MERCHANT_ID, MERCHANT_NAME } from './mockUsers'
 
 // What a merchant gets before anyone visits Settings > Barcode: both code
-// types printed (a scanner that can't read one can read the other), the
+// types printed (a scanner that can't read one can read the other) on the
+// 50 × 40 sticker that has room for both on their own rows, the
 // Serial Number encoded (the identifier staff already know), and only the
 // product name alongside it. Sales price is off by default — labels sit on
 // stock that hasn't been priced for a specific contract yet.
 export const DEFAULT_BARCODE_SETTINGS: BarcodeSettings = {
   codeTypes: 'both',
   encodedValue: 'serialNumber',
-  labelSize: '40x30',
+  labelSize: '50x40',
   showProductName: true,
   showStorage: true,
   showColor: true,
@@ -97,7 +98,7 @@ export const MOCK_MERCHANTS: Merchant[] = [
     ownerUserId: null,
     collectionFeeEnabled: true,
     collectionFeeAmount: 150,
-    barcodeSettings: { ...DEFAULT_BARCODE_SETTINGS, codeTypes: 'qr', encodedValue: 'unitId' },
+    barcodeSettings: { ...DEFAULT_BARCODE_SETTINGS, codeTypes: 'qr', encodedValue: 'unitId', labelSize: '40x30' },
     createdBy: 'super-1',
     createdAt: '2024-03-14T09:00:00.000Z',
     suspendedBy: null,

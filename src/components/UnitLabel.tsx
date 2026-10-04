@@ -1,11 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { ConfigProvider, Typography, theme } from 'antd'
 import { PAPER_THEME } from '../constants/paperTheme'
 import JsBarcode from 'jsbarcode'
 import QRCode from 'qrcode'
 import type { BarcodeSettings } from '../types/merchant'
 import type { Product, ProductUnit } from '../types/product'
-import { LABEL_SIZES, PX_PER_MM } from '../constants/labelSizes'
+import { LABEL_SIZES, PRINTER_DOT_MM, PX_PER_MM } from '../constants/labelSizes'
 
 interface Props {
   unit: ProductUnit
@@ -56,13 +56,20 @@ export function UnitLabel({ unit, product, settings, forPrint }: Props) {
 // whole preview column (as ContractDocument's is in the contract editor)
 // rather than a rounded box inside a card.
 export function UnitLabelPreview({ unit, product, settings, fill, fitHint }: Omit<Props, 'forPrint'> & { fill?: boolean; fitHint?: string }) {
-  const [fits, setFits] = useState(true)
+  const [fit, setFit] = useState<LabelFit>({ textFits: true, barcodeFits: true })
   return (
     <ConfigProvider theme={PAPER_THEME}>
       <PreviewCanvas fill={fill} labelWidthMm={LABEL_SIZES[settings.labelSize].width}>
-        <LabelBody unit={unit} product={product} settings={settings} onFitChange={setFits} />
+        <LabelBody unit={unit} product={product} settings={settings} onFitChange={setFit} />
       </PreviewCanvas>
-      {!fits && (
+      {!fit.barcodeFits && (
+        // Not a field to turn off: the value itself is too long for bars a
+        // scanner can read at this width. A QR Code holds it at any length.
+        <Typography.Text type="warning" style={{ display: 'block', fontSize: 13, marginTop: 8 }}>
+          This value is too long for a scannable barcode on a {LABEL_SIZES[settings.labelSize].label} sticker. Use QR Code only for it, or a shorter value.
+        </Typography.Text>
+      )}
+      {!fit.textFits && (
         <Typography.Text type="warning" style={{ display: 'block', fontSize: 13, marginTop: 8 }}>
           Some text doesn't fit on a {LABEL_SIZES[settings.labelSize].label} sticker and is cut off.
           {fitHint ? ` ${fitHint}` : ''}
@@ -76,6 +83,15 @@ export function UnitLabelPreview({ unit, product, settings, fill, fitHint }: Omi
 // and small enough that each line fits a 40mm sticker's width.
 const TEXT_SIZE = '6.5pt'
 const TEXT_LINE_HEIGHT = 1.15
+
+// The sticker's side margin. A barcode's quiet zones sit inside the space
+// between them, so the bars never run to the edge of the roll.
+const LABEL_PADDING_X_MM = 2
+
+// Clear space between the QR Code and anything beside it — the QR Code's
+// own quiet zone, which a scanner needs to find its corners. On a white
+// sticker the paper itself is the quiet zone, so it's kept as a gap.
+const QR_QUIET_ZONE_MM = 2
 
 // How much larger than true size the preview shows the label, at most.
 const PREVIEW_ZOOM = 2
@@ -111,7 +127,15 @@ function PreviewCanvas({ fill, labelWidthMm, children }: { fill?: boolean; label
   )
 }
 
-function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & { onFitChange?: (fits: boolean) => void }) {
+// What doesn't fit the sticker: text (fixable by turning a field off or a
+// bigger sticker), or the barcode itself (a value too long to scan at this
+// width).
+interface LabelFit {
+  textFits: boolean
+  barcodeFits: boolean
+}
+
+function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & { onFitChange?: Dispatch<SetStateAction<LabelFit>> }) {
   const { token } = theme.useToken()
   const value = encodedValueFor(unit, settings)
   const size = LABEL_SIZES[settings.labelSize]
@@ -124,14 +148,15 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
 
   const showBarcode = settings.codeTypes === 'barcode' || settings.codeTypes === 'both'
   const showQr = settings.codeTypes === 'qr' || settings.codeTypes === 'both'
-  const both = settings.codeTypes === 'both'
+  // A 30mm-tall sticker has less height to share between the stacked rows.
+  const short = size.height < 40
 
   const price = unit.customPrice ?? product.salesPrice
 
   // Laid out by what people look for on a shelf or a box, top to bottom:
   // what it is (name, with the price opposite), which variant (storage,
-  // color, grade), then the codes for the scanner, then the reference
-  // details (serial, SKU, branch) small at the bottom.
+  // color, grade), then the Barcode on its own row, then the QR Code on the
+  // next with the reference details (serial, SKU, branch) beside it.
   //
   // All text is one size, solid ink, with only the name and price in bold:
   // a thermal printer can't print grey — it dithers it into speckle,
@@ -144,7 +169,14 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
     settings.showColor && product.color,
     settings.showGrade && unit.grade && `Grade ${unit.grade}`,
   ].filter((v): v is string => !!v)
+  // The Serial Number is always printed as text (per the doc). Under the
+  // barcode, as its human-readable line, when that's what it encodes;
+  // otherwise here, with the other reference details.
+  const serialUnderBarcode = showBarcode && value === unit.serialNumber
+  // One per line: beside a 10mm QR Code there's height for three, and a
+  // line of its own keeps each from being cut short.
   const reference = [
+    !serialUnderBarcode && unit.serialNumber,
     settings.showSkuCode && product.sku,
     settings.showBranch && unit.branch,
   ].filter((v): v is string => !!v)
@@ -162,7 +194,10 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
     if (!box || !onFitChange) return
     const truncated = [...box.querySelectorAll<HTMLElement>('[data-one-line]')]
       .some(el => el.scrollWidth > el.clientWidth + 1)
-    onFitChange(box.scrollHeight <= box.clientHeight + 1 && !truncated)
+    const barcodeFits = !box.querySelector('[data-too-long]')
+    const textFits = box.scrollHeight <= box.clientHeight + 1 && !truncated
+    // Only on a change — a fresh object every render would loop.
+    onFitChange(prev => (prev.textFits === textFits && prev.barcodeFits === barcodeFits ? prev : { textFits, barcodeFits }))
   })
 
   return (
@@ -172,7 +207,7 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
         // The sticker at its real size (mm), so the print matches the roll.
         width: `${size.width}mm`,
         height: `${size.height}mm`,
-        padding: '1.5mm 2mm',
+        padding: `1.5mm ${LABEL_PADDING_X_MM}mm`,
         boxSizing: 'border-box',
         overflow: 'hidden',
         background: paper,
@@ -183,12 +218,12 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
         // preview canvas (the project's second elevation, from the paper
         // theme); the printed label is the sticker itself, so no shadow.
         boxShadow: forPrint ? 'none' : token.boxShadowSecondary,
-        // Three groups — what it is, the codes, the reference details —
-        // spread top to bottom: the first against the top edge, the last
-        // against the bottom, the codes between. Whatever height the chosen
-        // fields leave over is shared between the groups rather than
-        // pooling under the last line, and the serial always prints in
-        // the same place. The 1mm gap is the least they'll ever sit apart.
+        // The groups — what it is, the Barcode, the QR Code row — spread
+        // top to bottom: the first against the top edge, the last against
+        // the bottom. Whatever height the chosen fields leave over is shared
+        // between them as extra clear space around the codes, rather than
+        // pooling under the last line. The 1mm gap is the least they'll
+        // ever sit apart.
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -219,26 +254,43 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5mm', flexShrink: 0 }}>
-        {/* 10mm either way — with every field on, the five text lines leave
-            no more height than that at 40 × 30. */}
-        {showQr && <QrCode value={value} ink={ink} paper={paper} sizeMm={10} />}
-        {showBarcode && (
-          <Barcode value={value} ink={ink} paper={paper} heightMm={both ? 8 : 9} compact={both} />
-        )}
-      </div>
-
-      {/* Reference details, smallest. The serial is always printed as
-          text, even when the codes encode the internal unit id instead —
-          per the doc's own note. */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3mm', flexShrink: 0 }}>
-        <div data-one-line style={{ ...oneLine, fontFamily: token.fontFamilyCode, fontSize: TEXT_SIZE, lineHeight: TEXT_LINE_HEIGHT }}>
-          {unit.serialNumber}
+      {/* The Barcode on a row of its own, full width, with its value printed
+          under it — the usual retail price-tag layout (POSPOS's among them).
+          Nothing else shares the row, so its quiet zones stay clear. */}
+      {showBarcode && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5mm', flexShrink: 0 }}>
+          <Barcode value={value} ink={ink} paper={paper} heightMm={short ? 7 : 9} labelWidthMm={size.width} />
+          <div data-one-line style={{ ...oneLine, maxWidth: '100%', fontFamily: token.fontFamilyCode, fontSize: TEXT_SIZE, lineHeight: TEXT_LINE_HEIGHT }}>
+            {value}
+          </div>
         </div>
-        {reference.length > 0 && (
-          <div data-one-line style={{ ...oneLine, fontSize: TEXT_SIZE, lineHeight: TEXT_LINE_HEIGHT }}>{reference.join(' · ')}</div>
-        )}
-      </div>
+      )}
+
+      {/* The QR Code on the next row, with the reference details beside it
+          — never beside the barcode. Without a QR Code they're the last row.
+          The serial is here when the codes encode the internal unit id. */}
+      {(showQr || reference.length > 0) && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: `${QR_QUIET_ZONE_MM}mm`,
+          // Under the barcode, the row's own top margin tops the 1mm gap up
+          // to the QR Code's full quiet zone above it.
+          marginTop: showBarcode && showQr ? `${QR_QUIET_ZONE_MM - 1}mm` : undefined,
+          flexShrink: 0,
+        }}>
+          {showQr && <QrCode value={value} ink={ink} paper={paper} sizeMm={short ? 9 : 10} />}
+          {reference.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3mm', minWidth: 0 }}>
+              {reference.map((line, i) => (
+                <div key={i} data-one-line style={{ ...oneLine, fontFamily: i === 0 && !serialUnderBarcode ? token.fontFamilyCode : undefined, fontSize: TEXT_SIZE, lineHeight: TEXT_LINE_HEIGHT }}>
+                  {line}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -246,32 +298,77 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
 // Code 128, per the doc ("use Code 128 for the standard Barcode") — it's the
 // only common linear symbology that encodes the full alphanumeric character
 // set a serial number or an internal id can contain.
-function Barcode({ value, ink, paper, heightMm, compact }: {
+//
+// Sized for the scanner, not stretched to fit: each module (the narrowest
+// bar) is a whole number of printer dots, as wide as the row allows up to
+// two dots, with a quiet zone of ten modules either side (Code 128's
+// minimum) left blank. A longer value gets narrower modules, never a
+// squeezed image — and once even one-dot modules don't fit, the barcode is
+// marked as cut off (data-too-long) so the fit check warns, rather than
+// printing something a scanner can't read.
+const BARCODE_QUIET_ZONE_MODULES = 10
+const BARCODE_MAX_DOTS = 2
+
+function Barcode({ value, ink, paper, heightMm, labelWidthMm }: {
   value: string
   ink: string
   paper: string
   heightMm: number
-  compact?: boolean
+  labelWidthMm: number
 }) {
   const ref = useRef<SVGSVGElement>(null)
-  const height = heightMm * PX_PER_MM
+  const modules = useMemo(() => barcodeModules(value), [value])
+  const maxWidthMm = labelWidthMm - 2 * LABEL_PADDING_X_MM
+  const fitDots = Math.floor(maxWidthMm / ((modules + 2 * BARCODE_QUIET_ZONE_MODULES) * PRINTER_DOT_MM))
+  const dots = Math.max(1, Math.min(BARCODE_MAX_DOTS, fitDots))
+  const moduleMm = dots * PRINTER_DOT_MM
+  // Centred on the sticker, but starting on a whole printer dot from its
+  // left edge — so every bar edge lands between dots and each bar prints
+  // at exactly its width. Centred freely, a 2-dot bar can straddle three
+  // dots and print a dot too wide or narrow, enough to fail a scan.
+  const barsMm = modules * moduleMm
+  const leftMm = Math.round((labelWidthMm - barsMm) / 2 / PRINTER_DOT_MM) * PRINTER_DOT_MM
 
   useEffect(() => {
     if (!ref.current) return
     JsBarcode(ref.current, value, {
       format: 'CODE128',
-      // The value is already printed as text below the codes, so the
-      // symbology's own caption would just duplicate it.
+      // The value is printed as its own text line under the bars, in the
+      // label's type, rather than the symbology's caption.
       displayValue: false,
       margin: 0,
-      height,
-      width: compact ? 1 : 1.4,
+      width: 1,
+      height: 1,
       lineColor: ink,
       background: paper,
     })
-  }, [value, ink, paper, height, compact])
+    // One unit per module, scaled to the module width set below.
+    ref.current.setAttribute('preserveAspectRatio', 'none')
+  }, [value, ink, paper])
 
-  return <svg ref={ref} style={{ flex: 1, minWidth: 0, maxWidth: '100%', height: `${heightMm}mm` }} />
+  return (
+    <svg
+      ref={ref}
+      data-too-long={fitDots < 1 || undefined}
+      style={{
+        width: `${barsMm}mm`,
+        height: `${heightMm}mm`,
+        // Measured from the sticker's edge, so less the side padding the
+        // row already starts at. The quiet zones are the blank either side.
+        marginLeft: `${leftMm - LABEL_PADDING_X_MM}mm`,
+        alignSelf: 'flex-start',
+        flexShrink: 0,
+        shapeRendering: 'crispEdges',
+      }}
+    />
+  )
+}
+
+// How many modules wide a value's Code 128 symbol is, start to stop.
+function barcodeModules(value: string): number {
+  const encoded: { encodings?: { data: string }[] } = {}
+  JsBarcode(encoded, value, { format: 'CODE128' })
+  return (encoded.encodings ?? []).reduce((sum, e) => sum + e.data.length, 0)
 }
 
 function QrCode({ value, ink, paper, sizeMm }: { value: string, ink: string, paper: string, sizeMm: number }) {
