@@ -25,6 +25,7 @@ import ifixLogoDark from '../assets/logo.png'
 import ifixLogoLight from '../assets/logo-light.png'
 import { TableScrollbars } from '../components/TableScrollbars'
 import { PriceCheckModal } from '../pages/priceCheck/PriceCheckModal'
+import { fullSkuName } from '../utils/product'
 
 const { Header, Sider, Content } = Layout
 
@@ -165,7 +166,7 @@ export function AppLayout() {
   const productDetailName = productDetailId
     ? (user.role === 'super_admin'
       ? MOCK_CATALOG_PRODUCTS.find(c => c.id === productDetailId)?.name
-      : MOCK_PRODUCTS.find(p => p.id === productDetailId)?.name)
+      : (p => p && fullSkuName(p))(MOCK_PRODUCTS.find(p => p.id === productDetailId)))
     : undefined
 
   // Unit detail route (/products/unit/:id) — same 2-level treatment

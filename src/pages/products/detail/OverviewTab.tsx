@@ -1,11 +1,12 @@
-import { Button, Tag, theme } from 'antd'
+import { Button } from 'antd'
 import { Pencil } from 'lucide-react'
 import type { AuthUser } from '../../../types/installment'
 import type { Product } from '../../../types/product'
 import { canViewCostPrice } from '../../../constants/roles'
-import { CATEGORY_LABELS, TYPE_LABELS } from '../../../constants/products'
+import { CATEGORY_LABELS } from '../../../constants/products'
 import { DetailDescriptions } from '../../../components/DetailDescriptions'
 import { DetailHeader } from '../../../components/DetailHeader'
+import { fullSkuName } from '../../../utils/product'
 import { ProductStatusTag } from '../components/ProductStatusTag'
 import { ProductPhotoThumbnail } from '../components/ProductPhotoThumbnail'
 
@@ -25,7 +26,6 @@ interface Props {
 // that's really about the product's attributes and its units.
 export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
   const showCostPrice = canViewCostPrice(actor)
-  const { token } = theme.useToken()
 
   // Storage/RAM/Connection only apply to some categories (an Accessory has
   // none of the three), so each is dropped entirely rather than shown as an
@@ -60,13 +60,9 @@ export function OverviewTab({ actor, product, canEdit, onEdit }: Props) {
     <div style={{ marginBottom: 24 }}>
       <DetailHeader
         leading={<ProductPhotoThumbnail photos={product.photos} alt={product.name} />}
-        title={product.name}
-        tags={<>
-          <Tag style={{ margin: 0, background: token.colorFillSecondary, color: token.colorTextSecondary, fontSize: token.fontSizeSM, border: 'none' }}>
-            {TYPE_LABELS[product.type]}
-          </Tag>
-          <ProductStatusTag status={product.status} />
-        </>}
+        // The full SKU name, which already carries the condition.
+        title={fullSkuName(product)}
+        tags={<ProductStatusTag status={product.status} />}
         actions={canEdit && (
           <Button icon={<Pencil size={16} strokeWidth={2.25} />} onClick={onEdit}>Edit</Button>
         )}

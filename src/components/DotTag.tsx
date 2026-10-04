@@ -1,4 +1,5 @@
 import { Tag, theme } from 'antd'
+import { tintOf } from './tones'
 
 interface Props {
   dotColor: string
@@ -6,23 +7,20 @@ interface Props {
   children: React.ReactNode
 }
 
-// Shared status-tag look: same neutral background as the default Tag
-// (App.tsx's Tag.defaultBg override), secondary text by default (small
-// tag text, antd's own fontSizeSM, not full body size) — pass textColor to
-// override the tier (e.g. tertiary for de-emphasized states like
-// unavailable/sold) — and a small dot in the semantic/functional color so
-// the color carries the meaning instead of the whole pill being tinted.
-// Was colorFillTertiary, which this theme's solid-color conversion blends
-// against colorBgLayout — the same value colorBgElevated lands on — so the
-// pill was nearly invisible on any panel (see the matching Select/Table/
-// Button fixes in App.tsx).
+// Every status tag in the app: a small dot in the status's functional
+// colour, on a faint tint of that same colour (tintOf — 16% of the dot over
+// transparent), with secondary text by default at antd's fontSizeSM. Pass
+// textColor to drop a de-emphasised state to tertiary (sold, unavailable,
+// archived). The colour lives in the dot and the fill; the text stays
+// neutral so it reads at tag size — this theme's green and amber are too
+// bright to carry small text on their own tint.
 export function DotTag({ dotColor, textColor, children }: Props) {
   const { token } = theme.useToken()
   return (
     <Tag
       style={{
         margin: 0,
-        background: token.colorFillSecondary,
+        background: tintOf(dotColor),
         color: textColor ?? token.colorTextSecondary,
         fontSize: token.fontSizeSM,
         border: 'none',

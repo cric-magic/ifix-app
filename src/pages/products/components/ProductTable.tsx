@@ -5,14 +5,14 @@ import type { ColumnsType } from 'antd/es/table'
 import type { AuthUser } from '../../../types/installment'
 import type { Product } from '../../../types/product'
 import { canManageProducts, canManageUnits, canViewCostPrice, scopedUnitList } from '../../../constants/roles'
-import { CATEGORY_LABELS, TYPE_LABELS } from '../../../constants/products'
+import { CATEGORY_LABELS } from '../../../constants/products'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 import { MOCK_CONTRACTS } from '../../../constants/mockContracts'
 import { useIconColors } from '../../../constants/iconColors'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { countAvailableUnits } from '../../../utils/product'
 import { ProductStatusTag } from './ProductStatusTag'
-import { ProductConditionTag } from './ProductConditionTag'
+import { fullSkuName } from '../../../utils/product'
 import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
 import { useIsMobile } from '../../../components/useIsMobile'
 import { MobileTableRow } from '../../../components/MobileTableRow'
@@ -114,7 +114,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
       dataIndex: 'name',
       fixed: 'left',
       key: 'name',
-      sorter: (a, b) => a.name.localeCompare(b.name),
+      sorter: (a, b) => fullSkuName(a).localeCompare(fullSkuName(b)),
       showSorterTooltip: false,
       sortIcon: ({ sortOrder }) => (
         <ChevronDown
@@ -127,11 +127,13 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
           }}
         />
       ),
-      render: (name: string, p: Product) => (
+      // The full SKU name — Product + Color + Storage + Condition, e.g.
+      // "iPhone 17 Black 256GB New" — which already says the condition, so
+      // no separate condition tag beside it.
+      render: (_: string, p: Product) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {thumbnail(p, 28)}
-          <span style={{ color: token.colorText }}>{name}</span>
-          <ProductConditionTag type={p.type} />
+          <span style={{ color: token.colorText }}>{fullSkuName(p)}</span>
         </div>
       ),
     },
@@ -183,11 +185,11 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
     ? mobileColumns<Product>(p => (
         <MobileTableRow
           leading={thumbnail(p, 44)}
-          primary={p.name}
+          primary={fullSkuName(p)}
           trailing={<ProductStatusTag status={p.status} />}
-          secondary={`${TYPE_LABELS[p.type]} · ${p.sku}`}
+          secondary={p.sku}
           trailingSecondary={formatter.format(p.salesPrice)}
-          onMore={rowActions(p).length ? () => actionSheet.open(p.name, rowActions(p)) : undefined}
+          onMore={rowActions(p).length ? () => actionSheet.open(fullSkuName(p), rowActions(p)) : undefined}
         />
       ))
     : applyColumnPicker(withColumnMinWidths(allColumns))

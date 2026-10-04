@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { fullSkuName } from '../../utils/product'
 import { Alert, message } from 'antd'
 import { useCurrentUser } from '../../contexts/AuthContext'
 import { ListToolbar } from '../../components/ListToolbar'
@@ -34,17 +35,26 @@ export function ProductsPage() {
   }
 
   const products = scopedProductList(user, MOCK_PRODUCTS)
-  const typeFiltered = typeFilter === 'all' ? products : products.filter(p => p.type === typeFilter)
   const query = search.trim().toLowerCase()
-  const filteredProducts = query
-    ? typeFiltered.filter(p =>
+  const searched = query
+    ? products.filter(p =>
+        fullSkuName(p).toLowerCase().includes(query) ||
         p.name.toLowerCase().includes(query) ||
         p.brand.toLowerCase().includes(query) ||
         p.model.toLowerCase().includes(query) ||
         p.modelNumber.toLowerCase().includes(query) ||
         p.sku.toLowerCase().includes(query),
       )
-    : typeFiltered
+    : products
+  // The condition tabs' counts: within the search, so they say how many
+  // matches each condition holds.
+  const typeCounts: Record<TypeFilter, number> = {
+    all: searched.length,
+    new: searched.filter(p => p.type === 'new').length,
+    opened: searched.filter(p => p.type === 'opened').length,
+    used: searched.filter(p => p.type === 'used').length,
+  }
+  const filteredProducts = typeFilter === 'all' ? searched : searched.filter(p => p.type === typeFilter)
   void version // trigger re-render on mutation
 
   function refresh() {
@@ -60,7 +70,7 @@ export function ProductsPage() {
   return (
     <div className="ifix-fill-page">
       <ListToolbar
-        leading={<ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />}
+        leading={<ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} counts={typeCounts} />}
         search={<ListSearch value={search} onChange={setSearch} placeholder="Search by name, brand, or SKU" mobilePlaceholder="Search products" />}
         action={canManageProducts(user) ? { label: 'Create Product', onClick: () => setCreateOpen(true) } : undefined}
       />

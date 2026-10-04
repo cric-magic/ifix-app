@@ -7,10 +7,9 @@ import { useCurrentUser } from '../../contexts/AuthContext'
 import { MOCK_PRODUCTS } from '../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
 import { canManageUnits, canPrintUnitCodes, canViewUnits, scopedAllUnits, scopedProductList } from '../../constants/roles'
-import { AVAILABILITY_LABELS, GRADE_LABELS, TAX_LABELS } from '../../constants/products'
+import { GRADE_LABELS, TAX_LABELS } from '../../constants/products'
 import { useIconColors } from '../../constants/iconColors'
-import { Select } from '../../components/AppSelect'
-import type { ProductUnit, UnitAvailability } from '../../types/product'
+import type { ProductUnit } from '../../types/product'
 import { UnitAvailabilityTag } from './components/UnitAvailabilityTag'
 import { EditUnitModal } from './components/EditUnitModal'
 import { CreateUnitModal } from './components/CreateUnitModal'
@@ -18,6 +17,7 @@ import { PrintUnitLabelModal } from './components/PrintUnitLabelModal'
 import { TableEmptyState } from '../../components/TableEmptyState'
 import { UnitProductName } from './components/UnitProductName'
 import { MarkOpenedModal } from './components/MarkOpenedModal'
+import { UnitStatusTabs, type StatusFilter } from './components/UnitStatusTabs'
 import { canMarkOpened, fullSkuName } from '../../utils/product'
 import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../constants/paginationIcons'
 import { useIsMobile } from '../../components/useIsMobile'
@@ -32,15 +32,6 @@ import { useActionSheet } from '../../components/useActionSheet'
 import { rowActionMenu, type RowAction } from '../../components/rowActions'
 
 const priceFormatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 })
-
-type AvailabilityFilter = 'all' | UnitAvailability
-
-const AVAILABILITY_OPTIONS: { value: AvailabilityFilter; label: string }[] = [
-  { value: 'all', label: 'All statuses' },
-  { value: 'available', label: AVAILABILITY_LABELS.available },
-  { value: 'reserved', label: AVAILABILITY_LABELS.reserved },
-  { value: 'sold', label: AVAILABILITY_LABELS.sold },
-]
 
 export function UnitsListPage() {
   const applyColumnPicker = useColumnPicker('units', ['serialNumber', 'availability'])
@@ -57,7 +48,7 @@ export function UnitsListPage() {
   const [printingUnit, setPrintingUnit] = useState<ProductUnit | null>(null)
   const [openingUnit, setOpeningUnit] = useState<ProductUnit | null>(null)
   const [search, setSearch] = useState('')
-  const [availability, setAvailability] = useState<AvailabilityFilter>('all')
+  const [availability, setAvailability] = useState<StatusFilter>('all')
 
   // Staff reach this list read-only, to find a unit and print its label
   // (the doc's "Generate & Print Barcode — Staff ✅ (Own branch)"); every
@@ -79,15 +70,20 @@ export function UnitsListPage() {
   const allUnits = scopedAllUnits(user, MOCK_PRODUCT_UNITS, MOCK_PRODUCTS)
   const query = search.trim().toLowerCase()
   const hasActiveFilter = !!query || availability !== 'all'
-  const units = allUnits.filter(u => {
-    const matchesSearch = !query
-      || u.serialNumber.toLowerCase().includes(query)
-      || u.unitNumber.includes(query)
-      || !!u.imei1?.toLowerCase().includes(query)
-      || !!u.imei2?.toLowerCase().includes(query)
-    const matchesAvailability = availability === 'all' || u.availability === availability
-    return matchesSearch && matchesAvailability
-  })
+  const searched = allUnits.filter(u => !query
+    || u.serialNumber.toLowerCase().includes(query)
+    || u.unitNumber.includes(query)
+    || !!u.imei1?.toLowerCase().includes(query)
+    || !!u.imei2?.toLowerCase().includes(query))
+  // The status tabs' counts: within the search, so they say how many
+  // matches each status holds.
+  const statusCounts: Record<StatusFilter, number> = {
+    all: searched.length,
+    available: searched.filter(u => u.availability === 'available').length,
+    reserved: searched.filter(u => u.availability === 'reserved').length,
+    sold: searched.filter(u => u.availability === 'sold').length,
+  }
+  const units = availability === 'all' ? searched : searched.filter(u => u.availability === availability)
   const productById = new Map(MOCK_PRODUCTS.map(p => [p.id, p]))
   const products = scopedProductList(user, MOCK_PRODUCTS)
 
@@ -225,14 +221,10 @@ export function UnitsListPage() {
   return (
     <div className="ifix-fill-page">
       <ListToolbar
+        // Status as tabs with counts, in place of an Availability dropdown —
+        // the stock reads at a glance and a tap filters to it.
+        leading={<UnitStatusTabs value={availability} onChange={setAvailability} counts={statusCounts} />}
         search={<ListSearch value={search} onChange={setSearch} placeholder="Search by serial number, IMEI or unit ID" mobilePlaceholder="Search units" />}
-        filters={[{
-          key: 'availability',
-          label: 'Availability',
-          control: <Select value={availability} onChange={setAvailability} options={AVAILABILITY_OPTIONS} style={{ width: 160 }} />,
-        }]}
-        activeFilterCount={availability !== 'all' ? 1 : 0}
-        onClearFilters={() => setAvailability('all')}
         action={canManage ? { label: 'Add Unit', onClick: () => setCreateOpen(true) } : undefined}
       />
       <ConfigProvider theme={{

@@ -49,9 +49,8 @@ export function GlobalCatalogPage() {
   const dash = <span style={{ color: token.colorTextDisabled }}>—</span>
   const query = search.trim().toLowerCase()
   const hasActiveFilter = !!query || typeFilter !== 'all'
-  const products = MOCK_CATALOG_PRODUCTS
+  const searched = MOCK_CATALOG_PRODUCTS
     .filter(c => !c.deletedAt)
-    .filter(c => typeFilter === 'all' || c.type === typeFilter)
     .filter(c =>
       !query
       || c.name.toLowerCase().includes(query)
@@ -60,6 +59,15 @@ export function GlobalCatalogPage() {
       || c.modelNumber.toLowerCase().includes(query)
       || c.skuCode.toLowerCase().includes(query),
     )
+  // The condition tabs' counts: within the search, so they say how many
+  // matches each condition holds.
+  const typeCounts: Record<TypeFilter, number> = {
+    all: searched.length,
+    new: searched.filter(p => p.type === 'new').length,
+    opened: searched.filter(p => p.type === 'opened').length,
+    used: searched.filter(p => p.type === 'used').length,
+  }
+  const products = typeFilter === 'all' ? searched : searched.filter(c => c.type === typeFilter)
 
   function refresh() {
     setVersion(v => v + 1)
@@ -177,7 +185,7 @@ export function GlobalCatalogPage() {
   return (
     <div className="ifix-fill-page">
       <ListToolbar
-        leading={<ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} />}
+        leading={<ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} counts={typeCounts} />}
         search={<ListSearch value={search} onChange={setSearch} placeholder="Search by name, brand, or SKU code" mobilePlaceholder="Search catalog" />}
         action={{ label: 'Create Product', onClick: () => { setEditing(null); setModalOpen(true) } }}
       />
