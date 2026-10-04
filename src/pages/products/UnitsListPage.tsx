@@ -82,6 +82,7 @@ export function UnitsListPage() {
   const units = allUnits.filter(u => {
     const matchesSearch = !query
       || u.serialNumber.toLowerCase().includes(query)
+      || u.unitNumber.includes(query)
       || !!u.imei1?.toLowerCase().includes(query)
       || !!u.imei2?.toLowerCase().includes(query)
     const matchesAvailability = availability === 'all' || u.availability === availability
@@ -224,7 +225,7 @@ export function UnitsListPage() {
   return (
     <div className="ifix-fill-page">
       <ListToolbar
-        search={<ListSearch value={search} onChange={setSearch} placeholder="Search by serial number or IMEI" mobilePlaceholder="Search units" />}
+        search={<ListSearch value={search} onChange={setSearch} placeholder="Search by serial number, IMEI or unit ID" mobilePlaceholder="Search units" />}
         filters={[{
           key: 'availability',
           label: 'Availability',
@@ -254,7 +255,7 @@ export function UnitsListPage() {
             onRow={isMobile ? record => ({ onClick: () => navigate(`/products/unit/${record.id}`), style: { cursor: 'pointer' } }) : undefined}
             locale={{
               emptyText: hasActiveFilter ? (
-                <TableEmptyState icon={<Smartphone size={22} strokeWidth={2.25} />} title="No units found" description="Try a different serial number, IMEI, or status." />
+                <TableEmptyState icon={<Smartphone size={22} strokeWidth={2.25} />} title="No units found" description="Try a different serial number, IMEI, unit ID, or status." />
               ) : (
                 <TableEmptyState icon={<Smartphone size={22} strokeWidth={2.25} />} title="No units yet" description="Units you add will show up here." />
               ),

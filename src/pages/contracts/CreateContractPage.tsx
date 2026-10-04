@@ -141,7 +141,7 @@ export function CreateContractPage() {
 
   const STEP_META: Record<StepKey, { title: string; description: string }> = {
     branch: { title: 'Branch', description: 'Choose the branch this contract belongs to — its inventory is what you can sell from.' },
-    device: { title: 'Device', description: 'Browse by model, or search the IMEI to find the unit.' },
+    device: { title: 'Device', description: 'Browse by model, or scan the unit sticker or IMEI to find the unit.' },
     template: { title: 'Template & Terms', description: 'Choose a contract template and set the down payment and term.' },
     deviceInfo: { title: 'Device Info & Photos', description: "Confirm the unit's IMEI and serial number, then upload box photos." },
     customer: { title: 'Customer', description: 'Look up an existing customer by ID, or fill in a new one.' },

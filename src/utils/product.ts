@@ -87,6 +87,34 @@ export function isImeiTaken(
     .some(u => [u.imei1, u.imei2].some(v => v?.trim().toLowerCase() === value))
 }
 
+// Internal Unit IDs are eight digits (see ProductUnit.unitNumber).
+export const UNIT_NUMBER_LENGTH = 8
+
+// The next free Internal Unit ID: one past the highest in use.
+export function nextUnitNumber(units: ProductUnit[]): string {
+  const highest = units.reduce((max, u) => Math.max(max, Number(u.unitNumber) || 0), 0)
+  return String(highest + 1).padStart(UNIT_NUMBER_LENGTH, '0')
+}
+
+// The unit a scanned or typed code names, matched exactly: an Internal
+// Unit ID, an IMEI or a Serial Number — whichever a sticker or a box carries.
+export function findUnitByCode(code: string, units: ProductUnit[]): ProductUnit | undefined {
+  const value = code.trim().toLowerCase()
+  if (!value) return undefined
+  return units.find(u =>
+    u.unitNumber === value
+    || u.imei1 === value
+    || u.imei2 === value
+    || u.serialNumber.toLowerCase() === value)
+}
+
+// The code on a unit that starts with typed digits — its Internal Unit ID
+// (a sticker's barcode) or either IMEI (the box) — for suggestions while a
+// code is still being typed.
+export function codeMatching(unit: ProductUnit, digits: string): string | undefined {
+  return [unit.unitNumber, unit.imei1, unit.imei2].find(code => code?.startsWith(digits))
+}
+
 // The doc's "Available Units" column: units with Availability Status =
 // Available, counted within the caller's already branch-scoped list.
 export function countAvailableUnits(units: ProductUnit[]): number {

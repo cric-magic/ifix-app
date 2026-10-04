@@ -85,7 +85,7 @@ export function BarcodeSettingsModal({ open, merchant, sampleUnit, sampleProduct
             <Form.Item
               label="Encoded value"
               name="encodedValue"
-              extra="Both code types encode the same value. The Serial Number is printed as text either way."
+              extra="Both code types encode the same value. The Internal Unit ID is eight digits, so its barcode is the easiest to scan. The Serial Number is printed as text either way."
             >
               <Radio.Group
                 options={[

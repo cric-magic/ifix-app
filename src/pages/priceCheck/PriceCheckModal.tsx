@@ -12,7 +12,7 @@ import { MOCK_CONTRACTS } from '../../constants/mockContracts'
 import { TYPE_LABELS } from '../../constants/products'
 import { scopedAllUnits, scopedProductList } from '../../constants/roles'
 import { defaultTemplateOf, financingFor, selectableTemplatesFor, termsOf } from '../../utils/quote'
-import { unitPrice, variantOf } from '../../utils/product'
+import { UNIT_NUMBER_LENGTH, codeMatching, findUnitByCode, unitPrice, variantOf } from '../../utils/product'
 import type { AuthUser } from '../../types/installment'
 import type { ProductType, ProductUnit } from '../../types/product'
 import { conditionLabel, conditionOf, groupByModel, type ModelGroup } from './models'
@@ -150,7 +150,7 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
   // Part of an IMEI: the units it could be, whatever their state — one
   // that can't be sold says why rather than going missing.
   const imeiOptions = digits.length >= MIN_IMEI_QUERY
-    ? scopedUnits.filter(u => [u.imei1, u.imei2].some(i => i?.startsWith(digits))).slice(0, 8)
+    ? scopedUnits.filter(u => codeMatching(u, digits)).slice(0, 8)
     : []
 
   const unavailableReason = (u: ProductUnit) => {
@@ -180,7 +180,7 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
     ? imeiOptions.map(u => {
         const { product } = modelOf(u)
         const reason = unavailableReason(u)
-        const imei = [u.imei1, u.imei2].find(i => i?.startsWith(digits))!
+        const imei = codeMatching(u, digits)!
         return {
           key: u.id,
           disabled: !!reason,
@@ -238,10 +238,10 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
     setSearch(text)
     setPicked(null)
     setActive(0)
-    const typed = text.trim()
-    if (typed.length !== IMEI_LENGTH || !/^\d+$/.test(typed)) return
-    const unit = availableUnits.find(u => u.imei1 === typed || u.imei2 === typed)
-    if (unit) pickUnit(unit, typed)
+    // A full code from a sticker or a box — the Internal Unit ID, an IMEI or
+    // a Serial Number — picks its unit outright.
+    const unit = findUnitByCode(text, availableUnits)
+    if (unit) pickUnit(unit, text.trim())
   }
 
   // Arrow keys move through the results and Enter picks, so the keyboard
@@ -261,7 +261,7 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
     if (e.key === 'Enter' && !items[active]?.disabled) { e.preventDefault(); items[active]?.pick() }
   }
 
-  const imeiNotFound = digits.length === IMEI_LENGTH && !scopedUnits.some(u => u.imei1 === digits || u.imei2 === digits)
+  const imeiNotFound = (digits.length === IMEI_LENGTH || digits.length === UNIT_NUMBER_LENGTH) && !findUnitByCode(digits, scopedUnits) && !scopedUnits.some(u => codeMatching(u, digits))
   const pickedGroup = models.find(g => g.key === picked?.modelKey)
   const pickedIds = new Set(pickedGroup?.products.map(p => p.id))
 
@@ -276,11 +276,11 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
           variant="borderless"
           autoFocus
           allowClear
-          aria-label="Search a model, or scan an IMEI"
+          aria-label="Search a model, or scan a barcode or IMEI"
           value={search}
           onChange={e => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Search a model, or scan an IMEI"
+          placeholder="Search a model, or scan a barcode or IMEI"
           style={{ flex: 1, paddingInline: 0 }}
         />
         <Button type="text" size="small" aria-label="Close" icon={<X size={16} strokeWidth={2.25} />} onClick={onDone} style={{ borderRadius: 6, flexShrink: 0 }} />
@@ -291,7 +291,7 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
           type="warning"
           showIcon
           style={{ marginTop: 16 }}
-          message={`No unit with this IMEI${actor.branch ? ` at ${actor.branch}` : ''}. Check the digits against the box label, or search the model instead.`}
+          message={`No unit with this ${digits.length === UNIT_NUMBER_LENGTH ? 'unit ID' : 'IMEI'}${actor.branch ? ` at ${actor.branch}` : ''}. Check the digits against the label, or search the model instead.`}
         />
       )}
 

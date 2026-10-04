@@ -86,6 +86,8 @@ export function UnitDetailPage() {
         : <span style={{ color: token.colorTextDisabled }}>—</span>,
     },
     { key: 'serialNumber', label: 'Serial Number', children: unit.serialNumber },
+    // The Internal Unit ID a sticker's codes can carry — what a scan finds.
+    { key: 'unitNumber', label: 'Unit ID', children: unit.unitNumber },
     {
       key: 'modelNumber',
       label: 'Model Number',

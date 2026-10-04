@@ -4,12 +4,13 @@ import { MERCHANT_ID, MERCHANT_NAME } from './mockUsers'
 // What a merchant gets before anyone visits Settings > Barcode: both code
 // types printed (a scanner that can't read one can read the other) on a
 // 50 × 40 sticker, whose larger QR Code is the easiest to scan, the
-// Serial Number encoded (the identifier staff already know), and only the
+// Internal Unit ID encoded (eight digits, so the barcode prints thick bars
+// that scan easily — the Serial Number still prints as text), and only the
 // product name alongside it. Sales price is off by default — labels sit on
 // stock that hasn't been priced for a specific contract yet.
 export const DEFAULT_BARCODE_SETTINGS: BarcodeSettings = {
   codeTypes: 'both',
-  encodedValue: 'serialNumber',
+  encodedValue: 'unitId',
   labelSize: '50x40',
   showProductName: true,
   showStorage: true,

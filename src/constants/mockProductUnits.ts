@@ -61,6 +61,13 @@ export function unitIdFor(sku: string, branch: string): string {
   return `unit-${sku.toLowerCase()}-${codeFor(branch).toLowerCase()}`
 }
 
+// Internal Unit IDs, numbered from 1 in the order units were stocked.
+let unitSeq = 0
+function nextUnitNumber(): string {
+  unitSeq += 1
+  return String(unitSeq).padStart(8, '0')
+}
+
 // Deterministic 15-digit IMEIs, unique per unit.
 let imeiSeq = 0
 function nextImei(): string {
@@ -82,6 +89,7 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = LINEUP_VARIANTS.flatMap(v => {
 
   const base = (branch: string): ProductUnit => ({
     id: unitIdFor(v.skuCode, branch),
+    unitNumber: nextUnitNumber(),
     productId,
     serialNumber: serialFor(v.skuCode, branch),
     imei1: isPhone ? nextImei() : undefined,

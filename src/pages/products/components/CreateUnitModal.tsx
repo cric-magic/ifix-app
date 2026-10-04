@@ -9,7 +9,7 @@ import { GRADE_LABELS, TAX_LABELS } from '../../../constants/products'
 import { BRANCHES } from '../../../constants/mockData'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
-import { fullSkuName, isImeiTaken, isSerialNumberTaken } from '../../../utils/product'
+import { fullSkuName, isImeiTaken, isSerialNumberTaken, nextUnitNumber } from '../../../utils/product'
 
 interface Props {
   open: boolean
@@ -51,6 +51,7 @@ export function CreateUnitModal({ open, actor, product, products, onClose, onCre
     if (!activeProduct) return
     const unit: ProductUnit = {
       id: `unit-${Date.now()}`,
+      unitNumber: nextUnitNumber(MOCK_PRODUCT_UNITS),
       productId: activeProduct.id,
       serialNumber: values.serialNumber,
       modelNumber: values.modelNumber?.trim() || undefined,

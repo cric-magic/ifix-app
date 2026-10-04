@@ -45,6 +45,12 @@ export type UnitAvailability = 'available' | 'reserved' | 'sold'
 
 export interface ProductUnit {
   id: string
+  // The Internal Unit ID a sticker's codes can carry instead of the Serial
+  // Number (see BarcodeSettings): eight digits, unique across units. Digits
+  // because Code 128 packs two into each symbol, so the barcode is a
+  // third the width of a serial's and its bars can print two or three
+  // printer dots thick — far easier to scan.
+  unitNumber: string
   productId: string
   // Serial Number is the unit's primary identifier — required and unique
   // across the merchant. The IMEIs are supporting identifiers: optional

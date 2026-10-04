@@ -23,7 +23,7 @@ interface Props {
 // types are shown, Barcode and QR Code must encode the same selected
 // identifier" — so this is resolved once and shared by both renderers.
 export function encodedValueFor(unit: ProductUnit, settings: BarcodeSettings): string {
-  return settings.encodedValue === 'unitId' ? unit.id : unit.serialNumber
+  return settings.encodedValue === 'unitId' ? unit.unitNumber : unit.serialNumber
 }
 
 // A physical label is always printed dark-on-white regardless of which
@@ -309,7 +309,7 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
 //
 // Sized for the scanner, not stretched to fit: each module (the narrowest
 // bar) is a whole number of printer dots, as wide as the row allows up to
-// two dots, with a quiet zone of ten modules either side (Code 128's
+// three (0.375mm), with a quiet zone of ten modules either side (Code 128's
 // minimum) left blank. A longer value gets narrower modules, never a
 // squeezed image — and once even one-dot modules don't fit, the barcode is
 // left off the sticker and marked (data-too-long) so the fit check warns,
@@ -320,7 +320,7 @@ const BARCODE_QUIET_ZONE_MODULES = 10
 // across, and no more than 12mm, past which extra height adds nothing.
 const BARCODE_MIN_HEIGHT_MM = 5
 const BARCODE_MAX_HEIGHT_MM = 12
-const BARCODE_MAX_DOTS = 2
+const BARCODE_MAX_DOTS = 3
 
 function Barcode({ value, ink, paper, labelWidthMm }: {
   value: string

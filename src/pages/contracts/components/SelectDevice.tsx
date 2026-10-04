@@ -8,7 +8,7 @@ import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 import { MOCK_CONTRACTS } from '../../../constants/mockContracts'
 import { scopedAllUnits, scopedProductList } from '../../../constants/roles'
-import { unitConditionLabel } from '../../../utils/product'
+import { UNIT_NUMBER_LENGTH, codeMatching, findUnitByCode, unitConditionLabel } from '../../../utils/product'
 import type { AuthUser } from '../../../types/installment'
 import type { Product, ProductUnit } from '../../../types/product'
 
@@ -73,7 +73,7 @@ export function SelectDevice({ actor, branch, value, onChange, currentUnitId }: 
         onChange={next => setMode(next)}
         options={[
           { value: 'browse', label: 'Browse by model' },
-          { value: 'imei', label: 'Search by IMEI' },
+          { value: 'imei', label: 'Search by IMEI or unit ID' },
         ]}
         style={{ marginBottom: 16 }}
       />
@@ -262,10 +262,11 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange, onBrowse
   // than just finding nothing.
   const units = scopedAllUnits(actor, MOCK_PRODUCT_UNITS, MOCK_PRODUCTS)
   const matches = digits.length >= MIN_QUERY
-    ? units.filter(u => u.imei1?.startsWith(digits) || u.imei2?.startsWith(digits)).slice(0, 8)
+    ? units.filter(u => codeMatching(u, digits)).slice(0, 8)
     : []
-  const exact = digits.length === IMEI_LENGTH
-    ? units.find(u => u.imei1 === digits || u.imei2 === digits)
+  // A full code: an IMEI, or a sticker's Internal Unit ID.
+  const exact = digits.length === IMEI_LENGTH || digits.length === UNIT_NUMBER_LENGTH
+    ? findUnitByCode(digits, units)
     : undefined
   const exactReason = exact ? unavailableReason(exact, branch, isPickable) : null
   const notFound = digits.length === IMEI_LENGTH && !exact
@@ -275,14 +276,14 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange, onBrowse
   function onType(text: string) {
     setQuery(text)
     const typed = text.replace(/\D/g, '')
-    const hit = typed.length === IMEI_LENGTH ? units.find(u => u.imei1 === typed || u.imei2 === typed) : undefined
+    const hit = typed.length === IMEI_LENGTH || typed.length === UNIT_NUMBER_LENGTH ? findUnitByCode(typed, units) : undefined
     if (hit && isPickable(hit)) onChange({ unitId: hit.id, productId: hit.productId, source: 'imei' })
     else onChange(null)
   }
 
   return (
     <>
-      <Form.Item required label="IMEI" extra="Type or scan the IMEI — matching units appear as you type.">
+      <Form.Item required label="IMEI or unit ID" extra="Type or scan the IMEI, or scan the unit sticker's barcode — matching units appear as you type.">
         <AutoComplete
           value={query}
           onChange={onType}
@@ -293,12 +294,12 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange, onBrowse
             // The IMEI itself is the option's value — picking a suggestion
             // fills it in, which selects the unit (onType).
             return {
-              value: (u.imei1?.startsWith(digits) ? u.imei1 : u.imei2) ?? u.id,
+              value: codeMatching(u, digits) ?? u.id,
               disabled: !!reason,
               label: (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: token.fontFamilyCode }}>{u.imei1?.startsWith(digits) ? u.imei1 : u.imei2}</div>
+                    <div style={{ fontFamily: token.fontFamilyCode }}>{codeMatching(u, digits)}</div>
                     <Typography.Text type="secondary" style={{ fontSize: 12 }} ellipsis>
                       {product ? `${product.name}${product.storage ? ` · ${product.storage}` : ''} · ${product.color}` : '—'} · {unitConditionLabel(u, product)}
                     </Typography.Text>
