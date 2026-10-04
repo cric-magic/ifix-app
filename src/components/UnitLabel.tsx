@@ -79,14 +79,16 @@ export function UnitLabelPreview({ unit, product, settings, fill, fitHint }: Omi
   )
 }
 
-// Text sizes, in three steps down the sticker's hierarchy — each sized for
-// a 203 dpi thermal printer (about 2.8 dots per point). 5.5pt is the floor:
-// its strokes are still ~1.5 dots thick; below 5pt letters start to break
-// up. The name and price, what people read first, stay a step larger.
-const TEXT_PRIMARY = '6.5pt'
-const TEXT_SECONDARY = '6pt'
+// Text sizes, in three steps down the sticker's hierarchy. Scanning comes
+// first on this sticker, so the text is kept as small as a 203 dpi thermal
+// printer (about 2.8 dots per point) still prints legibly, and every bit of
+// height it gives up goes to the barcode. 4.5pt is the floor: its strokes
+// are about one dot, and below it letters break up. The name and price,
+// what people read first, stay a step larger and bold.
+const TEXT_PRIMARY = '5.5pt'
+const TEXT_SECONDARY = '5pt'
 // The barcode's value and the reference details — fine print, read up close.
-const TEXT_FINE = '5.5pt'
+const TEXT_FINE = '4.5pt'
 const TEXT_LINE_HEIGHT = 1.1
 
 // The sticker's safe margin, on every side: nothing prints within it, so a
@@ -264,9 +266,14 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
       {/* The Barcode on a row of its own, full width, with its value printed
           under it — the usual retail price-tag layout (POSPOS's among them).
           Nothing else shares the row, so its quiet zones stay clear. */}
+      {/* Its bars take whatever height the rest leaves — taller bars read
+          from more angles — from BARCODE_MIN_HEIGHT_MM (below it the fit
+          check warns) up to BARCODE_MAX_HEIGHT_MM. */}
       {showBarcode && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5mm', flexShrink: 0 }}>
-          <Barcode value={value} ink={ink} paper={paper} heightMm={short ? 5 : 8} labelWidthMm={size.width} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5mm', flex: '1 1 0', minHeight: 0 }}>
+          <div style={{ display: 'flex', flex: '1 1 0', alignSelf: 'stretch', minHeight: `${BARCODE_MIN_HEIGHT_MM}mm`, maxHeight: `${BARCODE_MAX_HEIGHT_MM}mm` }}>
+            <Barcode value={value} ink={ink} paper={paper} labelWidthMm={size.width} />
+          </div>
           <div data-one-line style={{ ...oneLine, maxWidth: '100%', fontFamily: token.fontFamilyCode, fontSize: TEXT_FINE, lineHeight: TEXT_LINE_HEIGHT }}>
             {value}
           </div>
@@ -309,13 +316,16 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
 // rather than printing bars that run into the safe margin with no quiet
 // zone — which a scanner can't rely on and a cut can clip.
 const BARCODE_QUIET_ZONE_MODULES = 10
+// Bar height: at least 5mm, the least a handheld scanner reliably reads
+// across, and no more than 12mm, past which extra height adds nothing.
+const BARCODE_MIN_HEIGHT_MM = 5
+const BARCODE_MAX_HEIGHT_MM = 12
 const BARCODE_MAX_DOTS = 2
 
-function Barcode({ value, ink, paper, heightMm, labelWidthMm }: {
+function Barcode({ value, ink, paper, labelWidthMm }: {
   value: string
   ink: string
   paper: string
-  heightMm: number
   labelWidthMm: number
 }) {
   const ref = useRef<SVGSVGElement>(null)
@@ -355,7 +365,7 @@ function Barcode({ value, ink, paper, heightMm, labelWidthMm }: {
       ref={ref}
       style={{
         width: `${barsMm}mm`,
-        height: `${heightMm}mm`,
+        height: '100%',
         // Measured from the sticker's edge, so less the side padding the
         // row already starts at. The quiet zones are the blank either side.
         marginLeft: `${leftMm - SAFE_MARGIN_MM}mm`,
