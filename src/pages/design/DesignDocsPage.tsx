@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Typography, Button, message, theme } from 'antd'
-import { Copy, Check, ChevronDown, Crosshair, ArrowLeft } from 'lucide-react'
+import { Copy, Check, ChevronDown, Crosshair, ArrowLeft, MoreHorizontal } from 'lucide-react'
 import { useIconColors } from '../../constants/iconColors'
 import { useDevTools } from '../../contexts/DevToolsContext'
 import { SPACING_SCALE, RADIUS_SCALE, BORDER_WIDTH_SCALE } from '../../constants/designTokens'
@@ -435,6 +435,60 @@ function ButtonStateSwatch({ label, children }: { label: string; children: React
   )
 }
 
+// One row of state swatches for a Secondary or Danger button — the same six
+// states as Primary's row. Hover/Active/Focus/Disabled are pinned with the
+// .ifix-btn-force-* classes (index.css) for the same reason Primary's are:
+// pseudo-classes can't be held still. Focus is pinned too rather than real
+// (Primary's row uses autoFocus), since only one element on the page can
+// hold real focus. Inspect covers these rows as well as Primary's — they all
+// sit inside the same componentsAreaRef container.
+//
+// `text` shows the borderless Text button the way the app actually uses it:
+// small and icon-only (the row "…" menu, back arrows, close buttons).
+function ButtonStateRow({ danger, primary, text, caption }: { danger?: boolean; primary?: boolean; text?: boolean; caption: string }) {
+  const { token } = theme.useToken()
+  const props = text
+    ? { type: 'text' as const, size: 'small' as const, icon: <MoreHorizontal size={16} strokeWidth={2.25} />, 'aria-label': 'More actions' }
+    : { danger, type: primary ? 'primary' as const : undefined }
+  const states: [string, string | undefined, boolean?][] = [
+    ['Default', undefined],
+    ['Hover', 'ifix-btn-force-hover'],
+    ['Active', 'ifix-btn-force-active'],
+    ['Focus', 'ifix-btn-force-focus'],
+    ['Loading', undefined, true],
+    ['Disabled', 'ifix-btn-force-disabled'],
+  ]
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{
+        position: 'relative',
+        background: token.colorBgLayout,
+        borderRadius: 8,
+        padding: '32px 24px',
+        display: 'flex',
+        gap: 24,
+        flexWrap: 'wrap',
+        marginBottom: 8,
+      }}>
+        {/* Each row carries its own Inspect toggle, the same one as
+            Primary's — they all flip the one shared Inspect mode, so it can
+            be switched on or off from whichever row is on screen. */}
+        <div data-ifix-inspect-exclude style={{ position: 'absolute', top: 8, right: 8 }}>
+          <InspectToggle />
+        </div>
+        {states.map(([label, className, loading]) => (
+          <ButtonStateSwatch key={label} label={label}>
+            <Button {...props} className={className} loading={loading} style={label === 'Disabled' ? { cursor: 'not-allowed' } : undefined}>
+              {text ? null : 'Button'}
+            </Button>
+          </ButtonStateSwatch>
+        ))}
+      </div>
+      <Typography.Text type="secondary" style={{ fontSize: 13 }}>{caption}</Typography.Text>
+    </div>
+  )
+}
+
 // Component token specs used to be shown as hand-maintained tables here
 // (property → token name → value). Replaced by InspectToggle + the real
 // InspectorOverlay (see its definition below) — hovering/clicking an actual
@@ -767,20 +821,20 @@ export function DesignDocsPage() {
 
           <Section id="button" title="Button">
             <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
-              Starting with the most-used config first (Primary, no icon); other types/variants follow.
+              The button kinds the app uses: Primary for a page's or dialog's one main action, Secondary for everything else, Text for icon-only controls, and Danger for removing or blocking something.
             </Typography.Text>
 
+            {/* Every button row sits in componentsAreaRef, so Inspect (toggled
+                top-right of the Primary row) can scope its hover/click
+                listeners here — see InspectToggle's comment for why this
+                replaced the old hand-maintained token tables. */}
+            <div ref={componentsAreaRef} data-ifix-inspect-atomic-only>
             <SubHeading>Primary</SubHeading>
             {/* Same backdrop treatment as the Shadow section's example boxes
                 (colorBgLayout, the real page canvas color, radius 8) — the
                 swatches read as floating on the app's own background instead
-                of blending into this panel's own colorBgElevated. Wrapped in
-                componentsAreaRef so Inspect (toggled top-right) can scope its
-                hover/click listeners here — see InspectToggle's comment for
-                why this replaced the old hand-maintained token tables. */}
+                of blending into this panel's own colorBgElevated. */}
             <div
-              ref={componentsAreaRef}
-              data-ifix-inspect-atomic-only
               style={{
                 position: 'relative',
                 background: token.colorBgLayout,
@@ -848,6 +902,20 @@ export function DesignDocsPage() {
                   Button
                 </Button>
               </ButtonStateSwatch>
+            </div>
+            <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
+              One per page, dialog or step, for its main action: Save, Create, Next.
+            </Typography.Text>
+
+            <SubHeading>Secondary</SubHeading>
+            <ButtonStateRow caption="antd's default type, transparent so it sits on any surface: Cancel, Back, Look Up." />
+
+            <SubHeading>Text</SubHeading>
+            <ButtonStateRow text caption="Borderless, small and icon-only: a row's … menu, back arrows, close buttons and the sidebar toggles." />
+
+            <SubHeading>Danger</SubHeading>
+            <ButtonStateRow danger caption="Outlined, for a destructive action that sits among other buttons (Blacklist customer)." />
+            <ButtonStateRow danger primary caption="Solid, only as the confirm button of a destructive confirmation (Delete template, Blacklist)." />
             </div>
           </Section>
         </div>

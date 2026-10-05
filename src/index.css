@@ -614,6 +614,81 @@ body {
   animation: none !important;
 }
 
+/* The same pinned states for DesignDocsPage's Secondary and Danger rows.
+   These buttons have no custom treatment of their own — each value below
+   is the Button component token (or the alias token behind it) antd
+   itself applies for that state, measured off the live :hover/:active/
+   :focus-visible/:disabled styles, so a swatch can't drift from the real
+   button beside it. Focus uses antd's own focus-visible outline. */
+.ant-btn-default:not(.ant-btn-dangerous).ifix-btn-force-hover {
+  background: var(--ant-button-default-hover-bg) !important;
+  border-color: var(--ant-button-default-hover-border-color) !important;
+  color: var(--ant-button-default-hover-color) !important;
+}
+
+.ant-btn-default:not(.ant-btn-dangerous).ifix-btn-force-active {
+  background: var(--ant-button-default-active-bg) !important;
+  border-color: var(--ant-button-default-active-border-color) !important;
+  color: var(--ant-button-default-active-color) !important;
+}
+
+.ant-btn-default.ant-btn-dangerous.ifix-btn-force-hover {
+  border-color: var(--ant-color-error-hover) !important;
+  color: var(--ant-color-error-hover) !important;
+}
+
+.ant-btn-default.ant-btn-dangerous.ifix-btn-force-active {
+  border-color: var(--ant-color-error-active) !important;
+  color: var(--ant-color-error-active) !important;
+}
+
+.ant-btn-primary.ant-btn-dangerous.ifix-btn-force-hover {
+  background: var(--ant-color-error-hover) !important;
+}
+
+.ant-btn-primary.ant-btn-dangerous.ifix-btn-force-active {
+  background: var(--ant-color-error-active) !important;
+}
+
+.ant-btn-default.ifix-btn-force-focus,
+.ant-btn-primary.ant-btn-dangerous.ifix-btn-force-focus {
+  outline: 1px solid var(--ant-color-primary-border);
+  outline-offset: 1px;
+}
+
+.ant-btn-default.ifix-btn-force-disabled,
+.ant-btn-primary.ant-btn-dangerous.ifix-btn-force-disabled {
+  background: var(--ant-button-default-bg-disabled) !important;
+  border-color: var(--ant-button-border-color-disabled) !important;
+  color: var(--ant-color-text-disabled) !important;
+}
+
+/* Text (borderless, icon-only) — same pinned-state approach. Its icon
+   follows the global button-icon rule further up (secondary at rest,
+   hover color on hover/focus), so the pinned states bump it the same way. */
+.ant-btn-text.ifix-btn-force-hover {
+  background: var(--ant-button-text-hover-bg) !important;
+}
+
+.ant-btn-text.ifix-btn-force-active {
+  background: var(--ant-color-bg-text-active) !important;
+}
+
+.ant-btn-text.ifix-btn-force-hover .ant-btn-icon svg,
+.ant-btn-text.ifix-btn-force-active .ant-btn-icon svg,
+.ant-btn-text.ifix-btn-force-focus .ant-btn-icon svg {
+  color: var(--ant-color-icon-hover);
+}
+
+.ant-btn-text.ifix-btn-force-focus {
+  outline: 1px solid var(--ant-color-primary-border);
+  outline-offset: 1px;
+}
+
+.ant-btn-text.ifix-btn-force-disabled {
+  color: var(--ant-color-text-disabled) !important;
+}
+
 /* Light swaps the beam color: a white beam (the default, above) reads as a
    highlight against Dark's navy surface, but against Light's near-white
    surface it would barely register — so the ring becomes the brand color
