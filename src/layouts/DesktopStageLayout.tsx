@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { theme } from 'antd'
+import { App as AntApp, ConfigProvider, message, notification, theme } from 'antd'
 import { Outlet } from 'react-router-dom'
 import { useDevTools } from '../contexts/DevToolsContext'
 import { AppWindowProvider } from '../contexts/AppWindowContext'
@@ -53,6 +53,20 @@ export function DesktopStageLayout() {
     setAppWindowEl(contentEl)
     return () => setAppWindowEl(null)
   }, [contentEl, setAppWindowEl])
+
+  // The static message/notification calls (`message.success(...)` imported
+  // straight from antd, used across the pages) don't read ConfigProvider
+  // context, so their toasts are pointed at the window here instead — the
+  // same place the contextual ones mount (see the ConfigProvider below).
+  useEffect(() => {
+    if (!contentEl) return
+    message.config({ getContainer: () => contentEl })
+    notification.config({ getContainer: () => contentEl })
+    return () => {
+      message.config({ getContainer: () => document.body })
+      notification.config({ getContainer: () => document.body })
+    }
+  }, [contentEl])
 
   const startResize = (dir: ResizeDir) => (e: React.MouseEvent) => {
     e.preventDefault()
@@ -190,9 +204,28 @@ export function DesktopStageLayout() {
                 app window rather than covering the whole desktop canvas.
                 `position: relative` makes this div the containing block antd
                 positions the portaled content against. */}
-            <AppWindowProvider value={contentEl}>
-              <Outlet />
-            </AppWindowProvider>
+            {/* Every overlay a page opens — Modal, confirm dialog (App.useApp's
+                modal), Drawer, message and notification toasts — mounts in
+                the window too, through this ConfigProvider's
+                getPopupContainer. Outside it they covered the whole desktop
+                canvas, and InspectorOverlay (scoped to the window) couldn't
+                reach them. antd calls getPopupContainer with no node, or with
+                document.body, for those whole-screen overlays; anchored
+                popups (Dropdown, Select, Tooltip) pass their trigger
+                instead, and keep going to document.body as before, so an
+                open menu is never clipped by the window's scroll area. The
+                nested AntApp gives App.useApp() a holder inside this
+                provider, so its modal/message pick the container up too. */}
+            <ConfigProvider getPopupContainer={node => (!node || node === document.body) && contentEl ? contentEl : document.body}>
+              {/* A real wrapper element (antd's cssVar mode needs one to
+                  scope its variables to), kept full-height so the pages'
+                  own height: 100% chain still reaches the window. */}
+              <AntApp style={{ height: '100%' }}>
+                <AppWindowProvider value={contentEl}>
+                  <Outlet />
+                </AppWindowProvider>
+              </AntApp>
+            </ConfigProvider>
           </div>
         </div>
 
