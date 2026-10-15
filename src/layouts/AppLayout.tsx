@@ -36,7 +36,7 @@ const PAGE_TITLES: Record<string, string> = {
   'merchants': 'Merchants',
   'branches': 'Branches',
   'settings': 'Workspace Settings',
-  'account': 'Account Settings',
+  'account': 'My account',
 }
 
 const SETTINGS_ITEMS = [
@@ -482,7 +482,7 @@ export function AppLayout() {
                       label: (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
                           <Button type="text" size="small" style={{ borderRadius: 6, justifySelf: 'start' }} icon={<ChevronLeft size={16} strokeWidth={2.25} />} />
-                          <span>Settings</span>
+                          <span>My account</span>
                           <span />
                         </div>
                       ),
@@ -610,6 +610,28 @@ export function AppLayout() {
                       label: 'Branches',
                       onClick: () => go('/branches'),
                     }] : []),
+                    // Workspace Settings, last in the list. It used to be
+                    // reachable only from the workspace name's menu (still
+                    // there), which clients didn't find. Opens the Settings
+                    // sub-menu the same way Products opens its own — so it
+                    // carries Products' chevron too.
+                    {
+                      key: 'workspace-settings',
+                      icon: navIcon(<Settings size={16} strokeWidth={2.25} />),
+                      style: { paddingRight: 4 },
+                      label: (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                          <span>Settings</span>
+                          <Button
+                            type="text"
+                            size="small"
+                            style={{ borderRadius: 6 }}
+                            icon={<ChevronRight size={14} strokeWidth={2.25} />}
+                          />
+                        </div>
+                      ),
+                      onClick: () => openSection('/settings/account'),
+                    },
                   ]}
                 />
               </div>
@@ -622,7 +644,7 @@ export function AppLayout() {
             dropdownRender={menu => <div style={{ margin: '0 4px 4px' }}>{menu}</div>}
             menu={{
               items: [
-                { key: 'settings', icon: <User size={16} strokeWidth={2.25} />, label: 'Account Settings' },
+                { key: 'settings', icon: <User size={16} strokeWidth={2.25} />, label: 'My account' },
                 { type: 'divider' },
                 { key: 'logout', icon: <LogOut size={16} strokeWidth={2.25} />, label: 'Log out' },
               ],
