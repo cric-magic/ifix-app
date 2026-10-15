@@ -50,19 +50,16 @@ export function ContractsListPage() {
     return matchesSearch && matchesBranch
   })
 
-  // Newest first. For an Owner/Admin — who approves contracts — the ones
-  // waiting on them come first of all, so the list opens on their to-do:
-  // Pending Approval (not yet picked up), then Under Review (being looked
-  // at).
-  const adminRank = (c: { status: string }) =>
+  // Newest first, with the contracts waiting on approval at the top for
+  // every role, so the list opens on what's in flight: Pending Approval
+  // (not yet picked up), then Under Review (being looked at).
+  const approvalRank = (c: { status: string }) =>
     c.status === 'pending_approval' ? 0 : c.status === 'under_review' ? 1 : 2
   const filtered = searched
     .filter(c => status === 'all' || c.status === status)
     .sort((a, b) => {
-      if (isAdmin) {
-        const rank = adminRank(a) - adminRank(b)
-        if (rank) return rank
-      }
+      const rank = approvalRank(a) - approvalRank(b)
+      if (rank) return rank
       return b.createdAt.localeCompare(a.createdAt)
     })
 

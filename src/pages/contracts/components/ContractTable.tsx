@@ -36,15 +36,14 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
       fixed: 'left',
       render: (val: string) => <span style={{ color: token.colorText }}>{val}</span>,
     },
-    // When it was created — Owner/Admin only, like Branch and Net Position
-    // below. Right after the number rather than with those two, so it's in
-    // view without scrolling the table sideways. Same date format as Next
-    // Due.
-    ...(showBranchColumns ? [{
+    // When it was created, for every role. Right after the number, so it's
+    // in view without scrolling the table sideways. Same date format as
+    // Next Due.
+    {
       title: 'Created',
       key: 'createdAt',
-      render: (_: unknown, c: Contract) => dayjs(c.createdAt).format('YYYY-MM-DD'),
-    }] : []),
+      render: (_, c) => dayjs(c.createdAt).format('YYYY-MM-DD'),
+    },
     { title: 'Customer', key: 'customer', render: (_, c) => c.customer.fullName },
     {
       title: 'Device',
