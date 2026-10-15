@@ -1,4 +1,5 @@
 import { ConfigProvider, Table, theme } from 'antd'
+import dayjs from 'dayjs'
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
@@ -35,6 +36,15 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
       fixed: 'left',
       render: (val: string) => <span style={{ color: token.colorText }}>{val}</span>,
     },
+    // When it was created — Owner/Admin only, like Branch and Net Position
+    // below. Right after the number rather than with those two, so it's in
+    // view without scrolling the table sideways. Same date format as Next
+    // Due.
+    ...(showBranchColumns ? [{
+      title: 'Created',
+      key: 'createdAt',
+      render: (_: unknown, c: Contract) => dayjs(c.createdAt).format('YYYY-MM-DD'),
+    }] : []),
     { title: 'Customer', key: 'customer', render: (_, c) => c.customer.fullName },
     {
       title: 'Device',

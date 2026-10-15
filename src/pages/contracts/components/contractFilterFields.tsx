@@ -1,21 +1,7 @@
 import { Select } from '../../../components/AppSelect'
 import type { ListFilterField } from '../../../components/ListToolbar'
 import { BRANCHES } from '../../../constants/mockData'
-import type { ContractStatusFilter } from './ContractFilters'
-
-const STATUS_OPTIONS: { value: ContractStatusFilter; label: string }[] = [
-  { value: 'all', label: 'All statuses' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'pending_approval', label: 'Pending Approval' },
-  { value: 'under_review', label: 'Under Review' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'awaiting_signature', label: 'Awaiting Signature' },
-  { value: 'pending_payment', label: 'Pending Payment' },
-  { value: 'active', label: 'Active' },
-  { value: 'overdue', label: 'Overdue' },
-  { value: 'settled', label: 'Settled' },
-]
+import { ContractStatusSelect, type ContractStatusFilter } from './ContractFilters'
 
 // The Contracts list's filters, as ListToolbar fields — inline dropdowns on
 // desktop, labelled and stacked in the filter sheet on mobile.
@@ -30,7 +16,7 @@ export function contractFilterFields({ status, onStatusChange, showBranchFilter,
     {
       key: 'status',
       label: 'Status',
-      control: <Select value={status} onChange={onStatusChange} options={STATUS_OPTIONS} style={{ width: 200 }} />,
+      control: <ContractStatusSelect value={status} onChange={onStatusChange} />,
     },
     ...(showBranchFilter ? [{
       key: 'branch',

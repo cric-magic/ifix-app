@@ -38,7 +38,7 @@ export function ContractsListPage() {
   const scoped = scopedContractList(user, MOCK_CONTRACTS)
 
   const query = search.trim().toLowerCase()
-  const filtered = scoped.filter(c => {
+  const searched = scoped.filter(c => {
     const matchesSearch = !query ||
       c.contractNumber.toLowerCase().includes(query) ||
       c.customer.fullName.toLowerCase().includes(query) ||
@@ -46,10 +46,22 @@ export function ContractsListPage() {
       c.device.serialNumber.toLowerCase().includes(query) ||
       !!c.device.imei1?.toLowerCase().includes(query) ||
       !!c.device.imei2?.toLowerCase().includes(query)
-    const matchesStatus = status === 'all' || c.status === status
     const matchesBranch = !branch || c.branch === branch
-    return matchesSearch && matchesStatus && matchesBranch
+    return matchesSearch && matchesBranch
   })
+
+  // Newest first. For an Owner/Admin — who approves contracts — the ones
+  // waiting on that approval (Pending Approval) come first of all, so the
+  // list opens on their to-do.
+  const filtered = searched
+    .filter(c => status === 'all' || c.status === status)
+    .sort((a, b) => {
+      if (isAdmin) {
+        const pending = Number(b.status === 'pending_approval') - Number(a.status === 'pending_approval')
+        if (pending) return pending
+      }
+      return b.createdAt.localeCompare(a.createdAt)
+    })
 
   return (
     <div className="ifix-fill-page">
