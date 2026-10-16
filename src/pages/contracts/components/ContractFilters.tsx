@@ -1,7 +1,9 @@
 import type { ContractStatus } from '../../../types/contract'
 import { ListSearch } from '../../../components/ListSearch'
 import { Select } from '../../../components/AppSelect'
-import { CONTRACT_STATUS_LABELS, FILTERABLE_CONTRACT_STATUSES, useContractStatusColors } from './contractStatus'
+import { useTones } from '../../../components/tones'
+import { CONTRACT_STATUS_BADGES } from '../../../constants/statusBadges'
+import { FILTERABLE_CONTRACT_STATUSES } from './contractStatus'
 
 export type ContractStatusFilter = 'all' | ContractStatus
 
@@ -19,17 +21,17 @@ export function ContractSearch({ value, onChange }: { value: string; onChange: (
 
 // The Contracts list's Status filter: a dropdown as before, with each
 // status's coloured dot beside its name — the same colour as its tag in the
-// table (useContractStatusColors), in the list and on the picked value.
+// table (its tone in CONTRACT_STATUS_BADGES), in the list and on the picked value.
 export function ContractStatusSelect({ value, onChange }: { value: ContractStatusFilter; onChange: (val: ContractStatusFilter) => void }) {
-  const colors = useContractStatusColors()
+  const tones = useTones()
   const options = [
     { value: 'all' as const, label: 'All statuses' },
     ...FILTERABLE_CONTRACT_STATUSES.map(s => ({
       value: s,
       label: (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: colors[s], flexShrink: 0 }} />
-          {CONTRACT_STATUS_LABELS[s]}
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: tones[CONTRACT_STATUS_BADGES[s].tone].dot, flexShrink: 0 }} />
+          {CONTRACT_STATUS_BADGES[s].label}
         </span>
       ),
     })),

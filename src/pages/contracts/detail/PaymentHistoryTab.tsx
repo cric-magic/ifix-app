@@ -77,7 +77,7 @@ export function PaymentHistoryTab({ contract, actor, onChanged }: Props) {
         </span>
       ),
     },
-    { title: 'Method', dataIndex: 'method', key: 'method', render: (val: ContractPaymentRecord['method']) => <DotTag dotColor={token.colorTextTertiary}>{METHOD_LABELS[val]}</DotTag> },
+    { title: 'Method', dataIndex: 'method', key: 'method', render: (val: ContractPaymentRecord['method']) => <DotTag tone="neutral">{METHOD_LABELS[val]}</DotTag> },
     {
       title: 'Slip',
       dataIndex: 'slipPhotos',

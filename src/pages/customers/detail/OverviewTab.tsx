@@ -1,7 +1,8 @@
 import { Button, theme } from 'antd'
 import { Pencil, ShieldAlert, ShieldCheck } from 'lucide-react'
 import type { Customer } from '../../../types/customer'
-import { DotTag } from '../../../components/DotTag'
+import { StatusTag } from '../../../components/DotTag'
+import { CUSTOMER_STANDING_BADGES } from '../../../constants/statusBadges'
 import { DetailDescriptions } from '../../../components/DetailDescriptions'
 import { DetailHeader } from '../../../components/DetailHeader'
 
@@ -25,8 +26,8 @@ export function OverviewTab({ customer, canEdit, canToggleBlacklist, onEdit, onT
       <DetailHeader
         title={customer.fullName}
         tags={customer.blacklisted
-          ? <DotTag dotColor={token.colorError}>Blacklisted</DotTag>
-          : <DotTag dotColor={token.colorSuccess}>Good Standing</DotTag>}
+          ? <StatusTag badge={CUSTOMER_STANDING_BADGES.blacklisted} />
+          : <StatusTag badge={CUSTOMER_STANDING_BADGES.good_standing} />}
         actions={(canToggleBlacklist || canEdit) && (
           <>
             {canToggleBlacklist && (

@@ -38,8 +38,8 @@ export function CountTabs<T extends string>({ value, onChange, tabs }: Props<T>)
 
   const pill = (count: number, tone: Tone = 'neutral') => (
     <span style={{
-      background: tones[tone].background,
-      color: tones[tone].color,
+      background: tones[tone].fill,
+      color: token.colorTextSecondary,
       display: 'inline-block',
       minWidth: 20,
       paddingInline: 6,
