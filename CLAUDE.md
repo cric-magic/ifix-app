@@ -42,6 +42,14 @@ If a spot check ever turns up a literal color value, convert it to one of the ab
 | Card / panel bg | `token.colorBgElevated` |
 | Border | `token.colorBorderSecondary` |
 
+### Status badges — tone tokens + the status map
+Every status badge (tag, count-tab pill, filter dot) is drawn from a **tone**, never from an antd colour token directly. Two layers:
+
+- **Tone tokens** (`src/components/tones.ts`): `primary`, `success`, `warning`, `error`, `neutral`, `purple`, `cyan`, `lime`, `magenta`. Each one has a `dot` (its source token: `colorPrimary`/`colorSuccess`/`colorWarning`/`colorError`/`colorTextTertiary`, or antd's `purple6`/`cyan6`/`lime6`/`magenta6` presets) and a `fill` (that dot at 16% opacity, as an 8-digit hex like `#20AA5329`, so it stays see-through on any surface). The text is always `colorTextSecondary`, or `colorTextTertiary` when `muted`.
+- **The status map** (`src/constants/statusBadges.ts`): every status in the app → `{ label, tone, muted? }`, grouped by entity (`CONTRACT_STATUS_BADGES`, `UNIT_AVAILABILITY_BADGES`, …). Render one with `<StatusTag badge={…} />`. For a plain label that has no status, use `<DotTag tone="neutral">`.
+
+A new status gets an entry in the status map, and its tone has to be one of the existing tones. If none fits, add a new tone to `tones.ts` (dot token + the same fill rule), not a one-off colour. `/design-docs` → Status badges renders from both files, so it never needs updating separately.
+
 ### Icon colors
 Icons render via `currentColor`, so there is no separate icon color scale — reuse the text token scale:
 

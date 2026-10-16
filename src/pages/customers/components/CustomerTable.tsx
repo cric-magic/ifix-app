@@ -5,7 +5,8 @@ import type { ColumnsType } from 'antd/es/table'
 import type { Customer } from '../../../types/customer'
 import type { Contract } from '../../../types/contract'
 import { TableEmptyState } from '../../../components/TableEmptyState'
-import { DotTag } from '../../../components/DotTag'
+import { StatusTag } from '../../../components/DotTag'
+import { CUSTOMER_STANDING_BADGES } from '../../../constants/statusBadges'
 import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
 import { useIsMobile } from '../../../components/useIsMobile'
 import { MobileTableRow } from '../../../components/MobileTableRow'
@@ -41,8 +42,8 @@ export function CustomerTable({ customers, contracts, search }: Props) {
       title: 'Status',
       key: 'blacklisted',
       render: (_, c) => c.blacklisted
-        ? <DotTag dotColor={token.colorError}>Blacklisted</DotTag>
-        : <DotTag dotColor={token.colorSuccess}>Good Standing</DotTag>,
+        ? <StatusTag badge={CUSTOMER_STANDING_BADGES.blacklisted} />
+        : <StatusTag badge={CUSTOMER_STANDING_BADGES.good_standing} />,
     },
   ]
 
@@ -54,8 +55,8 @@ export function CustomerTable({ customers, contracts, search }: Props) {
       <MobileTableRow
         primary={c.fullName}
         trailing={c.blacklisted
-          ? <DotTag dotColor={token.colorError}>Blacklisted</DotTag>
-          : <DotTag dotColor={token.colorSuccess}>Good Standing</DotTag>}
+          ? <StatusTag badge={CUSTOMER_STANDING_BADGES.blacklisted} />
+          : <StatusTag badge={CUSTOMER_STANDING_BADGES.good_standing} />}
         secondary={`${c.phone} · ${c.nationalId}`}
         trailingSecondary={`${active} active`}
       />

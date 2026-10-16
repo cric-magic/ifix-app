@@ -5,7 +5,8 @@ import type { ColumnsType } from 'antd/es/table'
 import type { ContractTemplate } from '../../../../types/contractTemplate'
 import type { Contract } from '../../../../types/contract'
 import { TableEmptyState } from '../../../../components/TableEmptyState'
-import { DotTag } from '../../../../components/DotTag'
+import { StatusTag } from '../../../../components/DotTag'
+import { CONTRACT_TEMPLATE_STATUS_BADGES } from '../../../../constants/statusBadges'
 import { MOCK_USER_ACCOUNTS } from '../../../../constants/mockUsers'
 import { ContractTemplatePreviewDrawer } from './ContractTemplatePreviewDrawer'
 import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../../constants/paginationIcons'
@@ -18,12 +19,6 @@ import { rowActionMenu, type RowAction } from '../../../../components/rowActions
 import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../../components/mobileTable'
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
-
-const STATUS_LABELS: Record<ContractTemplate['status'], string> = {
-  draft: 'Draft',
-  active: 'Active',
-  archived: 'Archived',
-}
 
 interface Props {
   templates: ContractTemplate[]
@@ -107,10 +102,7 @@ export function ContractTemplateTable({ templates, contracts, canManage, hasActi
     )
   }
 
-  const statusTag = (t: ContractTemplate) => {
-    const dotColor = t.status === 'active' ? token.colorSuccess : t.status === 'archived' ? token.colorTextTertiary : token.colorWarning
-    return <DotTag dotColor={dotColor}>{STATUS_LABELS[t.status]}</DotTag>
-  }
+  const statusTag = (t: ContractTemplate) => <StatusTag badge={CONTRACT_TEMPLATE_STATUS_BADGES[t.status]} />
 
   const columns: ColumnsType<ContractTemplate> = [
     {

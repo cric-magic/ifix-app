@@ -1,7 +1,7 @@
 import type { ProductType } from '../../../types/product'
 import { TYPE_LABELS } from '../../../constants/products'
 import { CountTabs } from '../../../components/CountTabs'
-import { CONDITION_TONES } from './conditionTones'
+import { PRODUCT_CONDITION_BADGES } from '../../../constants/statusBadges'
 
 export type TypeFilter = 'all' | ProductType
 
@@ -30,7 +30,7 @@ export function ProductTypeTabs({ activeType, onChange, counts }: Props) {
         count: counts[type],
         // All, the total, in the brand blue as on the Units list; each
         // condition in its own tone, the same as its tag.
-        tone: type === 'all' ? 'primary' : CONDITION_TONES[type],
+        tone: type === 'all' ? 'primary' : PRODUCT_CONDITION_BADGES[type].tone,
       }))}
     />
   )

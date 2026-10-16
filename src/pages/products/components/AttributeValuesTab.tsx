@@ -6,7 +6,8 @@ import { attributeValues, type AttributeTypeMeta, type AttributeValueRow } from 
 import { MOCK_PRODUCT_ATTRIBUTES } from '../../../constants/mockProductAttributes'
 import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
 import { countProductsUsingAttribute } from '../../../utils/product'
-import { DotTag } from '../../../components/DotTag'
+import { StatusTag } from '../../../components/DotTag'
+import { ATTRIBUTE_VALUE_BADGES } from '../../../constants/statusBadges'
 import { TableEmptyState } from '../../../components/TableEmptyState'
 import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import { ListToolbar } from '../../../components/ListToolbar'
@@ -103,9 +104,7 @@ export function AttributeValuesTab({ meta }: Props) {
   }
 
   const statusTag = (r: AttributeValueRow) => (
-    <DotTag dotColor={r.enabled ? token.colorSuccess : token.colorTextTertiary}>
-      {r.enabled ? 'Enabled' : 'Disabled'}
-    </DotTag>
+    <StatusTag badge={ATTRIBUTE_VALUE_BADGES[r.enabled ? 'enabled' : 'disabled']} />
   )
 
   const columns: ColumnsType<AttributeValueRow> = [

@@ -5,6 +5,9 @@ import { useIconColors } from '../../constants/iconColors'
 import { useDevTools } from '../../contexts/DevToolsContext'
 import { SPACING_SCALE, RADIUS_SCALE, BORDER_WIDTH_SCALE } from '../../constants/designTokens'
 import { toHex } from '../../utils/colorTokenLookup'
+import { DotTag, StatusTag } from '../../components/DotTag'
+import { TONE_SOURCES, TONE_FILL_ALPHA, useTones } from '../../components/tones'
+import { STATUS_BADGE_GROUPS } from '../../constants/statusBadges'
 
 // Grouped nav, same shape as antd's own docs sidebar (a group label that
 // toggles collapse, non-navigable itself, over a set of real section links).
@@ -29,6 +32,7 @@ const TOC_GROUPS = [
     label: 'Components',
     items: [
       { id: 'button', label: 'Button' },
+      { id: 'status-badges', label: 'Status badges' },
     ],
   },
 ]
@@ -495,6 +499,101 @@ function ButtonStateRow({ danger, primary, text, caption }: { danger?: boolean; 
 // rendered instance shows the same info, live off computed styles, so it
 // can't drift out of sync the way a manually-copied table could.
 
+// A value in the Status badges tables that copies on click — the same
+// click-to-copy (with the execCommand fallback) as Swatch's.
+function CopyValue({ value }: { value: string }) {
+  const { token } = theme.useToken()
+  const iconColors = useIconColors()
+  const [copied, setCopied] = useState(false)
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value)
+    } catch {
+      const textarea = document.createElement('textarea')
+      textarea.value = value
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(textarea)
+      if (!ok) {
+        message.error('Copy failed — select and copy the value manually')
+        return
+      }
+    }
+    setCopied(true)
+    message.success(`Copied ${value}`)
+    setTimeout(() => setCopied(false), 1500)
+  }
+  return (
+    <span onClick={handleCopy} title="Click to copy" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+      <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode }}>{value}</Typography.Text>
+      {copied
+        ? <Check size={11} strokeWidth={2.25} color={iconColors.secondary} />
+        : <Copy size={11} strokeWidth={2.25} color={iconColors.secondary} />}
+    </span>
+  )
+}
+
+// Status badges: the tone tokens (components/tones.ts), then every status
+// grouped by what it belongs to — both rendered straight from the same
+// sources the app's tags read (TONE_SOURCES, STATUS_BADGE_GROUPS), so this
+// can't fall out of step with the app. Values are the current theme's;
+// switch Appearance to read the other.
+function StatusBadgesDocs() {
+  const { token } = theme.useToken()
+  const tones = useTones()
+  const row: React.CSSProperties = {
+    display: 'grid',
+    alignItems: 'center',
+    gap: 12,
+    padding: '12px 0',
+    borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
+  }
+  const toneColumns = '120px 1fr 1fr 1fr'
+  const head = { fontSize: 12, color: token.colorTextTertiary }
+  return (
+    <>
+      <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
+        A status never names a colour. It has a tone, and the tone has two tokens: the dot, at full strength, and the fill, that colour at {Math.round(TONE_FILL_ALPHA * 100)}% opacity so it sits on any surface. Text is colorTextSecondary on every tone (colorTextTertiary when muted). A new status picks one of these tones.
+      </Typography.Text>
+
+      <SubHeading>Tones</SubHeading>
+      <div style={{ ...row, gridTemplateColumns: toneColumns, paddingTop: 0 }}>
+        <span style={head}>Tone</span>
+        <span style={head}>Source token</span>
+        <span style={head}>tone/*/dot</span>
+        <span style={head}>tone/*/fill</span>
+      </div>
+      {TONE_SOURCES.map(({ tone, token: source }) => (
+        <div key={tone} style={{ ...row, gridTemplateColumns: toneColumns }}>
+          <span><DotTag tone={tone}>{tone}</DotTag></span>
+          <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode }}>{source}</Typography.Text>
+          <span><CopyValue value={toHex(tones[tone].dot).toUpperCase()} /></span>
+          <span><CopyValue value={tones[tone].fill} /></span>
+        </div>
+      ))}
+
+      {STATUS_BADGE_GROUPS.map(group => (
+        <div key={group.title} style={{ marginTop: 24 }}>
+          <SubHeading>{group.title}</SubHeading>
+          <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>{group.usedIn}</Typography.Text>
+          {Object.entries(group.badges).map(([key, badge]) => (
+            <div key={key} style={{ ...row, gridTemplateColumns: '180px 1fr 1fr' }}>
+              <span><StatusTag badge={badge} /></span>
+              <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode }}>{key}</Typography.Text>
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                {badge.tone}{badge.muted ? ' · muted' : ''}
+              </Typography.Text>
+            </div>
+          ))}
+        </div>
+      ))}
+    </>
+  )
+}
+
 function SubHeading({ children }: { children: React.ReactNode }) {
   const { token } = theme.useToken()
   return (
@@ -917,6 +1016,10 @@ export function DesignDocsPage() {
             <ButtonStateRow danger caption="Outlined, for a destructive action that sits among other buttons (Blacklist customer)." />
             <ButtonStateRow danger primary caption="Solid, only as the confirm button of a destructive confirmation (Delete template, Blacklist)." />
             </div>
+          </Section>
+
+          <Section id="status-badges" title="Status badges">
+            <StatusBadgesDocs />
           </Section>
         </div>
       </div>

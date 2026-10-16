@@ -54,6 +54,16 @@ export function toHex(value: string): string {
   return `#${toByte(r)}${toByte(g)}${toByte(b)}`
 }
 
+// A colour at a given opacity, as an 8-digit hex (#RRGGBBAA) — the one
+// form that pastes the same into CSS, Figma and any other stack. Used for
+// the status tones' fills (components/tones.ts).
+export function toHex8(value: string, alpha: number): string {
+  const p = parseColor(value)
+  if (!p) return value
+  const toByte = (n: number) => Math.round(n).toString(16).padStart(2, '0').toUpperCase()
+  return `#${toByte(p[0])}${toByte(p[1])}${toByte(p[2])}${toByte(alpha * 255)}`
+}
+
 // Linear scan over ~20 named tokens — only ever called on click (once per
 // pin, a handful of times per popover render), not per animation frame, so
 // there's no need for a Map-based index.

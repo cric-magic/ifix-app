@@ -3,6 +3,7 @@ import { Alert, Avatar, Button, Drawer, Input, Modal, Tag, Typography, theme } f
 import { ImageOff, X } from 'lucide-react'
 import { MobileTableRow } from '../../components/MobileTableRow'
 import { DotTag } from '../../components/DotTag'
+import { UNIT_AVAILABILITY_BADGES } from '../../constants/statusBadges'
 import { useIsMobile } from '../../components/useIsMobile'
 import { useAppWindowContainer } from '../../contexts/AppWindowContext'
 import { useIconColors } from '../../constants/iconColors'
@@ -237,8 +238,8 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
               leading={thumbnail(row.product)}
               primary={name}
               trailing={reserved
-                ? <DotTag dotColor={token.colorWarning} textColor={token.colorTextTertiary}>Reserved</DotTag>
-                : <DotTag dotColor={token.colorSuccess}>{row.units.length > 1 ? `Available · ${row.units.length}` : 'Available'}</DotTag>}
+                ? <DotTag tone={UNIT_AVAILABILITY_BADGES.reserved.tone} muted>{UNIT_AVAILABILITY_BADGES.reserved.label}</DotTag>
+                : <DotTag tone={UNIT_AVAILABILITY_BADGES.available.tone}>{row.units.length > 1 ? `Available · ${row.units.length}` : 'Available'}</DotTag>}
               secondary={reserved
                 ? `${row.branch} · ${unavailableReason(row.units[0])}`
                 : `${row.branch}${monthly != null ? ` · from ${priceFormatter.format(monthly)}/mo` : ''}`}
