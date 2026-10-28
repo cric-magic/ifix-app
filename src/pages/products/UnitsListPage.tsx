@@ -18,7 +18,7 @@ import { TableEmptyState } from '../../components/TableEmptyState'
 import { UnitProductName } from './components/UnitProductName'
 import { MarkOpenedModal } from './components/MarkOpenedModal'
 import { UnitStatusTabs, type StatusFilter } from './components/UnitStatusTabs'
-import { canMarkOpened, fullSkuName } from '../../utils/product'
+import { canMarkOpened, fullSkuName, unitDisplayStatus } from '../../utils/product'
 import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../constants/paginationIcons'
 import { useIsMobile } from '../../components/useIsMobile'
 import { MobileTableRow } from '../../components/MobileTableRow'
@@ -77,14 +77,20 @@ export function UnitsListPage() {
     || !!u.imei2?.toLowerCase().includes(query))
   // The status tabs' counts: within the search, so they say how many
   // matches each status holds.
+  const productById = new Map(MOCK_PRODUCTS.map(p => [p.id, p]))
+  // Counted and filtered by what each unit shows as, so an Available unit
+  // of a removed or Unavailable product counts under Not for sale, not
+  // Available — the Available count is what can actually be sold.
+  const statusOf = (u: ProductUnit) => unitDisplayStatus(u, productById.get(u.productId))
+  const countOf = (status: StatusFilter) => searched.filter(u => statusOf(u) === status).length
   const statusCounts: Record<StatusFilter, number> = {
     all: searched.length,
-    available: searched.filter(u => u.availability === 'available').length,
-    reserved: searched.filter(u => u.availability === 'reserved').length,
-    sold: searched.filter(u => u.availability === 'sold').length,
+    available: countOf('available'),
+    not_for_sale: countOf('not_for_sale'),
+    reserved: countOf('reserved'),
+    sold: countOf('sold'),
   }
-  const units = availability === 'all' ? searched : searched.filter(u => u.availability === availability)
-  const productById = new Map(MOCK_PRODUCTS.map(p => [p.id, p]))
+  const units = availability === 'all' ? searched : searched.filter(u => statusOf(u) === availability)
   const products = scopedProductList(user, MOCK_PRODUCTS)
 
   function refresh() {
@@ -187,7 +193,7 @@ export function UnitsListPage() {
     { title: 'Battery', key: 'battery', align: 'right', render: (_, u) => u.batteryPercentage != null ? `${u.batteryPercentage}%` : <span style={{ color: token.colorTextDisabled }}>—</span> },
     { title: 'Tax', key: 'tax', render: (_, u) => TAX_LABELS[u.tax] },
     { title: 'Price', key: 'price', align: 'right', render: (_, u) => <UnitPrice unit={u} product={productById.get(u.productId)} /> },
-    { title: 'Availability', key: 'availability', fixed: 'right', render: (_, u) => <UnitAvailabilityTag availability={u.availability} /> },
+    { title: 'Availability', key: 'availability', fixed: 'right', render: (_, u) => <UnitAvailabilityTag unit={u} product={productById.get(u.productId)} /> },
     {
       title: '',
       key: 'actions',
@@ -208,7 +214,7 @@ export function UnitsListPage() {
       <MobileTableRow
         leading={thumbnail(u, 44)}
         primary={u.serialNumber}
-        trailing={<UnitAvailabilityTag availability={u.availability} />}
+        trailing={<UnitAvailabilityTag unit={u} product={product} />}
         secondary={product ? `${fullSkuName(product)}${product.deletedAt ? ' · Removed' : ''}` : '—'}
         // Just the amount — desktop's "Sales price" note (the unit has no
         // custom price) doesn't fit beside the product name here.

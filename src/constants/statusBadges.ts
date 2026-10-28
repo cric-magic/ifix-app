@@ -1,7 +1,7 @@
 import type { Tone } from '../components/tones'
 import type { ContractStatus, ScheduleItem } from '../types/contract'
 import type { ContractTemplate } from '../types/contractTemplate'
-import type { ProductStatus, ProductType, UnitAvailability } from '../types/product'
+import type { ProductStatus, ProductType, UnitDisplayStatus } from '../types/product'
 import type { UserStatus } from '../types/user'
 import type { BranchStatus } from '../types/branch'
 import type { MerchantStatus } from '../types/merchant'
@@ -46,8 +46,11 @@ export const SCHEDULE_STATUS_BADGES: Record<ScheduleItem['status'], StatusBadge>
   future: { label: 'Upcoming', tone: 'neutral' },
 }
 
-export const UNIT_AVAILABILITY_BADGES: Record<UnitAvailability, StatusBadge> = {
+// not_for_sale is display-only: an Available unit whose SKU is removed or
+// Unavailable (unitDisplayStatus in utils/product.ts).
+export const UNIT_AVAILABILITY_BADGES: Record<UnitDisplayStatus, StatusBadge> = {
   available: { label: AVAILABILITY_LABELS.available, tone: 'success' },
+  not_for_sale: { label: 'Not for sale', tone: 'neutral', muted: true },
   reserved: { label: AVAILABILITY_LABELS.reserved, tone: 'warning' },
   sold: { label: AVAILABILITY_LABELS.sold, tone: 'purple' },
 }
@@ -99,7 +102,7 @@ export const CONTRACT_TEMPLATE_STATUS_BADGES: Record<ContractTemplate['status'],
 export const STATUS_BADGE_GROUPS: { title: string; usedIn: string; badges: Record<string, StatusBadge> }[] = [
   { title: 'Contract', usedIn: 'Contracts list, its status filter, contract detail', badges: CONTRACT_STATUS_BADGES },
   { title: 'Installment', usedIn: 'Contract payment schedule', badges: SCHEDULE_STATUS_BADGES },
-  { title: 'Unit availability', usedIn: 'Units list and its status tabs, Price Check', badges: UNIT_AVAILABILITY_BADGES },
+  { title: 'Unit availability', usedIn: 'Units list and its status tabs, unit detail, Price Check. Not for sale = Available, but its product is removed or Unavailable', badges: UNIT_AVAILABILITY_BADGES },
   { title: 'Product status', usedIn: 'Catalog, product detail', badges: PRODUCT_STATUS_BADGES },
   { title: 'Product condition', usedIn: 'Catalog and its condition tabs', badges: PRODUCT_CONDITION_BADGES },
   { title: 'Attribute value', usedIn: 'Product attributes', badges: ATTRIBUTE_VALUE_BADGES },

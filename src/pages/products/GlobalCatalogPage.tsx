@@ -61,7 +61,7 @@ export function GlobalCatalogPage() {
     )
   // The condition tabs' counts: within the search, so they say how many
   // matches each condition holds.
-  const typeCounts: Record<TypeFilter, number> = {
+  const typeCounts: Record<Exclude<TypeFilter, 'removed'>, number> = {
     all: searched.length,
     new: searched.filter(p => p.type === 'new').length,
     opened: searched.filter(p => p.type === 'opened').length,

@@ -80,7 +80,7 @@ export function UnitsTab({ actor, product }: Props) {
     { title: 'Battery', key: 'battery', align: 'right', render: (_, u) => u.batteryPercentage != null ? `${u.batteryPercentage}%` : <span style={{ color: token.colorTextDisabled }}>—</span> },
     { title: 'Tax', key: 'tax', render: (_, u) => TAX_LABELS[u.tax] },
     { title: 'Price', key: 'price', align: 'right', render: (_, u) => <UnitPrice unit={u} product={product} /> },
-    { title: 'Availability', key: 'availability', fixed: 'right', render: (_, u) => <UnitAvailabilityTag availability={u.availability} /> },
+    { title: 'Availability', key: 'availability', fixed: 'right', render: (_, u) => <UnitAvailabilityTag unit={u} product={product} /> },
     {
       title: '',
       key: 'actions',
@@ -140,7 +140,7 @@ export function UnitsTab({ actor, product }: Props) {
           />
         )}
         primary={u.serialNumber}
-        trailing={<UnitAvailabilityTag availability={u.availability} />}
+        trailing={<UnitAvailabilityTag unit={u} product={product} />}
         secondary={u.grade ? `${u.branch} · ${GRADE_LABELS[u.grade]}` : u.branch}
         trailingSecondary={price != null ? priceFormatter.format(price) : undefined}
       />

@@ -201,7 +201,7 @@ export function UnitDetailPage() {
           // Serial Number, not IMEI — it's the required primary identifier
           // now that IMEI is optional and absent on laptops/accessories.
           title={unit.serialNumber}
-          tags={<UnitAvailabilityTag availability={unit.availability} />}
+          tags={<UnitAvailabilityTag unit={unit} product={product} />}
           actions={(canPrint || canEditUnit) && (
             <>
               {canOpen && (

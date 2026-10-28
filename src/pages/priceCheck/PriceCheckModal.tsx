@@ -12,7 +12,7 @@ import { MOCK_PRODUCT_UNITS } from '../../constants/mockProductUnits'
 import { MOCK_CONTRACTS } from '../../constants/mockContracts'
 import { scopedAllUnits, scopedProductList } from '../../constants/roles'
 import { defaultTemplateOf, financingFor, selectableTemplatesFor, termsOf } from '../../utils/quote'
-import { UNIT_NUMBER_LENGTH, codeMatching, findUnitByCode, fullSkuName, unitPrice, variantOf } from '../../utils/product'
+import { UNIT_NUMBER_LENGTH, codeMatching, findUnitByCode, fullSkuName, isProductForSale, isSellable, notForSaleReason, unitPrice, variantOf } from '../../utils/product'
 import type { AuthUser } from '../../types/installment'
 import type { Product, ProductUnit, UnitAvailability } from '../../types/product'
 import { conditionLabel, conditionOf, groupByModel, type Condition } from './models'
@@ -111,7 +111,8 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
   const longestTerm = defaultTemplate ? termsOf(defaultTemplate).at(-1) : undefined
 
   const scopedUnits = useMemo(() => scopedAllUnits(actor, MOCK_PRODUCT_UNITS, MOCK_PRODUCTS), [actor])
-  const availableUnits = scopedUnits.filter(u => u.availability === 'available')
+  // What can be quoted and picked: Available, of a product for sale.
+  const availableUnits = scopedUnits.filter(u => isSellable(u, MOCK_PRODUCTS.find(p => p.id === u.productId)))
   const models = useMemo(
     () => groupByModel(scopedProductList(actor, MOCK_PRODUCTS).filter(p => p.status === 'available')),
     [actor],
@@ -137,7 +138,7 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
     for (const unit of scopedUnits) {
       if (unit.availability === 'sold') continue
       const product = MOCK_PRODUCTS.find(p => p.id === unit.productId)
-      if (!product || product.deletedAt || product.status !== 'available') continue
+      if (!product || !isProductForSale(product)) continue
       const price = unitPrice(unit, product)
       const condition = conditionOf(unit, product)
       // Each reserved unit is held by its own contract, so its own row.
@@ -186,7 +187,7 @@ function PriceCheckContent({ actor, onDone }: { actor: AuthUser; onDone: () => v
       const holder = MOCK_CONTRACTS.find(c => c.device.unitId === u.id)
       return holder ? `Reserved for ${holder.contractNumber}` : 'Reserved'
     }
-    return undefined
+    return notForSaleReason(MOCK_PRODUCTS.find(p => p.id === u.productId)) ?? undefined
   }
 
   const thumbnail = (product: Product) => (
