@@ -95,7 +95,7 @@ function SizeLabel({ rect, token }: { rect: DOMRect; token: any }) {
     <div style={{
       position: 'fixed', left: rect.left, top, pointerEvents: 'none', zIndex: 99998,
       background: token.colorPrimary, color: token.colorWhite,
-      fontSize: 10, lineHeight: `${labelHeight}px`, fontFamily: token.fontFamilyCode,
+      fontSize: 10, lineHeight: `${labelHeight}px`,
       padding: '0 4px', borderRadius: 4, whiteSpace: 'nowrap',
     }}>
       {width} × {height}
@@ -110,7 +110,7 @@ function Badge({ x, y, value, color, token }: { x: number; y: number; value: num
       position: 'fixed', left: x, top: y, transform: 'translate(-50%, -50%)',
       pointerEvents: 'none', zIndex: 99998,
       background: token.colorBgElevated, border: `0.5px solid ${color}`,
-      color, fontSize: 10, lineHeight: '14px', fontFamily: token.fontFamilyCode,
+      color, fontSize: 10, lineHeight: '14px',
       padding: '0 4px', borderRadius: 4, whiteSpace: 'nowrap',
     }}>
       {value}
@@ -169,10 +169,6 @@ function ColorRow({ label, value, lookup, token }: { label: string; value: strin
       <span style={{ color: token.colorTextTertiary, flexShrink: 0 }}>{label}</span>
       <span style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
         <span style={{ width: 12, height: 12, borderRadius: 4, background: value, border: `0.5px solid ${token.colorBorderSecondary}`, flexShrink: 0 }} />
-        {/* No fontFamilyCode here — SideValues' padding/margin rows use the
-            plain UI font too, and monospace renders the " · " separator
-            with noticeably wider letter-spacing, which was the actual
-            cause of the gap reading as bigger than theirs. */}
         <span title={text} style={{ color: name ? token.colorText : token.colorTextTertiary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {text}
         </span>
@@ -291,7 +287,7 @@ function CopyValue({ value, token }: { value: string; token: GlobalToken }) {
       title="Click to copy"
       style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, cursor: 'pointer', color: token.colorText }}
     >
-      <span style={{ fontFamily: token.fontFamilyCode, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</span>
+      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</span>
       <span style={{ color: token.colorTextTertiary, flexShrink: 0 }}>{copied ? 'Copied' : 'Copy'}</span>
     </span>
   )
@@ -550,7 +546,7 @@ export function InspectorOverlay() {
           fontSize: 12,
         }}>
           <div style={{ marginBottom: 8 }}>
-            <span style={{ color: token.colorText, fontFamily: token.fontFamilyCode, fontWeight: 600 }}>{tagLabel}</span>
+            <span style={{ color: token.colorText, fontWeight: 600 }}>{tagLabel}</span>
           </div>
 
           {iconInfo && (
@@ -584,7 +580,7 @@ export function InspectorOverlay() {
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                     <span style={{ color: token.colorTextTertiary, flexShrink: 0 }}>antd</span>
-                    <span style={{ color: token.colorText, fontFamily: token.fontFamilyCode }}>{iconInfo.name}</span>
+                    <span style={{ color: token.colorText }}>{iconInfo.name}</span>
                   </div>
                   <div style={{ color: token.colorWarning }}>antd's own icon, not Lucide</div>
                 </>

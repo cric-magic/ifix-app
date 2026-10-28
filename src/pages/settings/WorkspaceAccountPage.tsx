@@ -124,7 +124,7 @@ export function WorkspaceAccountPage() {
           <SettingsRow label="Prefix">{merchant.contractPrefix}</SettingsRow>
           <SettingsRow label="Next contract number">
             {/* A code — kept whole; the label wraps instead on narrow screens. */}
-            <span style={{ fontFamily: token.fontFamilyCode, whiteSpace: 'nowrap' }}>{previewContractNumber(merchant)}</span>
+            <span style={{ whiteSpace: 'nowrap' }}>{previewContractNumber(merchant)}</span>
           </SettingsRow>
         </SettingsCard>
 
@@ -141,7 +141,7 @@ export function WorkspaceAccountPage() {
           </SettingsRow>
           {merchant.collectionFeeEnabled && (
             <SettingsRow label="Default amount">
-              <span style={{ fontFamily: token.fontFamilyCode }}>฿{merchant.collectionFeeAmount.toLocaleString()}</span>
+              <span>฿{merchant.collectionFeeAmount.toLocaleString()}</span>
             </SettingsRow>
           )}
         </SettingsCard>

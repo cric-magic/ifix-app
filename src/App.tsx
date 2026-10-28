@@ -182,6 +182,8 @@ const DEFAULT_FUNCTIONAL_COLORS = {
   colorInfo: '#5d87a6',
 }
 
+const APP_FONT_FAMILY = "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'"
+
 function buildTheme(variant: ThemeVariant) {
   const { algorithm: algorithmName, functionalColors, ...variantSeed } = VARIANT_SEEDS[variant]
   const algorithm = algorithmName === 'light' ? theme.defaultAlgorithm : theme.darkAlgorithm
@@ -211,7 +213,11 @@ function buildTheme(variant: ThemeVariant) {
     // Google Sans loaded via Google Fonts (see index.html) — falls back to
     // the system stack (antd's own default fontFamily) if it hasn't loaded
     // yet or the page is ever opened offline.
-    fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
+    fontFamily: APP_FONT_FAMILY,
+    // No monospace anywhere — codes (IMEI, SKU, token names) use the same
+    // Google Sans as everything else, so antd's code font is pointed at it
+    // too and nothing can fall back to a mono face.
+    fontFamilyCode: APP_FONT_FAMILY,
     lineWidth: 0.5,
     colorBgElevated: '#000000', // placeholder, replaced below once colorFillQuaternary is known
     controlHeight: 36,

@@ -284,7 +284,7 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
           <div style={{ display: 'flex', flex: '1 1 0', alignSelf: 'stretch', minHeight: `${BARCODE_MIN_HEIGHT_MM}mm`, maxHeight: `${BARCODE_MAX_HEIGHT_MM}mm` }}>
             <Barcode value={value} ink={ink} paper={paper} labelWidthMm={size.width} />
           </div>
-          <div data-one-line style={{ ...oneLine, maxWidth: '100%', fontFamily: token.fontFamilyCode, fontSize: TEXT_FINE, lineHeight: TEXT_LINE_HEIGHT }}>
+          <div data-one-line style={{ ...oneLine, maxWidth: '100%', fontSize: TEXT_FINE, lineHeight: TEXT_LINE_HEIGHT }}>
             {value}
           </div>
         </div>
@@ -299,7 +299,7 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
           {reference.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3mm', flexShrink: 0, maxWidth: '100%' }}>
               {reference.map((line, i) => (
-                <div key={i} data-one-line style={{ ...oneLine, maxWidth: '100%', fontFamily: i === 0 ? token.fontFamilyCode : undefined, fontSize: TEXT_FINE, lineHeight: TEXT_LINE_HEIGHT }}>
+                <div key={i} data-one-line style={{ ...oneLine, maxWidth: '100%', fontSize: TEXT_FINE, lineHeight: TEXT_LINE_HEIGHT }}>
                   {line}
                 </div>
               ))}
@@ -316,7 +316,7 @@ function LabelBody({ unit, product, settings, forPrint, onFitChange }: Props & {
           {reference.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: centered ? 'center' : undefined, gap: '0.3mm', minWidth: 0, maxWidth: '100%' }}>
               {reference.map((line, i) => (
-                <div key={i} data-one-line style={{ ...oneLine, fontFamily: i === 0 && !serialUnderBarcode ? token.fontFamilyCode : undefined, fontSize: TEXT_FINE, lineHeight: TEXT_LINE_HEIGHT }}>
+                <div key={i} data-one-line style={{ ...oneLine, fontSize: TEXT_FINE, lineHeight: TEXT_LINE_HEIGHT }}>
                   {line}
                 </div>
               ))}

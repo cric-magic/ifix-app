@@ -82,7 +82,7 @@ export function PrintUnitLabelModal({ open, unit, product, merchantId, onClose }
         {' · '}
         {LABEL_SIZES[settings.labelSize].label}
       </Typography.Text>
-      <div style={{ marginTop: 4, fontFamily: token.fontFamilyCode, fontSize: 12, color: token.colorTextTertiary, wordBreak: 'break-all' }}>
+      <div style={{ marginTop: 4, fontSize: 12, color: token.colorTextTertiary, wordBreak: 'break-all' }}>
         {encodedValueFor(unit, settings)}
       </div>
       <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginTop: 16, marginBottom: 0 }}>
