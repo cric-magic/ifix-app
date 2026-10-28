@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Alert, AutoComplete, Button, Col, Form, Input, Row, Segmented, Tag, Typography, theme } from 'antd'
-import { ScanLine, Search } from 'lucide-react'
+import { Alert, AutoComplete, Col, Form, Input, Row, Segmented, Tag, Typography, theme } from 'antd'
+import { ScanLine } from 'lucide-react'
 import { Select } from '../../../components/AppSelect'
 import { useIconColors } from '../../../constants/iconColors'
 import { useIsMobile } from '../../../components/useIsMobile'
@@ -8,7 +8,7 @@ import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
 import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 import { MOCK_CONTRACTS } from '../../../constants/mockContracts'
 import { scopedAllUnits, scopedProductList } from '../../../constants/roles'
-import { UNIT_NUMBER_LENGTH, codeMatching, findUnitByCode, unitConditionLabel } from '../../../utils/product'
+import { UNIT_NUMBER_LENGTH, codeMatching, findUnitByCode, isSellable, notForSaleReason, unitConditionLabel } from '../../../utils/product'
 import type { AuthUser } from '../../../types/installment'
 import type { Product, ProductUnit } from '../../../types/product'
 
@@ -50,8 +50,8 @@ const MIN_QUERY = 3
 // - IMEI Search (used inventory, or a fast lookup with the box in hand):
 //   type or scan the IMEI; matching units are suggested as you type, and
 //   picking one fills in the rest. A unit that can't be used — not found,
-//   Reserved, Sold, or at another branch — says why, with a way back to
-//   browsing.
+//   Reserved, Sold, at another branch, or its product isn't for sale —
+//   says why.
 // Either way the picked unit is summarised underneath.
 export function SelectDevice({ actor, branch, value, onChange, currentUnitId }: Props) {
   const isMobile = useIsMobile()
@@ -59,8 +59,10 @@ export function SelectDevice({ actor, branch, value, onChange, currentUnitId }: 
 
   const products = scopedProductList(actor, MOCK_PRODUCTS)
   const productById = new Map(MOCK_PRODUCTS.map(p => [p.id, p]))
+  // Sellable (Available, and its product neither removed nor Unavailable)
+  // at this branch — or the unit this contract already holds, when editing.
   const isPickable = (u: ProductUnit) =>
-    u.branch === branch && (u.availability === 'available' || u.id === currentUnitId)
+    u.branch === branch && (isSellable(u, productById.get(u.productId)) || u.id === currentUnitId)
 
   const selectedUnit = value ? MOCK_PRODUCT_UNITS.find(u => u.id === value.unitId) : undefined
   const selectedProduct = selectedUnit ? productById.get(selectedUnit.productId) : undefined
@@ -92,7 +94,6 @@ export function SelectDevice({ actor, branch, value, onChange, currentUnitId }: 
           isPickable={isPickable}
           productById={productById}
           onChange={onChange}
-          onBrowse={() => setMode('browse')}
         />
       )}
 
@@ -233,24 +234,25 @@ function GuidedBrowse({ products, isPickable, value, onChange }: {
 }
 
 // Why a unit found by IMEI can't be picked, or null if it can.
-function unavailableReason(unit: ProductUnit, branch: string, isPickable: (u: ProductUnit) => boolean): string | null {
+function unavailableReason(unit: ProductUnit, product: Product | undefined, branch: string, isPickable: (u: ProductUnit) => boolean): string | null {
   if (isPickable(unit)) return null
   if (unit.availability === 'sold') return 'Sold'
   if (unit.availability === 'reserved') {
     const contract = MOCK_CONTRACTS.find(c => c.device.unitId === unit.id)
     return contract ? `Reserved for ${contract.contractNumber}` : 'Reserved'
   }
+  const notForSale = notForSaleReason(product)
+  if (notForSale) return notForSale
   if (unit.branch !== branch) return `At ${unit.branch}`
   return 'Unavailable'
 }
 
-function ImeiSearch({ actor, branch, isPickable, productById, onChange, onBrowse }: {
+function ImeiSearch({ actor, branch, isPickable, productById, onChange }: {
   actor: AuthUser
   branch: string
   isPickable: (u: ProductUnit) => boolean
   productById: Map<string, Product>
   onChange: (choice: DeviceChoice | null) => void
-  onBrowse: () => void
 }) {
   const { token } = theme.useToken()
   const iconColors = useIconColors()
@@ -268,7 +270,7 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange, onBrowse
   const exact = digits.length === IMEI_LENGTH || digits.length === UNIT_NUMBER_LENGTH
     ? findUnitByCode(digits, units)
     : undefined
-  const exactReason = exact ? unavailableReason(exact, branch, isPickable) : null
+  const exactReason = exact ? unavailableReason(exact, productById.get(exact.productId), branch, isPickable) : null
   const notFound = digits.length === IMEI_LENGTH && !exact
 
   // A full, exact IMEI of an available unit picks it — typed or scanned in
@@ -290,7 +292,7 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange, onBrowse
           style={{ width: '100%' }}
           options={matches.map(u => {
             const product = productById.get(u.productId)
-            const reason = unavailableReason(u, branch, isPickable)
+            const reason = unavailableReason(u, product, branch, isPickable)
             // The IMEI itself is the option's value — picking a suggestion
             // fills it in, which selects the unit (onType).
             return {
@@ -321,14 +323,14 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange, onBrowse
       </Form.Item>
 
       {/* The fallback states: nothing has this IMEI, or the unit that does
-          can't go on this contract — each with the way forward. */}
+          can't go on this contract — each saying why, in its text alone;
+          Browse by model is the tab right above. */}
       {notFound && (
         <Alert
           type="warning"
           showIcon
           message="No unit with this IMEI"
           description={`Nothing in ${branch}'s inventory has IMEI ${digits}. Check the digits against the box label, or find the unit by model instead.`}
-          action={<Button size="small" icon={<Search size={16} strokeWidth={2.25} />} onClick={onBrowse}>Browse by model</Button>}
           style={{ marginBottom: 16 }}
         />
       )}
@@ -342,9 +344,10 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange, onBrowse
               ? 'It has already been sold. Pick another unit.'
               : exact.availability === 'reserved'
                 ? 'It is held by another contract. Pick another unit.'
-                : `Contracts can only use units at ${branch}. Pick a unit from this branch.`
+                : notForSaleReason(productById.get(exact.productId))
+                  ? "Its product isn't for sale, so it can't go on a new contract. Pick another unit."
+                  : `Contracts can only use units at ${branch}. Pick a unit from this branch.`
           }
-          action={<Button size="small" icon={<Search size={16} strokeWidth={2.25} />} onClick={onBrowse}>Browse by model</Button>}
           style={{ marginBottom: 16 }}
         />
       )}

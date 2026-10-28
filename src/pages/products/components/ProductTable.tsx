@@ -1,6 +1,6 @@
 import { App, ConfigProvider, Table, Button, Dropdown, Avatar, theme } from 'antd'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Trash2, Boxes, ChevronLeft, ChevronRight, ChevronDown, MoreHorizontal, ImageOff, Package } from 'lucide-react'
+import { Pencil, Trash2, Boxes, ChevronLeft, ChevronRight, ChevronDown, MoreHorizontal, ImageOff, Package, RotateCcw } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import type { AuthUser } from '../../../types/installment'
 import type { Product } from '../../../types/product'
@@ -10,7 +10,9 @@ import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
 import { MOCK_CONTRACTS } from '../../../constants/mockContracts'
 import { useIconColors } from '../../../constants/iconColors'
 import { TableEmptyState } from '../../../components/TableEmptyState'
-import { countAvailableUnits } from '../../../utils/product'
+import { countAvailableUnits, restoreConflictOf, restoreDescription } from '../../../utils/product'
+import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
+import { RemovedTag } from './RemovedTag'
 import { ProductStatusTag } from './ProductStatusTag'
 import { fullSkuName } from '../../../utils/product'
 import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGE_SIZE_CHANGER, MOBILE_PAGINATION } from '../../../constants/paginationIcons'
@@ -30,10 +32,11 @@ interface Props {
   isSearching: boolean
   onEdit: (product: Product) => void
   onRemove: (product: Product) => void
+  onRestore: (product: Product) => void
   onAddUnit: (product: Product) => void
 }
 
-export function ProductTable({ actor, products, isSearching, onEdit, onRemove, onAddUnit }: Props) {
+export function ProductTable({ actor, products, isSearching, onEdit, onRemove, onRestore, onAddUnit }: Props) {
   const applyColumnPicker = useColumnPicker('products', ['name', 'status'])
   const { token } = theme.useToken()
   const actionSheet = useActionSheet()
@@ -47,7 +50,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
   const canAddUnit = canManageUnits(actor)
 
   // Removing a SKU is a soft delete: its units stay in the Units list,
-  // marked Removed. But a Reserved unit is committed to a live contract, so
+  // their Available ones showing as Not for sale (unitDisplayStatus). But a Reserved unit is committed to a live contract, so
   // the SKU can't be removed until that contract is done with it — the
   // warning names the contract(s) so it's clear what's in the way.
   function confirmRemove(p: Product) {
@@ -67,7 +70,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
     modal.confirm({
       title: 'Remove this product?',
       content: units.length > 0
-        ? `It will no longer appear in the catalog. Its ${units.length} ${units.length === 1 ? 'unit stays' : 'units stay'} in the Units list, marked Removed.`
+        ? `It will no longer appear in the catalog. Its ${units.length} ${units.length === 1 ? 'unit stays' : 'units stay'} in the Units list. Any still in stock show as Not for sale and can't go on a new contract.`
         : 'It will no longer appear in the catalog.',
       okText: 'Remove',
       okButtonProps: { danger: true },
@@ -75,10 +78,36 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
     })
   }
 
+  // Restoring undoes a removal. It's refused when a live product already
+  // covers the same device (same catalog entry or SKU code) — bringing this
+  // one back would leave two SKUs for it — and the warning names that one.
+  function confirmRestore(p: Product) {
+    const conflict = restoreConflictOf(p, MOCK_PRODUCTS)
+    if (conflict) {
+      modal.warning({
+        title: "Can't restore this product",
+        content: `${fullSkuName(conflict)} (${conflict.sku}) is already in the catalog for the same device. Restoring this one would add a second product for it.`,
+        okText: 'OK',
+      })
+      return
+    }
+    const units = MOCK_PRODUCT_UNITS.filter(u => u.productId === p.id)
+    modal.confirm({
+      title: 'Restore this product?',
+      content: restoreDescription(units.length),
+      okText: 'Restore',
+      onOk: () => onRestore(p),
+    })
+  }
+
   // A row's actions — the desktop "…" menu and the mobile action sheet
-  // (its "…", on every row with actions, at every size).
+  // (its "…", on every row with actions, at every size). A removed product
+  // has one: Restore.
   function rowActions(p: Product): RowAction[] {
     if (!canManage) return []
+    if (p.deletedAt) {
+      return [{ key: 'restore', icon: <RotateCcw size={16} strokeWidth={2.25} />, label: 'Restore', onClick: () => confirmRestore(p) }]
+    }
     return [
       { key: 'edit', icon: <Pencil size={16} strokeWidth={2.25} />, label: 'Edit', onClick: () => onEdit(p) },
       ...(canAddUnit ? [{ key: 'add-unit', icon: <Boxes size={16} strokeWidth={2.25} />, label: 'Add Unit', onClick: () => onAddUnit(p) }] : []),
@@ -167,7 +196,9 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
       align: 'right',
       render: (_, p) => countAvailableUnits(scopedUnitList(actor, p.id, MOCK_PRODUCT_UNITS)),
     },
-    { title: 'Status', key: 'status', fixed: 'right', render: (_, p) => <ProductStatusTag status={p.status} /> },
+    // A removed product shows Removed rather than the status it'll come back
+    // with — a green Available on it would read as sellable.
+    { title: 'Status', key: 'status', fixed: 'right', render: (_, p) => p.deletedAt ? <RemovedTag /> : <ProductStatusTag status={p.status} /> },
     ...(canManage ? [{
       title: '',
       key: 'actions',
@@ -186,7 +217,7 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
         <MobileTableRow
           leading={thumbnail(p, 44)}
           primary={fullSkuName(p)}
-          trailing={<ProductStatusTag status={p.status} />}
+          trailing={p.deletedAt ? <RemovedTag /> : <ProductStatusTag status={p.status} />}
           secondary={p.sku}
           trailingSecondary={formatter.format(p.salesPrice)}
           onMore={rowActions(p).length ? () => actionSheet.open(fullSkuName(p), rowActions(p)) : undefined}
@@ -212,7 +243,9 @@ export function ProductTable({ actor, products, isSearching, onEdit, onRemove, o
               {...(isMobile ? MOBILE_TABLE_PROPS : {})}
               dataSource={products}
               scroll={isMobile ? { y: '100%' } : { x: 'max-content', y: '100%' }}
-              onRow={record => ({
+              // A removed product has no detail page to open — its row only
+              // carries the Restore action.
+              onRow={record => record.deletedAt ? {} : ({
                 onClick: () => navigate(`/products/catalog/${record.id}`),
                 style: { cursor: 'pointer' },
               })}

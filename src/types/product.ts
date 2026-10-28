@@ -42,6 +42,11 @@ export interface Product {
 export type UnitGrade = 'A' | 'B' | 'C' | 'D'
 export type UnitTax = 'vat' | 'non_vat'
 export type UnitAvailability = 'available' | 'reserved' | 'sold'
+// What a unit shows as, as opposed to what it stores: an Available unit
+// whose SKU is removed or switched to Unavailable is still in stock — its
+// stored availability stays 'available' — but can't be sold, so it shows as
+// Not for sale (see unitDisplayStatus in utils/product.ts).
+export type UnitDisplayStatus = UnitAvailability | 'not_for_sale'
 
 export interface ProductUnit {
   id: string

@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
-import { Tag, theme } from 'antd'
+import { theme } from 'antd'
 import type { Product } from '../../../types/product'
 import { fullSkuName } from '../../../utils/product'
+import { RemovedTag } from './RemovedTag'
 
 interface Props {
   product: Product | undefined
@@ -24,9 +25,7 @@ export function UnitProductName({ product, color }: Props) {
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
         <span style={{ color }}>{fullSkuName(product)}</span>
-        <Tag style={{ margin: 0, background: token.colorFillSecondary, color: token.colorTextSecondary, fontSize: token.fontSizeSM, border: 'none' }}>
-          Removed
-        </Tag>
+        <RemovedTag />
       </span>
     )
   }

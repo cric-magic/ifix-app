@@ -1,4 +1,4 @@
-import type { Product, ProductUnit } from '../types/product'
+import type { Product, ProductUnit, UnitDisplayStatus } from '../types/product'
 import { GRADE_LABELS, TYPE_LABELS } from '../constants/products'
 
 // A SKU's full name, the way staff and customers say it: product name,
@@ -23,10 +23,57 @@ export function contractConditionOf(unit: ProductUnit, product: Product): string
   return product.type === 'used' && unit.grade ? unit.grade : TYPE_LABELS[product.type]
 }
 
-// Only an Available unit of a live New SKU can be marked Opened: a Reserved
-// one is committed to a contract at its New price, and a Sold one is gone.
+// Whether a SKU's units can be sold at all: it hasn't been removed (soft
+// delete) and its status is Available. Neither changes its units' stored
+// availability — they stay in stock, they just can't go on a new contract.
+export function isProductForSale(product: Product | undefined): boolean {
+  return !!product && !product.deletedAt && product.status === 'available'
+}
+
+// The one rule for whether a unit can go on a new contract: it's Available
+// AND its SKU is for sale. Availability alone isn't enough.
+export function isSellable(unit: ProductUnit, product: Product | undefined): boolean {
+  return unit.availability === 'available' && isProductForSale(product)
+}
+
+// Why an in-stock unit can't be sold, in words — for the device picker's
+// refusal and the Not for sale tag's tooltip. Null when it can be.
+export function notForSaleReason(product: Product | undefined): string | null {
+  if (isProductForSale(product)) return null
+  return product && !product.deletedAt ? 'Product unavailable' : 'Product removed'
+}
+
+// What a unit shows as: its stored availability, except an Available unit
+// whose SKU isn't for sale shows as Not for sale.
+export function unitDisplayStatus(unit: ProductUnit, product: Product | undefined): UnitDisplayStatus {
+  return unit.availability === 'available' && !isProductForSale(product) ? 'not_for_sale' : unit.availability
+}
+
+// What stops a removed product coming back: a live product of the same
+// merchant that already covers it — adopted from the same catalog entry, or
+// using the same SKU code. Restoring would leave two SKUs for one device.
+export function restoreConflictOf(product: Product, products: Product[]): Product | undefined {
+  return products.find(p =>
+    p.id !== product.id
+    && !p.deletedAt
+    && p.merchantId === product.merchantId
+    && ((!!product.sourceCatalogId && p.sourceCatalogId === product.sourceCatalogId)
+      || p.sku.trim().toLowerCase() === product.sku.trim().toLowerCase()),
+  )
+}
+
+// The Restore confirmation's text, wherever a restore is offered (the
+// Catalog's Removed tab, the add-product drawer).
+export function restoreDescription(unitCount: number): string {
+  return unitCount > 0
+    ? `It comes back to the catalog with its ${unitCount} ${unitCount === 1 ? 'unit' : 'units'}. Any still in stock can be sold again.`
+    : 'It comes back to the catalog.'
+}
+
+// Only a sellable unit of a New SKU can be marked Opened: a Reserved one is
+// committed to a contract at its New price, and a Sold one is gone.
 export function canMarkOpened(unit: ProductUnit, product: Product | undefined): boolean {
-  return unit.availability === 'available' && !!product && !product.deletedAt && product.type === 'new'
+  return isSellable(unit, product) && product!.type === 'new'
 }
 
 // The Opened SKU for the same device as a New one — same merchant and the

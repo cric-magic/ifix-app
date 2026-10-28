@@ -34,7 +34,7 @@ import { normalizeSections } from '../../constants/contractSections'
 import { MOCK_BRANCHES } from '../../constants/mockBranches'
 import { BoxLabelNote } from './components/BoxLabelNote'
 import { SelectDevice, type DeviceChoice, type DeviceSource } from './components/SelectDevice'
-import { contractConditionOf } from '../../utils/product'
+import { contractConditionOf, isSellable } from '../../utils/product'
 
 interface DeviceValues { branch: string; productId: string; unitId: string; source: DeviceSource }
 interface TemplateValues { templateId: string; termMonths: number; ratePercent: number; downPaymentPercent: number }
@@ -188,10 +188,10 @@ export function CreateContractPage() {
     )
   }
 
-  // Active branches of this merchant, each with how many units it has
-  // available — what the Branch step offers.
+  // Active branches of this merchant, each with how many units it can sell
+  // (Available, of a product for sale) — what the Branch step offers.
   const merchantBranches = MOCK_BRANCHES.filter(b => b.merchantId === actor.merchantId && b.status === 'active')
-  const availableAt = (name: string) => MOCK_PRODUCT_UNITS.filter(u => u.branch === name && u.availability === 'available').length
+  const availableAt = (name: string) => MOCK_PRODUCT_UNITS.filter(u => u.branch === name && isSellable(u, MOCK_PRODUCTS.find(p => p.id === u.productId))).length
 
   function handleBranchNext() {
     if (!branch) {

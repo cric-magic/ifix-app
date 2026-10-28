@@ -34,10 +34,16 @@ export function ProductsPage() {
     )
   }
 
+  const canManage = canManageProducts(user)
   const products = scopedProductList(user, MOCK_PRODUCTS)
+  // Removed (soft-deleted) products, for the Removed tab to restore from —
+  // only for roles that can remove and restore them.
+  const removedProducts = canManage
+    ? scopedProductList(user, MOCK_PRODUCTS, undefined, { includeRemoved: true }).filter(p => p.deletedAt)
+    : []
   const query = search.trim().toLowerCase()
-  const searched = query
-    ? products.filter(p =>
+  const matchesSearch = (list: Product[]) => query
+    ? list.filter(p =>
         fullSkuName(p).toLowerCase().includes(query) ||
         p.name.toLowerCase().includes(query) ||
         p.brand.toLowerCase().includes(query) ||
@@ -45,7 +51,9 @@ export function ProductsPage() {
         p.modelNumber.toLowerCase().includes(query) ||
         p.sku.toLowerCase().includes(query),
       )
-    : products
+    : list
+  const searched = matchesSearch(products)
+  const searchedRemoved = matchesSearch(removedProducts)
   // The condition tabs' counts: within the search, so they say how many
   // matches each condition holds.
   const typeCounts: Record<TypeFilter, number> = {
@@ -53,8 +61,11 @@ export function ProductsPage() {
     new: searched.filter(p => p.type === 'new').length,
     opened: searched.filter(p => p.type === 'opened').length,
     used: searched.filter(p => p.type === 'used').length,
+    removed: searchedRemoved.length,
   }
-  const filteredProducts = typeFilter === 'all' ? searched : searched.filter(p => p.type === typeFilter)
+  const filteredProducts = typeFilter === 'removed'
+    ? searchedRemoved
+    : typeFilter === 'all' ? searched : searched.filter(p => p.type === typeFilter)
   void version // trigger re-render on mutation
 
   function refresh() {
@@ -67,12 +78,22 @@ export function ProductsPage() {
     refresh()
   }
 
+  // Undoing a removal: the product comes back to the catalog, and since its
+  // units' stored availability never changed, they come back exactly as
+  // they were — Available ones sellable again, Sold ones still Sold.
+  function handleRestore(product: Product) {
+    product.deletedAt = null
+    message.success(`${fullSkuName(product)} restored`)
+    if (typeFilter === 'removed' && removedProducts.length === 1) setTypeFilter('all')
+    refresh()
+  }
+
   return (
     <div className="ifix-fill-page">
       <ListToolbar
-        leading={<ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} counts={typeCounts} />}
+        leading={<ProductTypeTabs activeType={typeFilter} onChange={setTypeFilter} counts={typeCounts} showRemoved={canManage} />}
         search={<ListSearch value={search} onChange={setSearch} placeholder="Search by name, brand, or SKU" mobilePlaceholder="Search products" />}
-        action={canManageProducts(user) ? { label: 'Create Product', onClick: () => setCreateOpen(true) } : undefined}
+        action={canManage ? { label: 'Create Product', onClick: () => setCreateOpen(true) } : undefined}
       />
 
       <ProductTable
@@ -81,6 +102,7 @@ export function ProductsPage() {
         isSearching={!!query}
         onEdit={setEditingProduct}
         onRemove={handleRemove}
+        onRestore={handleRestore}
         onAddUnit={setAddUnitProduct}
       />
 
@@ -88,6 +110,10 @@ export function ProductsPage() {
         open={createOpen}
         actor={user}
         onClose={() => setCreateOpen(false)}
+        onRestore={product => {
+          setCreateOpen(false)
+          handleRestore(product)
+        }}
         onCreated={product => {
           setCreateOpen(false)
           MOCK_PRODUCTS.push(product)

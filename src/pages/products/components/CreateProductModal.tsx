@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Drawer, Button, Space, Form, Input, Typography, theme } from 'antd'
+import { App, Drawer, Button, Space, Form, Input, Typography, theme } from 'antd'
 import { InputNumber } from '../../../components/AppInputNumber'
 import { Search, ArrowLeft, Package } from 'lucide-react'
 import { Select } from '../../../components/AppSelect'
@@ -16,12 +16,17 @@ import {
 } from '../../../constants/products'
 import { MOCK_CATALOG_PRODUCTS } from '../../../constants/mockCatalogProducts'
 import { MOCK_PRODUCTS } from '../../../constants/mockProducts'
+import { MOCK_PRODUCT_UNITS } from '../../../constants/mockProductUnits'
+import { fullSkuName, restoreConflictOf, restoreDescription } from '../../../utils/product'
 
 interface Props {
   open: boolean
   actor: AuthUser
   onClose: () => void
   onCreated: (product: Product) => void
+  // Bring back one of this merchant's removed products instead of adding a
+  // second one for the same device.
+  onRestore: (product: Product) => void
 }
 
 interface FormValues {
@@ -51,13 +56,14 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ 
 // its specification (name, brand, model, storage, color…) stays as the
 // catalog defines it — the merchant edits only the SKU code and their own
 // prices, status and photos. Creating from scratch leaves everything open.
-export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
+export function CreateProductModal({ open, actor, onClose, onCreated, onRestore }: Props) {
   const [form] = Form.useForm<FormValues>()
   const { token } = theme.useToken()
   const iconColors = useIconColors()
   const type = Form.useWatch('type', form)
   const isNew = type !== 'used'
   const appWindow = useAppWindowContainer()
+  const { modal } = App.useApp()
 
   const [stage, setStage] = useState<'pick' | 'form'>('pick')
   const [source, setSource] = useState<CatalogProduct | null>(null)
@@ -83,6 +89,24 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
       .map(p => p.sourceCatalogId),
   )
 
+  // This merchant's removed products that can come back (nothing live
+  // already covers them) — by catalog entry, so picking that entry again
+  // offers Restore instead of creating a duplicate whose units would leave
+  // the old ones stranded as Not for sale.
+  const restorable = MOCK_PRODUCTS.filter(p =>
+    p.merchantId === actor.merchantId && p.deletedAt && !restoreConflictOf(p, MOCK_PRODUCTS))
+  const removedByCatalogId = new Map(restorable.filter(p => p.sourceCatalogId).map(p => [p.sourceCatalogId!, p]))
+
+  function confirmRestore(product: Product) {
+    const units = MOCK_PRODUCT_UNITS.filter(u => u.productId === product.id).length
+    modal.confirm({
+      title: `Restore ${fullSkuName(product)}?`,
+      content: `You removed this product earlier. ${restoreDescription(units)}`,
+      okText: 'Restore',
+      onOk: () => onRestore(product),
+    })
+  }
+
   const query = search.trim().toLowerCase()
   const matches = MOCK_CATALOG_PRODUCTS.filter(c => !c.deletedAt).filter(c =>
     !query
@@ -91,10 +115,12 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
     || c.model.toLowerCase().includes(query)
     || c.skuCode.toLowerCase().includes(query),
   )
-  // Entries still available to adopt come first; ones already added sink
-  // below them, each group keeping the catalog's own order.
+  // Entries still available to adopt come first, then ones removed earlier
+  // (to restore), then ones already added — each group keeping the
+  // catalog's own order.
   const catalog = [
-    ...matches.filter(c => !adoptedIds.has(c.id)),
+    ...matches.filter(c => !adoptedIds.has(c.id) && !removedByCatalogId.has(c.id)),
+    ...matches.filter(c => !adoptedIds.has(c.id) && removedByCatalogId.has(c.id)),
     ...matches.filter(c => adoptedIds.has(c.id)),
   ]
 
@@ -126,6 +152,20 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
   }
 
   function handleSubmit(values: FormValues) {
+    // A SKU code one of this merchant's removed products used: that product
+    // is probably what they're after, so offer it back first.
+    const removedMatch = restorable.find(p => p.sku.trim().toLowerCase() === values.sku.trim().toLowerCase())
+    if (removedMatch) {
+      const units = MOCK_PRODUCT_UNITS.filter(u => u.productId === removedMatch.id).length
+      modal.confirm({
+        title: 'This SKU code belongs to a removed product',
+        content: `${fullSkuName(removedMatch)} (${removedMatch.sku}) was removed from the catalog. Restore it instead? ${restoreDescription(units)}`,
+        okText: 'Restore it',
+        cancelText: 'Back',
+        onOk: () => onRestore(removedMatch),
+      })
+      return
+    }
     const product: Product = {
       id: `prod-${Date.now()}`,
       ...values,
@@ -184,6 +224,7 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {catalog.map(entry => {
                 const alreadyAdded = adoptedIds.has(entry.id)
+                const removed = removedByCatalogId.get(entry.id)
                 const spec = [entry.storage, entry.ram, entry.color].filter(Boolean).join(' · ')
                 return (
                   <div
@@ -201,14 +242,19 @@ export function CreateProductModal({ open, actor, onClose, onCreated }: Props) {
                       <div style={{ fontSize: 12, color: token.colorTextTertiary }}>
                         {entry.skuCode}{spec ? ` · ${spec}` : ''}
                       </div>
+                      {removed && (
+                        <div style={{ fontSize: 12, color: token.colorTextTertiary }}>
+                          You removed this earlier — restore it to bring back its units
+                        </div>
+                      )}
                     </div>
                     <Button
                       size="small"
                       disabled={alreadyAdded}
-                      onClick={() => startFromCatalog(entry)}
+                      onClick={() => removed ? confirmRestore(removed) : startFromCatalog(entry)}
                       style={{ flexShrink: 0 }}
                     >
-                      {alreadyAdded ? 'Added' : 'Use'}
+                      {alreadyAdded ? 'Added' : removed ? 'Restore' : 'Use'}
                     </Button>
                   </div>
                 )
