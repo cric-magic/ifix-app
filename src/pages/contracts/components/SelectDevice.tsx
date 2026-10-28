@@ -254,7 +254,6 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange }: {
   productById: Map<string, Product>
   onChange: (choice: DeviceChoice | null) => void
 }) {
-  const { token } = theme.useToken()
   const iconColors = useIconColors()
   const [query, setQuery] = useState('')
   const digits = query.replace(/\D/g, '')
@@ -301,7 +300,7 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange }: {
               label: (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: token.fontFamilyCode }}>{codeMatching(u, digits)}</div>
+                    <div>{codeMatching(u, digits)}</div>
                     <Typography.Text type="secondary" style={{ fontSize: 12 }} ellipsis>
                       {product ? `${product.name}${product.storage ? ` · ${product.storage}` : ''} · ${product.color}` : '—'} · {unitConditionLabel(u, product)}
                     </Typography.Text>

@@ -11,6 +11,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Native form controls don't inherit the page font by default — browsers
+   give them their own (Arial on macOS) — so the app's plain <button>s
+   (Inspect toggles, toolbar controls) would drop out of Google Sans. */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
 #root {
   width: 100%;
   min-height: 100vh;

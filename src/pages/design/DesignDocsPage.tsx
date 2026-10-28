@@ -80,7 +80,7 @@ function TypeRow({ label, sample, tokenLabel }: { label: string; sample: React.C
       borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
     }}>
       <div style={{ ...sample, color: token.colorText }}>{label}</div>
-      <Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap', fontFamily: token.fontFamilyCode }}>
+      <Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
         {tokenLabel}
       </Typography.Text>
     </div>
@@ -139,7 +139,7 @@ function Swatch({ name, value, copyValue, tokenName, textOn }: { name: string; v
       </div>
       <div>
         <Typography.Text style={{ fontSize: 13, display: 'block' }}>{name}</Typography.Text>
-        <Typography.Text type="secondary" style={{ fontSize: 11, fontFamily: token.fontFamilyCode, display: 'block' }}>{tokenName}</Typography.Text>
+        <Typography.Text type="secondary" style={{ fontSize: 11, display: 'block' }}>{tokenName}</Typography.Text>
         <div
           onClick={handleCopy}
           title="Click to copy"
@@ -153,7 +153,7 @@ function Swatch({ name, value, copyValue, tokenName, textOn }: { name: string; v
           }}
         >
           <Typography.Text
-            style={{ fontSize: 11, fontFamily: token.fontFamilyCode, color: token.colorText, wordBreak: 'break-all' }}
+            style={{ fontSize: 11, color: token.colorText, wordBreak: 'break-all' }}
           >
             {displayValue}
           </Typography.Text>
@@ -209,7 +209,7 @@ function SpacingRow({ name, px }: { name: string; px: number }) {
       padding: '8px 0',
       borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
     }}>
-      <Typography.Text style={{ width: 32, fontSize: 13, fontFamily: token.fontFamilyCode, flexShrink: 0 }}>
+      <Typography.Text style={{ width: 32, fontSize: 13, flexShrink: 0 }}>
         {name}
       </Typography.Text>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -223,7 +223,7 @@ function SpacingRow({ name, px }: { name: string; px: number }) {
         title="Click to copy"
         style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', width: 56, justifyContent: 'flex-end', flexShrink: 0 }}
       >
-        <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode, color: token.colorText }}>
+        <Typography.Text style={{ fontSize: 12, color: token.colorText }}>
           {displayValue}
         </Typography.Text>
         {copied
@@ -288,7 +288,7 @@ function ShadowRow({ name, tokenName, value }: { name: string; tokenName: string
         title="Click to copy"
         style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', width: 148, justifyContent: 'flex-end', flexShrink: 0 }}
       >
-        <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode, color: token.colorText }}>
+        <Typography.Text style={{ fontSize: 12, color: token.colorText }}>
           {tokenName}
         </Typography.Text>
         {copied
@@ -335,7 +335,7 @@ function RadiusRow({ name, px }: { name: string; px: number }) {
       padding: '8px 0',
       borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
     }}>
-      <Typography.Text style={{ width: 32, fontSize: 13, fontFamily: token.fontFamilyCode, flexShrink: 0 }}>
+      <Typography.Text style={{ width: 32, fontSize: 13, flexShrink: 0 }}>
         {name}
       </Typography.Text>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -350,7 +350,7 @@ function RadiusRow({ name, px }: { name: string; px: number }) {
         title="Click to copy"
         style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', width: 56, justifyContent: 'flex-end', flexShrink: 0 }}
       >
-        <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode, color: token.colorText }}>
+        <Typography.Text style={{ fontSize: 12, color: token.colorText }}>
           {displayValue}
         </Typography.Text>
         {copied
@@ -397,7 +397,7 @@ function BorderRow({ name, px }: { name: string; px: number }) {
       padding: '8px 0',
       borderBottom: `0.5px solid ${token.colorBorderSecondary}`,
     }}>
-      <Typography.Text style={{ width: 32, fontSize: 13, fontFamily: token.fontFamilyCode, flexShrink: 0 }}>
+      <Typography.Text style={{ width: 32, fontSize: 13, flexShrink: 0 }}>
         {name}
       </Typography.Text>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -412,7 +412,7 @@ function BorderRow({ name, px }: { name: string; px: number }) {
         title="Click to copy"
         style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', width: 56, justifyContent: 'flex-end', flexShrink: 0 }}
       >
-        <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode, color: token.colorText }}>
+        <Typography.Text style={{ fontSize: 12, color: token.colorText }}>
           {displayValue}
         </Typography.Text>
         {copied
@@ -502,7 +502,6 @@ function ButtonStateRow({ danger, primary, text, caption }: { danger?: boolean; 
 // A value in the Status badges tables that copies on click — the same
 // click-to-copy (with the execCommand fallback) as Swatch's.
 function CopyValue({ value }: { value: string }) {
-  const { token } = theme.useToken()
   const iconColors = useIconColors()
   const [copied, setCopied] = useState(false)
   const handleCopy = async () => {
@@ -528,7 +527,7 @@ function CopyValue({ value }: { value: string }) {
   }
   return (
     <span onClick={handleCopy} title="Click to copy" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-      <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode }}>{value}</Typography.Text>
+      <Typography.Text style={{ fontSize: 12 }}>{value}</Typography.Text>
       {copied
         ? <Check size={11} strokeWidth={2.25} color={iconColors.secondary} />
         : <Copy size={11} strokeWidth={2.25} color={iconColors.secondary} />}
@@ -569,7 +568,7 @@ function StatusBadgesDocs() {
       {TONE_SOURCES.map(({ tone, token: source }) => (
         <div key={tone} style={{ ...row, gridTemplateColumns: toneColumns }}>
           <span><DotTag tone={tone}>{tone}</DotTag></span>
-          <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode }}>{source}</Typography.Text>
+          <Typography.Text style={{ fontSize: 12 }}>{source}</Typography.Text>
           <span><CopyValue value={toHex(tones[tone].dot).toUpperCase()} /></span>
           <span><CopyValue value={tones[tone].fill} /></span>
         </div>
@@ -582,7 +581,7 @@ function StatusBadgesDocs() {
           {Object.entries(group.badges).map(([key, badge]) => (
             <div key={key} style={{ ...row, gridTemplateColumns: '180px 1fr 1fr' }}>
               <span><StatusTag badge={badge} /></span>
-              <Typography.Text style={{ fontSize: 12, fontFamily: token.fontFamilyCode }}>{key}</Typography.Text>
+              <Typography.Text style={{ fontSize: 12 }}>{key}</Typography.Text>
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                 {badge.tone}{badge.muted ? ' · muted' : ''}
               </Typography.Text>
@@ -833,7 +832,7 @@ export function DesignDocsPage() {
             />
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 24, padding: '16px 0 0' }}>
               <Typography.Text strong style={{ fontWeight: token.fontWeightStrong }}>Strong / Semibold</Typography.Text>
-              <Typography.Text type="secondary" style={{ fontSize: 12, fontFamily: token.fontFamilyCode }}>
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                 fontWeightStrong · {token.fontWeightStrong}
               </Typography.Text>
             </div>
