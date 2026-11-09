@@ -12,6 +12,7 @@ const PRICES: Record<string, Record<string, number>> = {
   'Galaxy S25+': { '256GB': 36900, '512GB': 40900 },
   'Galaxy S25 Ultra': { '256GB': 46900, '512GB': 50900, '1TB': 58900 },
   'AirPods Pro 3': { '': 8990 },
+  'iPad Air 11 Wi-Fi': { '128GB': 23900, '256GB': 27900 },
 }
 
 // Used stock sells well under the new price — its own figure rather than a
