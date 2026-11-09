@@ -122,9 +122,11 @@ function nextImei(): string {
 // before: units marked sold that no contract had sold.
 export const MOCK_PRODUCT_UNITS: ProductUnit[] = LINEUP_VARIANTS.flatMap(v => {
   const productId = productIdFor(v.skuCode)
-  const isPhone = v.line.category === 'smartphone'
+  // Only a device with a cellular radio has an IMEI: phones, and a tablet
+  // with cellular. A Wi-Fi-only tablet, a laptop or an accessory has none.
+  const hasImei = v.line.category === 'smartphone' || /cellular|4G|5G/i.test(v.line.connection ?? '')
   // Samsung ships dual physical SIM; the iPhone 17 family is eSIM plus one.
-  const dualImei = isPhone && v.line.brand === 'Samsung'
+  const dualImei = hasImei && v.line.brand === 'Samsung'
   const createdAt = v.line.brand === 'Apple' ? '2025-09-25T09:00:00.000Z' : '2025-02-12T09:00:00.000Z'
 
   const base = (branch: string): ProductUnit => ({
@@ -132,7 +134,7 @@ export const MOCK_PRODUCT_UNITS: ProductUnit[] = LINEUP_VARIANTS.flatMap(v => {
     unitNumber: nextUnitNumber(),
     productId,
     serialNumber: serialFor(v.skuCode, branch),
-    imei1: isPhone ? nextImei() : undefined,
+    imei1: hasImei ? nextImei() : undefined,
     imei2: dualImei ? nextImei() : undefined,
     branch,
     tax: v.type === 'used' ? 'non_vat' : 'vat',

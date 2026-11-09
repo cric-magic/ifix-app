@@ -35,6 +35,10 @@ export const LINEUP: LineupModel[] = [
   // The one non-phone: Staff category restriction only visibly does
   // anything when some category falls outside it.
   { brand: 'Apple', model: 'AirPods Pro 3', modelNumber: 'A3063', category: 'accessory', storages: [undefined], colors: ['White'] },
+  // A Wi-Fi-only tablet: a device with no IMEI at all, so the IMEI-optional
+  // paths (unit registration, a contract's Device Info step) have a real
+  // unit to show. Last in the list so the units above keep their numbers.
+  { brand: 'Apple', model: 'iPad Air 11 Wi-Fi', modelNumber: 'A3266', category: 'tablet', ram: '8GB', connection: 'Wi-Fi', storages: ['128GB', '256GB'], colors: ['Blue', 'Starlight'] },
 ]
 
 // Used stock is a variant the same way a colour is: same model, its own SKU

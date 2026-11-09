@@ -389,7 +389,10 @@ export function EditContractPage() {
   const steps = [
     { title: 'Device', description: 'Pick the branch, product, and available unit for this contract.' },
     { title: 'Template & Terms', description: 'Choose a contract template and set the down payment and term.' },
-    { title: 'Device Info & Photos', description: "Confirm the unit's IMEI and serial number, then upload box photos." },
+    { title: 'Device Info & Photos', description: termsUnit && !termsUnit.imei1
+      // A Wi-Fi-only device has no IMEI to confirm.
+      ? "Confirm the unit's serial number, then upload box photos."
+      : "Confirm the unit's IMEI and serial number, then upload box photos." },
     { title: 'Customer', description: 'Look up an existing customer by ID, or fill in a new one.' },
     { title: 'Preview', description: 'Review the full contract summary before saving.' },
   ]
@@ -530,7 +533,7 @@ export function EditContractPage() {
                 : Promise.reject(new Error(`Doesn't match this unit's ${what}`))
             ),
           })
-          const filledNote = fromImei ? 'Filled in from the IMEI search' : undefined
+          const filledNote = fromImei ? 'Filled in from the search' : undefined
           return (
           <Form form={deviceInfoForm} layout="vertical" initialValues={fromImei ? deviceInfo ?? undefined : undefined}>
             {!fromImei && (
@@ -584,7 +587,10 @@ export function EditContractPage() {
                 </Form.Item>
               </Col>
               <Col span={6}>
-                <Form.Item label="IMEI Label" name="imeiLabelPhoto" rules={[{ required: true, message: 'Required' }]}>
+                {/* Required only when the unit has an IMEI, the same rule as
+                    IMEI 1 above: a Wi-Fi-only device has no IMEI label to
+                    photograph. */}
+                <Form.Item label="IMEI Label" name="imeiLabelPhoto" rules={unit.imei1 ? [{ required: true, message: 'Required' }] : []}>
                   <PhotoUpload maxCount={1} />
                 </Form.Item>
               </Col>
