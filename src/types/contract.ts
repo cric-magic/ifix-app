@@ -32,7 +32,8 @@ export type ContractStatus =
 // record — per the doc, edits to the Customer record later must not change
 // what's already saved on the contract.
 export interface CustomerSnapshot {
-  fullName: string
+  firstName: string
+  lastName: string
   nationalId: string
   phone: string
   dateOfBirth: string

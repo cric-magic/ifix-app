@@ -34,6 +34,7 @@ import { normalizeSections } from '../../constants/contractSections'
 import { MOCK_BRANCHES } from '../../constants/mockBranches'
 import { BoxLabelNote } from './components/BoxLabelNote'
 import { SelectDevice, type DeviceChoice, type DeviceSource } from './components/SelectDevice'
+import { customerName } from '../../utils/customer'
 import { contractConditionOf, isSellable } from '../../utils/product'
 
 interface DeviceValues { branch: string; productId: string; unitId: string; source: DeviceSource }
@@ -49,7 +50,8 @@ interface DeviceInfoValues {
 }
 interface CustomerValues {
   nationalId: string
-  fullName: string
+  firstName: string
+  lastName: string
   phone: string
   dateOfBirth: string
   email?: string
@@ -243,7 +245,8 @@ export function CreateContractPage() {
     if (found) {
       setMatchedCustomer(found)
       customerForm.setFieldsValue({
-        fullName: found.fullName,
+        firstName: found.firstName,
+        lastName: found.lastName,
         phone: found.phone,
         dateOfBirth: found.dateOfBirth,
         email: found.email,
@@ -251,7 +254,7 @@ export function CreateContractPage() {
         currentAddress: found.currentAddress,
         workplaceAddress: found.workplaceAddress,
       })
-      message.success(`Existing customer found — form prefilled from ${found.fullName}'s record`)
+      message.success(`Existing customer found — form prefilled from ${customerName(found)}'s record`)
     } else {
       setMatchedCustomer(null)
       message.info('No existing customer with this ID — fill in the form below to create one')
@@ -296,7 +299,8 @@ export function CreateContractPage() {
         id: customerId,
         merchantId: actor.merchantId!,
         nationalId: customerValues.nationalId,
-        fullName: customerValues.fullName,
+        firstName: customerValues.firstName,
+        lastName: customerValues.lastName,
         phone: customerValues.phone,
         dateOfBirth: customerValues.dateOfBirth,
         email: customerValues.email,
@@ -311,7 +315,8 @@ export function CreateContractPage() {
       // "Update when adding a new contract for an existing customer" — the
       // form may have edited details for the matched record.
       Object.assign(matchedCustomer, {
-        fullName: customerValues.fullName,
+        firstName: customerValues.firstName,
+        lastName: customerValues.lastName,
         phone: customerValues.phone,
         dateOfBirth: customerValues.dateOfBirth,
         email: customerValues.email,
@@ -358,7 +363,8 @@ export function CreateContractPage() {
       },
       customerId,
       customer: {
-        fullName: customerValues.fullName,
+        firstName: customerValues.firstName,
+        lastName: customerValues.lastName,
         nationalId: customerValues.nationalId,
         phone: customerValues.phone,
         dateOfBirth: customerValues.dateOfBirth,
@@ -663,19 +669,25 @@ export function CreateContractPage() {
                 style={{ marginBottom: 16 }}
               />
             )}
+            {/* First and last name kept apart, as on the ID card. */}
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item label="Full Name" name="fullName" rules={[{ required: true, message: 'Required' }]}>
+                <Form.Item label="First Name" name="firstName" rules={[{ required: true, message: 'Required' }]}>
                   <Input />
                 </Form.Item>
               </Col>
+              <Col span={12}>
+                <Form.Item label="Last Name" name="lastName" rules={[{ required: true, message: 'Required' }]}>
+                  <Input />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
               <Col span={12}>
                 <Form.Item label="Phone" name="phone" rules={[{ required: true, message: 'Required' }]}>
                   <Input placeholder="0XX-XXX-XXXX" />
                 </Form.Item>
               </Col>
-            </Row>
-            <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
                   label="Date of Birth"
@@ -687,6 +699,8 @@ export function CreateContractPage() {
                   <DatePicker style={{ width: '100%' }} />
                 </Form.Item>
               </Col>
+            </Row>
+            <Row gutter={16}>
               <Col span={12}>
                 <Form.Item label="Email" name="email">
                   <Input placeholder="email@example.com" />
@@ -755,7 +769,7 @@ export function CreateContractPage() {
               <Typography.Title level={5}>Customer</Typography.Title>
               <DetailDescriptions style={{ marginBottom: 24 }}
                 items={[
-                  { label: 'Full Name', children: customerValues.fullName },
+                  { label: 'Full Name', children: customerName(customerValues) },
                   { label: 'National ID', children: customerValues.nationalId },
                   { label: 'Phone', children: customerValues.phone },
                   { label: 'Email', children: customerValues.email || '—' },

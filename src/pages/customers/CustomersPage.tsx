@@ -9,6 +9,7 @@ import { canViewCustomers, canManageCustomers, scopedCustomerList } from '../../
 import type { Customer } from '../../types/customer'
 import { CustomerTable } from './components/CustomerTable'
 import { CustomerModal } from './components/CustomerModal'
+import { customerName } from '../../utils/customer'
 
 // Real Customers list, replacing the "coming soon" placeholder — per the
 // Customer doc's Phase 2 "List Customer" feature (name, ID number, active
@@ -37,7 +38,7 @@ export function CustomersPage() {
   const query = search.trim().toLowerCase()
   const filtered = query
     ? scoped.filter(c =>
-        c.fullName.toLowerCase().includes(query) ||
+        customerName(c).toLowerCase().includes(query) ||
         c.nationalId.toLowerCase().includes(query) ||
         c.phone.toLowerCase().includes(query),
       )
@@ -64,7 +65,7 @@ export function CustomersPage() {
           setCreateOpen(false)
           MOCK_CUSTOMERS.push(customer)
           refresh()
-          message.success(`${customer.fullName} added`)
+          message.success(`${customerName(customer)} added`)
         }}
       />
     </div>

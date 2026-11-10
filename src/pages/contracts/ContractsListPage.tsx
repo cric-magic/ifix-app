@@ -9,6 +9,7 @@ import { ContractTable } from './components/ContractTable'
 import { ContractSearch, type ContractStatusFilter } from './components/ContractFilters'
 import { contractFilterFields } from './components/contractFilterFields'
 import { ListToolbar } from '../../components/ListToolbar'
+import { customerName } from '../../utils/customer'
 
 // Real Contracts list, replacing the old "coming soon" placeholder — per
 // the Contract doc's "List Contract" section: search by contract number/
@@ -41,7 +42,7 @@ export function ContractsListPage() {
   const searched = scoped.filter(c => {
     const matchesSearch = !query ||
       c.contractNumber.toLowerCase().includes(query) ||
-      c.customer.fullName.toLowerCase().includes(query) ||
+      customerName(c.customer).toLowerCase().includes(query) ||
       c.customer.phone.toLowerCase().includes(query) ||
       c.device.serialNumber.toLowerCase().includes(query) ||
       !!c.device.imei1?.toLowerCase().includes(query) ||

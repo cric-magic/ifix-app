@@ -5,6 +5,7 @@ import { StatusTag } from '../../../components/DotTag'
 import { CUSTOMER_STANDING_BADGES } from '../../../constants/statusBadges'
 import { DetailDescriptions } from '../../../components/DetailDescriptions'
 import { DetailHeader } from '../../../components/DetailHeader'
+import { customerName } from '../../../utils/customer'
 
 interface Props {
   customer: Customer
@@ -24,7 +25,7 @@ export function OverviewTab({ customer, canEdit, canToggleBlacklist, onEdit, onT
   return (
     <div style={{ marginBottom: 24 }}>
       <DetailHeader
-        title={customer.fullName}
+        title={customerName(customer)}
         tags={customer.blacklisted
           ? <StatusTag badge={CUSTOMER_STANDING_BADGES.blacklisted} />
           : <StatusTag badge={CUSTOMER_STANDING_BADGES.good_standing} />}

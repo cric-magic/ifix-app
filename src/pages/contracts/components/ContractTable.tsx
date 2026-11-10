@@ -14,6 +14,7 @@ import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, P
 import { useIsMobile } from '../../../components/useIsMobile'
 import { useColumnPicker } from '../../../components/useColumnPicker'
 import { withColumnMinWidths } from '../../../components/tableColumns'
+import { customerName } from '../../../utils/customer'
 
 interface Props {
   contracts: Contract[]
@@ -44,7 +45,7 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
       key: 'createdAt',
       render: (_, c) => dayjs(c.createdAt).format('YYYY-MM-DD'),
     },
-    { title: 'Customer', key: 'customer', render: (_, c) => c.customer.fullName },
+    { title: 'Customer', key: 'customer', render: (_, c) => customerName(c.customer) },
     {
       title: 'Device',
       key: 'device',
@@ -105,7 +106,7 @@ export function ContractTable({ contracts, products, showBranchColumns, search }
           primary={c.contractNumber}
           trailing={<ContractStatusTag status={c.status} />}
           secondary={<>
-            {c.customer.fullName} · {device}
+            {customerName(c.customer)} · {device}
             {overdueDays > 0 && <span style={{ color: token.colorError }}> · {overdueDays}d overdue</span>}
           </>}
           trailingSecondary={<CurrencyDisplay amount={getOutstandingBalance(c)} />}

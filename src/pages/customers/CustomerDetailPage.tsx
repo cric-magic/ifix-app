@@ -13,6 +13,7 @@ import { PageEmptyState } from '../../components/PageEmptyState'
 import { MobileActionBar } from '../../components/MobileActionBar'
 import type { MoreAction } from '../../components/MobileActionBar'
 import { useIsMobile } from '../../components/useIsMobile'
+import { customerName } from '../../utils/customer'
 
 export function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -68,7 +69,7 @@ export function CustomerDetailPage() {
       onOk: () => {
         customer!.blacklisted = willBlacklist
         refresh()
-        message.success(willBlacklist ? `${customer!.fullName} blacklisted` : `${customer!.fullName} removed from blacklist`)
+        message.success(willBlacklist ? `${customerName(customer!)} blacklisted` : `${customerName(customer!)} removed from blacklist`)
       },
     })
   }
