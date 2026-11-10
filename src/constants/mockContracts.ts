@@ -32,7 +32,8 @@ function deviceSnapshotFor(unitId: string): DeviceSnapshot {
 function customerSnapshotFor(customerId: string): CustomerSnapshot {
   const c = MOCK_CUSTOMERS.find(x => x.id === customerId)!
   return {
-    fullName: c.fullName,
+    firstName: c.firstName,
+    lastName: c.lastName,
     nationalId: c.nationalId,
     phone: c.phone,
     dateOfBirth: c.dateOfBirth,

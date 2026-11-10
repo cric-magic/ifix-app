@@ -11,6 +11,7 @@ import { JUMP_PREV_ICON, JUMP_NEXT_ICON, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, P
 import { useIsMobile } from '../../../components/useIsMobile'
 import { MobileTableRow } from '../../../components/MobileTableRow'
 import { MOBILE_TABLE_PROPS, mobileColumns, tablePanelPadding } from '../../../components/mobileTable'
+import { customerName } from '../../../utils/customer'
 
 interface Props {
   customers: Customer[]
@@ -30,10 +31,9 @@ export function CustomerTable({ customers, contracts, search }: Props) {
   const columns: ColumnsType<Customer> = [
     {
       title: <span style={{ color: token.colorText }}>Full Name</span>,
-      dataIndex: 'fullName',
-      key: 'fullName',
+      key: 'name',
       fixed: 'left',
-      render: (name: string) => <span style={{ color: token.colorText }}>{name}</span>,
+      render: (_, c) => <span style={{ color: token.colorText }}>{customerName(c)}</span>,
     },
     { title: 'National ID / Passport', dataIndex: 'nationalId', key: 'nationalId' },
     { title: 'Phone', dataIndex: 'phone', key: 'phone' },
@@ -53,7 +53,7 @@ export function CustomerTable({ customers, contracts, search }: Props) {
     const active = activeContractCount(c.id)
     return (
       <MobileTableRow
-        primary={c.fullName}
+        primary={customerName(c)}
         trailing={c.blacklisted
           ? <StatusTag badge={CUSTOMER_STANDING_BADGES.blacklisted} />
           : <StatusTag badge={CUSTOMER_STANDING_BADGES.good_standing} />}

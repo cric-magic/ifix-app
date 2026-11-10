@@ -16,7 +16,8 @@ interface Props {
 
 interface FormValues {
   nationalId: string
-  fullName: string
+  firstName: string
+  lastName: string
   phone: string
   dateOfBirth: string
   email?: string
@@ -36,7 +37,8 @@ export function CustomerModal({ open, customer, onClose, onSaved }: Props) {
     if (customer) {
       form.setFieldsValue({
         nationalId: customer.nationalId,
-        fullName: customer.fullName,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
         phone: customer.phone,
         dateOfBirth: customer.dateOfBirth,
         email: customer.email,
@@ -54,7 +56,8 @@ export function CustomerModal({ open, customer, onClose, onSaved }: Props) {
       id: customer?.id ?? generateCustomerId(),
       merchantId: customer?.merchantId ?? actor.merchantId!,
       nationalId: values.nationalId,
-      fullName: values.fullName,
+      firstName: values.firstName,
+      lastName: values.lastName,
       phone: values.phone,
       dateOfBirth: values.dateOfBirth,
       email: values.email,
@@ -87,9 +90,16 @@ export function CustomerModal({ open, customer, onClose, onSaved }: Props) {
         <Form.Item label="National ID / Passport" name="nationalId" rules={[{ required: true, message: 'Required' }]}>
           <Input placeholder="X-XXXX-XXXXX-XX-X" />
         </Form.Item>
-        <Form.Item label="Full Name" name="fullName" rules={[{ required: true, message: 'Required' }]}>
-          <Input />
-        </Form.Item>
+        {/* First and last name kept apart, as on the ID card — side by
+            side, the same pairing as the contract's Customer step. */}
+        <div style={{ display: 'flex', gap: 16 }}>
+          <Form.Item label="First Name" name="firstName" rules={[{ required: true, message: 'Required' }]} style={{ flex: 1 }}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="Last Name" name="lastName" rules={[{ required: true, message: 'Required' }]} style={{ flex: 1 }}>
+            <Input />
+          </Form.Item>
+        </div>
         <Form.Item label="Phone" name="phone" rules={[{ required: true, message: 'Required' }]}>
           <Input placeholder="0XX-XXX-XXXX" />
         </Form.Item>

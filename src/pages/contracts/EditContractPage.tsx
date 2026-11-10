@@ -34,6 +34,7 @@ import type { Customer } from '../../types/customer'
 import type { Contract } from '../../types/contract'
 import { PageEmptyState } from '../../components/PageEmptyState'
 import { normalizeSections } from '../../constants/contractSections'
+import { customerName } from '../../utils/customer'
 import { contractConditionOf } from '../../utils/product'
 
 // Per the Contract doc's Free Rate terms ("pick a term: 3/6/10/12/18/24
@@ -53,7 +54,8 @@ interface DeviceInfoValues {
 }
 interface CustomerValues {
   nationalId: string
-  fullName: string
+  firstName: string
+  lastName: string
   phone: string
   dateOfBirth: string
   email?: string
@@ -157,7 +159,8 @@ export function EditContractPage() {
   })
   const [customerValues, setCustomerValues] = useState<CustomerValues | null>({
     nationalId: contract.customer.nationalId,
-    fullName: contract.customer.fullName,
+    firstName: contract.customer.firstName,
+    lastName: contract.customer.lastName,
     phone: contract.customer.phone,
     dateOfBirth: contract.customer.dateOfBirth,
     email: contract.customer.email,
@@ -227,7 +230,8 @@ export function EditContractPage() {
     if (found) {
       setMatchedCustomer(found)
       customerForm.setFieldsValue({
-        fullName: found.fullName,
+        firstName: found.firstName,
+        lastName: found.lastName,
         phone: found.phone,
         dateOfBirth: found.dateOfBirth,
         email: found.email,
@@ -235,7 +239,7 @@ export function EditContractPage() {
         currentAddress: found.currentAddress,
         workplaceAddress: found.workplaceAddress,
       })
-      message.success(`Existing customer found — form prefilled from ${found.fullName}'s record`)
+      message.success(`Existing customer found — form prefilled from ${customerName(found)}'s record`)
     } else {
       setMatchedCustomer(null)
       message.info('No existing customer with this ID — fill in the form below to create one')
@@ -286,7 +290,8 @@ export function EditContractPage() {
         id: customerId,
         merchantId: actor.merchantId!,
         nationalId: customerValues.nationalId,
-        fullName: customerValues.fullName,
+        firstName: customerValues.firstName,
+        lastName: customerValues.lastName,
         phone: customerValues.phone,
         dateOfBirth: customerValues.dateOfBirth,
         email: customerValues.email,
@@ -301,7 +306,8 @@ export function EditContractPage() {
       // "Update when adding a new contract for an existing customer" — the
       // form may have edited details for the matched record.
       Object.assign(matchedCustomer, {
-        fullName: customerValues.fullName,
+        firstName: customerValues.firstName,
+        lastName: customerValues.lastName,
         phone: customerValues.phone,
         dateOfBirth: customerValues.dateOfBirth,
         email: customerValues.email,
@@ -346,7 +352,8 @@ export function EditContractPage() {
     }
     contract.customerId = customerId
     contract.customer = {
-      fullName: customerValues.fullName,
+      firstName: customerValues.firstName,
+      lastName: customerValues.lastName,
       nationalId: customerValues.nationalId,
       phone: customerValues.phone,
       dateOfBirth: customerValues.dateOfBirth,
@@ -635,19 +642,25 @@ export function EditContractPage() {
                 style={{ marginBottom: 16 }}
               />
             )}
+            {/* First and last name kept apart, as on the ID card. */}
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item label="Full Name" name="fullName" rules={[{ required: true, message: 'Required' }]}>
+                <Form.Item label="First Name" name="firstName" rules={[{ required: true, message: 'Required' }]}>
                   <Input />
                 </Form.Item>
               </Col>
+              <Col span={12}>
+                <Form.Item label="Last Name" name="lastName" rules={[{ required: true, message: 'Required' }]}>
+                  <Input />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
               <Col span={12}>
                 <Form.Item label="Phone" name="phone" rules={[{ required: true, message: 'Required' }]}>
                   <Input placeholder="0XX-XXX-XXXX" />
                 </Form.Item>
               </Col>
-            </Row>
-            <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
                   label="Date of Birth"
@@ -659,6 +672,8 @@ export function EditContractPage() {
                   <DatePicker style={{ width: '100%' }} />
                 </Form.Item>
               </Col>
+            </Row>
+            <Row gutter={16}>
               <Col span={12}>
                 <Form.Item label="Email" name="email">
                   <Input placeholder="email@example.com" />
@@ -727,7 +742,7 @@ export function EditContractPage() {
               <Typography.Title level={5}>Customer</Typography.Title>
               <DetailDescriptions style={{ marginBottom: 24 }}
                 items={[
-                  { label: 'Full Name', children: customerValues.fullName },
+                  { label: 'Full Name', children: customerName(customerValues) },
                   { label: 'National ID', children: customerValues.nationalId },
                   { label: 'Phone', children: customerValues.phone },
                   { label: 'Email', children: customerValues.email || '—' },

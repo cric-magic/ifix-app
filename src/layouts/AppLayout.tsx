@@ -26,6 +26,7 @@ import ifixLogoLight from '../assets/logo-light.png'
 import { TableScrollbars } from '../components/TableScrollbars'
 import { PriceCheckModal } from '../pages/priceCheck/PriceCheckModal'
 import { fullSkuName } from '../utils/product'
+import { customerName } from '../utils/customer'
 
 const { Header, Sider, Content } = Layout
 
@@ -236,9 +237,10 @@ export function AppLayout() {
   // ("Customers / <name>"), looked up through scopedCustomerList for the
   // same reason as the contract/branch/member breadcrumbs above.
   const customerDetailId = selectedKey === 'customers' ? location.pathname.split('/')[2] : undefined
-  const customerDetailName = customerDetailId
-    ? scopedCustomerList(user, MOCK_CUSTOMERS).find(c => c.id === customerDetailId)?.fullName
+  const customerDetailRecord = customerDetailId
+    ? scopedCustomerList(user, MOCK_CUSTOMERS).find(c => c.id === customerDetailId)
     : undefined
+  const customerDetailName = customerDetailRecord ? customerName(customerDetailRecord) : undefined
 
   const breadcrumbParts = productDetailName
     ? ['Products', productDetailName]

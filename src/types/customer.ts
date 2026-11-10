@@ -16,7 +16,10 @@ export interface Customer {
   // or Passport number. Unique across a merchant's customers (not
   // globally — see the doc's cross-merchant blacklist-only sharing rule).
   nationalId: string
-  fullName: string
+  // Separate, as on the ID card; customerName() (utils/customer.ts) joins
+  // them for display.
+  firstName: string
+  lastName: string
   phone: string
   dateOfBirth: string
   email?: string
