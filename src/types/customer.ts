@@ -9,6 +9,8 @@
 // out house no./street/subdistrict/district/province/postal code — that
 // structured breakdown is a Phase 2/UI-forms concern, not a data-shape one
 // this prototype needs yet.
+import type { IdType } from '../utils/idNumber'
+
 export interface Customer {
   id: string
   merchantId: string
@@ -16,6 +18,9 @@ export interface Customer {
   // or Passport number. Unique across a merchant's customers (not
   // globally — see the doc's cross-merchant blacklist-only sharing rule).
   nationalId: string
+  // Which kind of ID nationalId is — detected from the number itself, not
+  // picked (readIdNumber in utils/idNumber.ts).
+  idType: IdType
   // Separate, as on the ID card; customerName() (utils/customer.ts) joins
   // them for display.
   firstName: string

@@ -35,6 +35,7 @@ function customerSnapshotFor(customerId: string): CustomerSnapshot {
     firstName: c.firstName,
     lastName: c.lastName,
     nationalId: c.nationalId,
+    idType: c.idType,
     phone: c.phone,
     dateOfBirth: c.dateOfBirth,
     email: c.email,

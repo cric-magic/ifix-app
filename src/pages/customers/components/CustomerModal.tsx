@@ -6,6 +6,8 @@ import { useAppWindowContainer } from '../../../contexts/AppWindowContext'
 import type { Customer } from '../../../types/customer'
 import { generateCustomerId } from '../../../constants/mockCustomers'
 import { useCurrentUser } from '../../../contexts/AuthContext'
+import { idFields } from '../../../utils/idNumber'
+import { IdNumberField } from '../../../components/IdNumberField'
 
 interface Props {
   open: boolean
@@ -55,7 +57,7 @@ export function CustomerModal({ open, customer, onClose, onSaved }: Props) {
     const saved: Customer = {
       id: customer?.id ?? generateCustomerId(),
       merchantId: customer?.merchantId ?? actor.merchantId!,
-      nationalId: values.nationalId,
+      ...idFields(values.nationalId),
       firstName: values.firstName,
       lastName: values.lastName,
       phone: values.phone,
@@ -87,9 +89,7 @@ export function CustomerModal({ open, customer, onClose, onSaved }: Props) {
       }
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false}>
-        <Form.Item label="National ID / Passport" name="nationalId" rules={[{ required: true, message: 'Required' }]}>
-          <Input placeholder="X-XXXX-XXXXX-XX-X" />
-        </Form.Item>
+        <IdNumberField form={form} />
         {/* First and last name kept apart, as on the ID card — side by
             side, the same pairing as the contract's Customer step. */}
         <div style={{ display: 'flex', gap: 16 }}>

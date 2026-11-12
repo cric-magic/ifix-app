@@ -9,6 +9,7 @@
 // ScheduleResult there are shared far outside this module (Products pages,
 // roles.ts) and aren't part of the rename.
 import type { CommissionRule, ContractSection, ContractTemplateType, PenaltyRule } from './contractTemplate'
+import type { IdType } from '../utils/idNumber'
 
 // The doc's full lifecycle. Defaulted/Closed are explicitly called out as
 // "proposed — TBD" / out of scope, but included here (unused by the
@@ -35,6 +36,7 @@ export interface CustomerSnapshot {
   firstName: string
   lastName: string
   nationalId: string
+  idType: IdType
   phone: string
   dateOfBirth: string
   email?: string

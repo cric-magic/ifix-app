@@ -6,6 +6,7 @@ import { CUSTOMER_STANDING_BADGES } from '../../../constants/statusBadges'
 import { DetailDescriptions } from '../../../components/DetailDescriptions'
 import { DetailHeader } from '../../../components/DetailHeader'
 import { customerName } from '../../../utils/customer'
+import { ID_TYPE_LABELS } from '../../../utils/idNumber'
 
 interface Props {
   customer: Customer
@@ -49,7 +50,7 @@ export function OverviewTab({ customer, canEdit, canToggleBlacklist, onEdit, onT
 
       <DetailDescriptions
         items={[
-          { key: 'nationalId', label: 'National ID / Passport', children: customer.nationalId },
+          { key: 'nationalId', label: ID_TYPE_LABELS[customer.idType], children: customer.nationalId },
           { key: 'phone', label: 'Phone', children: customer.phone },
           { key: 'dob', label: 'Date of Birth', children: customer.dateOfBirth },
           { key: 'email', label: 'Email', children: customer.email || <span style={{ color: token.colorTextDisabled }}>—</span> },
