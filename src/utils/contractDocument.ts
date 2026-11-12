@@ -1,12 +1,31 @@
 import dayjs from 'dayjs'
 import type { ContractDocumentData } from '../components/ContractDocument'
-import type { Merchant } from '../types/merchant'
+import type { BankAccountProfile, Merchant } from '../types/merchant'
 import type { Branch } from '../types/branch'
 import type { Contract } from '../types/contract'
 import { calcFixRate } from './calculator'
 import { getWorkspaceAvatarUrl } from './avatar'
 import { normalizeSections } from '../constants/contractSections'
 import { customerName } from './customer'
+
+// The accounts a contract prints, primary first. The primary is the
+// configured one: the issuing branch's own payment account (Phase 1 prints
+// the branch's — "use the payment account and QR code from the selected
+// branch"), or the merchant's Default where the branch has none. The
+// merchant's other accounts follow, numbered 2, 3, 4…, minus any that's
+// already the primary. Only the primary's PromptPay QR prints.
+function paymentFor(merchant: Merchant | undefined, branch: Branch | undefined, fallback: string): ContractDocumentData['payment'] {
+  const merchantAccounts = merchant?.bankAccounts ?? []
+  const primary = branch?.bankAccount ?? merchantAccounts.find(b => b.isDefault) ?? merchantAccounts[0]
+  const others = merchantAccounts.filter(b => b !== primary && b.id !== primary?.id && b.accountNumber !== primary?.accountNumber)
+  const row = (b: BankAccountProfile) => ({ bankName: b.bank, accountName: b.accountName, accountNumber: b.accountNumber })
+  return {
+    accounts: primary
+      ? [row(primary), ...others.map(row)]
+      : [{ bankName: fallback, accountName: fallback, accountNumber: fallback }],
+    promptPayQrUrl: primary?.qrCodeUrl,
+  }
+}
 
 // Per the doc, "Sample values are used when no contract has been created
 // yet" — the template preview lays the live content fields over this fixed
@@ -53,10 +72,6 @@ export function buildSampleContractDocument({
   const calc = calcFixRate(loanAmount, ratePercent, termMonths)
   const createdAt = dayjs().format('D MMM YYYY')
 
-  // Phase 1 prints the *branch's* payment account and QR, per the doc
-  // ("use the payment account and QR code from the selected branch");
-  // the merchant's own default is the fallback for a branch without one.
-  const account = branch?.bankAccount ?? merchant?.bankAccounts.find(b => b.isDefault) ?? merchant?.bankAccounts[0]
 
   const schedule: ContractDocumentData['schedule'] = [
     {
@@ -103,12 +118,7 @@ export function buildSampleContractDocument({
       termMonths,
     },
     schedule,
-    payment: {
-      bankName: account?.bank ?? 'Bank name',
-      accountNumber: account?.accountNumber ?? 'Account number',
-      accountName: account?.accountName ?? 'Account name',
-      promptPayQrUrl: account?.qrCodeUrl,
-    },
+    payment: paymentFor(merchant, branch, '—'),
     content,
   }
 }
@@ -134,7 +144,6 @@ export function buildContractDocument(
   branch: Branch | undefined,
 ): ContractDocumentData {
   const { device, customer, template, financing } = contract
-  const account = branch?.bankAccount ?? merchant?.bankAccounts.find(b => b.isDefault) ?? merchant?.bankAccounts[0]
   const dash = '—'
 
   return {
@@ -183,12 +192,7 @@ export function buildContractDocument(
       dueDate: dayjs(item.dueDate).format('D MMM YYYY'),
       status: SCHEDULE_STATUS_TH[item.status] ?? item.status,
     })),
-    payment: {
-      bankName: account?.bank ?? dash,
-      accountNumber: account?.accountNumber ?? dash,
-      accountName: account?.accountName ?? dash,
-      promptPayQrUrl: account?.qrCodeUrl,
-    },
+    payment: paymentFor(merchant, branch, dash),
     content: {
       title: template.title,
       bindingStatement: template.bindingStatement,

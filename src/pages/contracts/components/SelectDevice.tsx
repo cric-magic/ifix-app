@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Alert, AutoComplete, Col, Form, Input, Row, Segmented, Tag, Typography, theme } from 'antd'
-import { ScanLine } from 'lucide-react'
+import { Alert, Col, Form, Input, Row, Segmented, Tag, Typography, theme } from 'antd'
+import { Check, ScanLine } from 'lucide-react'
 import { Select } from '../../../components/AppSelect'
 import { useIconColors } from '../../../constants/iconColors'
 import { useIsMobile } from '../../../components/useIsMobile'
@@ -39,8 +39,9 @@ const priceFormatter = new Intl.NumberFormat('th-TH', { style: 'currency', curre
 
 // Where an IMEI search stops: a full IMEI is 15 digits.
 const IMEI_LENGTH = 15
-// Typed digits before matching units are suggested.
+// Typed digits before matching units are listed, and how many at most.
 const MIN_QUERY = 3
+const MAX_RESULTS = 8
 
 // Step 2 of the Contract Creation Flow, per the Contract doc — two ways to
 // pick the unit:
@@ -93,6 +94,7 @@ export function SelectDevice({ actor, branch, value, onChange, currentUnitId }: 
           branch={branch}
           isPickable={isPickable}
           productById={productById}
+          value={value?.source === 'imei' ? value : null}
           onChange={onChange}
         />
       )}
@@ -247,24 +249,26 @@ function unavailableReason(unit: ProductUnit, product: Product | undefined, bran
   return 'Unavailable'
 }
 
-function ImeiSearch({ actor, branch, isPickable, productById, onChange }: {
+function ImeiSearch({ actor, branch, isPickable, productById, value, onChange }: {
   actor: AuthUser
   branch: string
   isPickable: (u: ProductUnit) => boolean
   productById: Map<string, Product>
+  value: DeviceChoice | null
   onChange: (choice: DeviceChoice | null) => void
 }) {
+  const { token } = theme.useToken()
   const iconColors = useIconColors()
   const [query, setQuery] = useState('')
   const digits = query.replace(/\D/g, '')
 
-  // Every unit in scope with an IMEI starting with what's typed — including
-  // ones that can't be picked, so a scan of a taken unit says why rather
-  // than just finding nothing.
+  // Every unit in scope with an IMEI (or unit ID) starting with what's
+  // typed — including ones that can't be picked, so a scan of a taken unit
+  // says why rather than just finding nothing. Listed under the field, not
+  // in a dropdown on it.
   const units = scopedAllUnits(actor, MOCK_PRODUCT_UNITS, MOCK_PRODUCTS)
-  const matches = digits.length >= MIN_QUERY
-    ? units.filter(u => codeMatching(u, digits)).slice(0, 8)
-    : []
+  const allMatches = digits.length >= MIN_QUERY ? units.filter(u => codeMatching(u, digits)) : []
+  const matches = allMatches.slice(0, MAX_RESULTS)
   // A full code: an IMEI, or a sticker's Internal Unit ID.
   const exact = digits.length === IMEI_LENGTH || digits.length === UNIT_NUMBER_LENGTH
     ? findUnitByCode(digits, units)
@@ -272,8 +276,15 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange }: {
   const exactReason = exact ? unavailableReason(exact, productById.get(exact.productId), branch, isPickable) : null
   const notFound = digits.length === IMEI_LENGTH && !exact
 
+  // Picking a result selects its unit and fills in its full code, so the
+  // list narrows to the one row that's now chosen.
+  function pick(unit: ProductUnit) {
+    setQuery(codeMatching(unit, digits) ?? unit.unitNumber)
+    onChange({ unitId: unit.id, productId: unit.productId, source: 'imei' })
+  }
+
   // A full, exact IMEI of an available unit picks it — typed or scanned in
-  // full, or filled in by choosing a suggestion.
+  // full, or filled in by picking a result.
   function onType(text: string) {
     setQuery(text)
     const typed = text.replace(/\D/g, '')
@@ -284,42 +295,72 @@ function ImeiSearch({ actor, branch, isPickable, productById, onChange }: {
 
   return (
     <>
-      <Form.Item required label="IMEI or unit ID" extra="Type or scan the IMEI, or scan the unit sticker's barcode — matching units appear as you type.">
-        <AutoComplete
+      <Form.Item required label="IMEI or unit ID" extra="Type or scan the IMEI, or scan the unit sticker's barcode — matching units are listed below to pick from.">
+        <Input
           value={query}
-          onChange={onType}
-          style={{ width: '100%' }}
-          options={matches.map(u => {
-            const product = productById.get(u.productId)
-            const reason = unavailableReason(u, product, branch, isPickable)
-            // The IMEI itself is the option's value — picking a suggestion
-            // fills it in, which selects the unit (onType).
-            return {
-              value: codeMatching(u, digits) ?? u.id,
-              disabled: !!reason,
-              label: (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+          onChange={e => onType(e.target.value)}
+          inputMode="numeric"
+          maxLength={IMEI_LENGTH}
+          placeholder="e.g. 352417000000017"
+          prefix={<ScanLine size={16} strokeWidth={2.25} color={iconColors.secondary} />}
+          allowClear
+        />
+      </Form.Item>
+
+      {/* The matching units, as a plain list under the field: pick one to
+          select it. A unit that can't be used stays listed, greyed out with
+          the reason, so a scan of a taken unit says why. */}
+      {matches.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: token.fontSizeSM, marginBottom: 4 }}>
+            {allMatches.length > matches.length
+              ? `Showing ${matches.length} of ${allMatches.length} matches — keep typing to narrow it down`
+              : `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}`}
+          </Typography.Text>
+          <div style={{ border: `0.5px solid ${token.colorBorderSecondary}`, borderRadius: token.borderRadiusLG, overflow: 'hidden' }}>
+            {matches.map((u, i) => {
+              const product = productById.get(u.productId)
+              const reason = unavailableReason(u, product, branch, isPickable)
+              const selected = value?.unitId === u.id
+              return (
+                <div
+                  key={u.id}
+                  role="button"
+                  aria-disabled={!!reason}
+                  onClick={reason ? undefined : () => pick(u)}
+                  className={reason ? undefined : 'ifix-imei-result'}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 8,
+                    padding: '8px 12px',
+                    cursor: reason ? 'not-allowed' : 'pointer',
+                    background: selected ? token.colorFillSecondary : undefined,
+                    borderTop: i === 0 ? undefined : `0.5px solid ${token.colorBorderSecondary}`,
+                  }}
+                >
                   <div style={{ minWidth: 0 }}>
-                    <div>{codeMatching(u, digits)}</div>
+                    <div style={{ color: reason ? token.colorTextTertiary : token.colorText }}>{codeMatching(u, digits)}</div>
                     <Typography.Text type="secondary" style={{ fontSize: 12 }} ellipsis>
                       {product ? `${product.name}${product.storage ? ` · ${product.storage}` : ''} · ${product.color}` : '—'} · {unitConditionLabel(u, product)}
                     </Typography.Text>
                   </div>
-                  {reason && <Tag style={{ margin: 0, flexShrink: 0 }}>{reason}</Tag>}
+                  {reason
+                    ? <Tag style={{ margin: 0, flexShrink: 0 }}>{reason}</Tag>
+                    : selected && <Check size={16} strokeWidth={2.25} color={iconColors.primary} style={{ flexShrink: 0 }} />}
                 </div>
-              ),
-            }
-          })}
-        >
-          <Input
-            inputMode="numeric"
-            maxLength={IMEI_LENGTH}
-            placeholder="e.g. 352417000000017"
-            prefix={<ScanLine size={16} strokeWidth={2.25} color={iconColors.secondary} />}
-            allowClear
-          />
-        </AutoComplete>
-      </Form.Item>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {digits.length >= MIN_QUERY && allMatches.length === 0 && !notFound && (
+        <Typography.Text type="secondary" style={{ display: 'block', fontSize: token.fontSizeSM, marginBottom: 16 }}>
+          No units match — check the digits, or keep typing the full IMEI.
+        </Typography.Text>
+      )}
 
       {/* The fallback states: nothing has this IMEI, or the unit that does
           can't go on this contract — each saying why, in its text alone;
