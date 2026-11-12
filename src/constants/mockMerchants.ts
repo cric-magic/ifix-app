@@ -53,6 +53,24 @@ export const MOCK_MERCHANTS: Merchant[] = [
         branch: 'Sukhumvit',
         isDefault: true,
       },
+      // More than one account, so the contract's Payment Accounts list has
+      // a primary and others to show (primary first, then 2, 3…).
+      {
+        id: 'bank-4',
+        bank: 'Bangkok Bank (BBL)',
+        accountNumber: '345-6-78901-2',
+        accountName: 'Siam Gadget Repair Co., Ltd.',
+        branch: 'Silom',
+        isDefault: false,
+      },
+      {
+        id: 'bank-5',
+        bank: 'Krungthai Bank (KTB)',
+        accountNumber: '456-7-89012-3',
+        accountName: 'Siam Gadget Repair Co., Ltd.',
+        branch: 'Chiang Mai',
+        isDefault: false,
+      },
     ],
     ownerName: 'Ake Somsak',
     ownerEmail: 'ake.owner@ifix.dev',

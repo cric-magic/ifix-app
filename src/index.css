@@ -2510,3 +2510,10 @@ label[for="password"]::after {
   outline: 2px solid var(--ant-color-primary);
   outline-offset: 1px;
 }
+
+/* Contract creation › Search by IMEI: a pickable row in the results list
+   under the field (SelectDevice's ImeiSearch). The selected row sets its own
+   background inline, which wins over this. */
+.ifix-imei-result:hover {
+  background: var(--ant-color-fill-tertiary);
+}

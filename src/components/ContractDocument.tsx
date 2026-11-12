@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 import { ConfigProvider, Typography, theme } from 'antd'
 import { PAPER_THEME } from '../constants/paperTheme'
 import { ImageOff } from 'lucide-react'
@@ -54,10 +54,11 @@ export interface ContractDocumentData {
     dueDate: string
     status: string
   }[]
+  // Every account the customer can pay into, the configured primary first
+  // (see paymentFor in utils/contractDocument.ts). The QR is the primary's
+  // only.
   payment: {
-    bankName: string
-    accountNumber: string
-    accountName: string
+    accounts: { bankName: string; accountName: string; accountNumber: string }[]
     promptPayQrUrl?: string
   }
   // The three editable content blocks from the template, plus the penalty
@@ -489,10 +490,24 @@ function buildUnits(data: ContractDocumentData, token: Token): Unit[] {
       case 'paymentSystem':
         block(key, key, () => (
           <Panel token={token}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-              <span>Payment Channel <strong>{payment.bankName}</strong></span>
-              <span style={{ color: token.colorTextSecondary }}>เลขบัญชี {payment.accountNumber}</span>
-              <span style={{ color: token.colorTextSecondary }}>ชื่อบัญชี {payment.accountName}</span>
+            <SectionTitle>ช่องทางชำระเงิน • Payment Accounts</SectionTitle>
+            {/* One row per account, the primary first and marked as such,
+                then 2, 3, 4… — bank, account name and number in columns
+                under a single heading row. */}
+            <div style={{ display: 'grid', gridTemplateColumns: '112px 1fr 1fr 1fr', columnGap: 16, rowGap: 6 }}>
+              {['', 'ธนาคาร • Bank', 'ชื่อบัญชี • Account Name', 'เลขบัญชี • Account No.'].map((heading, i) => (
+                <span key={i} style={{ color: token.colorTextSecondary }}>{heading}</span>
+              ))}
+              {payment.accounts.map((account, i) => (
+                <Fragment key={i}>
+                  <span style={{ color: i === 0 ? undefined : token.colorTextSecondary, fontWeight: i === 0 ? 600 : undefined }}>
+                    {i === 0 ? 'บัญชีหลัก • Primary' : `บัญชีที่ ${i + 1}`}
+                  </span>
+                  <span style={{ minWidth: 0, wordBreak: 'break-word' }}>{account.bankName}</span>
+                  <span style={{ minWidth: 0, wordBreak: 'break-word' }}>{account.accountName}</span>
+                  <span>{account.accountNumber}</span>
+                </Fragment>
+              ))}
             </div>
           </Panel>
         ))
@@ -570,7 +585,7 @@ function DocumentFooter({ data, showPaymentSystem, page, total, token }: {
         {showPaymentSystem && <QrSlot
           url={payment.promptPayQrUrl}
           title="PromptPay • โอนเงิน"
-          caption={`${payment.accountName} • ${payment.accountNumber}`}
+          caption={`${payment.accounts[0]?.accountName} • ${payment.accounts[0]?.accountNumber}`}
           token={token}
         />}
       </div>
