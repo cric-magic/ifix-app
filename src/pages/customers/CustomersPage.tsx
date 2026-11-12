@@ -10,6 +10,7 @@ import type { Customer } from '../../types/customer'
 import { CustomerTable } from './components/CustomerTable'
 import { CustomerModal } from './components/CustomerModal'
 import { customerName } from '../../utils/customer'
+import { normalizeIdNumber } from '../../utils/idNumber'
 
 // Real Customers list, replacing the "coming soon" placeholder — per the
 // Customer doc's Phase 2 "List Customer" feature (name, ID number, active
@@ -39,7 +40,7 @@ export function CustomersPage() {
   const filtered = query
     ? scoped.filter(c =>
         customerName(c).toLowerCase().includes(query) ||
-        c.nationalId.toLowerCase().includes(query) ||
+        normalizeIdNumber(c.nationalId).includes(normalizeIdNumber(query)) ||
         c.phone.toLowerCase().includes(query),
       )
     : scoped

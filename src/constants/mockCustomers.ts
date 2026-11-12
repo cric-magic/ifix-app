@@ -1,5 +1,6 @@
 import type { Customer } from '../types/customer'
 import { MERCHANT_ID } from './mockUsers'
+import { sameIdNumber } from '../utils/idNumber'
 
 // Standalone Customer records — per the Customer doc these are currently
 // only created/edited inline during contract creation (no list/edit UI
@@ -10,7 +11,8 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: 'cust-001',
     merchantId: MERCHANT_ID,
-    nationalId: '1-1001-00001-00-1',
+    nationalId: '1-1001-00001-00-6',
+    idType: 'national_id',
     firstName: 'Somchai',
     lastName: 'Jaidee',
     phone: '081-234-5678',
@@ -26,7 +28,8 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: 'cust-002',
     merchantId: MERCHANT_ID,
-    nationalId: '1-5001-00002-00-2',
+    nationalId: '1-5001-00002-00-9',
+    idType: 'national_id',
     firstName: 'Malee',
     lastName: 'Srisuk',
     phone: '082-345-6789',
@@ -41,7 +44,8 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: 'cust-003',
     merchantId: MERCHANT_ID,
-    nationalId: '1-8301-00003-00-3',
+    nationalId: '1-8301-00003-00-2',
+    idType: 'national_id',
     firstName: 'Prapat',
     lastName: 'Wannasin',
     phone: '083-456-7890',
@@ -57,7 +61,8 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: 'cust-004',
     merchantId: MERCHANT_ID,
-    nationalId: '1-4001-00004-00-4',
+    nationalId: '1-4001-00004-00-2',
+    idType: 'national_id',
     firstName: 'Nattaya',
     lastName: 'Boonsri',
     phone: '084-567-8901',
@@ -72,7 +77,8 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: 'cust-005',
     merchantId: MERCHANT_ID,
-    nationalId: '1-1001-00005-00-5',
+    nationalId: '1-1001-00005-00-1',
+    idType: 'national_id',
     firstName: 'Wanchai',
     lastName: 'Phromma',
     phone: '085-678-9012',
@@ -88,7 +94,8 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: 'cust-006',
     merchantId: MERCHANT_ID,
-    nationalId: '1-5001-00006-00-6',
+    nationalId: '1-5001-00006-00-4',
+    idType: 'national_id',
     firstName: 'Siriporn',
     lastName: 'Thaweesak',
     phone: '086-789-0123',
@@ -100,10 +107,30 @@ export const MOCK_CUSTOMERS: Customer[] = [
     createdBy: 'branch-1',
     createdAt: '2023-09-01T09:00:00.000Z',
   },
+  // A foreign customer on a passport, so the ID field's passport path has a
+  // real record to look up.
+  {
+    id: 'cust-007',
+    merchantId: MERCHANT_ID,
+    nationalId: 'C4X7K2M9P',
+    idType: 'passport',
+    firstName: 'Daniel',
+    lastName: 'Becker',
+    phone: '095-321-7788',
+    dateOfBirth: '1990-07-08',
+    email: 'daniel.becker@email.com',
+    idCardAddress: 'Hauptstraße 12, 10115 Berlin, Germany',
+    currentAddress: '22 Sukhumvit Soi 11, Khlong Toei Nuea, Bangkok 10110',
+    blacklisted: false,
+    createdBy: 'staff-1',
+    createdAt: '2026-10-02T09:00:00.000Z',
+  },
 ]
 
+// Matched on the normalised ID (sameIdNumber), so the same number typed
+// with or without dashes finds the same customer.
 export function findCustomerByNationalId(merchantId: string, nationalId: string): Customer | undefined {
-  return MOCK_CUSTOMERS.find(c => c.merchantId === merchantId && c.nationalId === nationalId)
+  return MOCK_CUSTOMERS.find(c => c.merchantId === merchantId && sameIdNumber(c.nationalId, nationalId))
 }
 
 export function generateCustomerId(): string {

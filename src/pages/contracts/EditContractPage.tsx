@@ -35,6 +35,8 @@ import type { Contract } from '../../types/contract'
 import { PageEmptyState } from '../../components/PageEmptyState'
 import { normalizeSections } from '../../constants/contractSections'
 import { customerName } from '../../utils/customer'
+import { ID_TYPE_LABELS, idFields, readIdNumber } from '../../utils/idNumber'
+import { IdNumberField } from '../../components/IdNumberField'
 import { contractConditionOf } from '../../utils/product'
 
 // Per the Contract doc's Free Rate terms ("pick a term: 3/6/10/12/18/24
@@ -224,9 +226,14 @@ export function EditContractPage() {
   }
 
   function handleLookupCustomer() {
-    const nationalId = customerForm.getFieldValue('nationalId')
-    if (!nationalId || !actor.merchantId) return
-    const found = findCustomerByNationalId(actor.merchantId, nationalId)
+    const reading = readIdNumber(customerForm.getFieldValue('nationalId') ?? '')
+    if (!actor.merchantId) return
+    if (!reading.type) {
+      customerForm.validateFields(['nationalId'])
+      return
+    }
+    customerForm.setFieldValue('nationalId', reading.value)
+    const found = findCustomerByNationalId(actor.merchantId, reading.value)
     if (found) {
       setMatchedCustomer(found)
       customerForm.setFieldsValue({
@@ -289,7 +296,7 @@ export function EditContractPage() {
       MOCK_CUSTOMERS.push({
         id: customerId,
         merchantId: actor.merchantId!,
-        nationalId: customerValues.nationalId,
+        ...idFields(customerValues.nationalId),
         firstName: customerValues.firstName,
         lastName: customerValues.lastName,
         phone: customerValues.phone,
@@ -354,7 +361,7 @@ export function EditContractPage() {
     contract.customer = {
       firstName: customerValues.firstName,
       lastName: customerValues.lastName,
-      nationalId: customerValues.nationalId,
+      ...idFields(customerValues.nationalId),
       phone: customerValues.phone,
       dateOfBirth: customerValues.dateOfBirth,
       email: customerValues.email,
@@ -623,14 +630,7 @@ export function EditContractPage() {
                     rather than a separate column — a column pushed down to
                     the input's line by a fixed margin, which broke loose
                     onto its own row once columns stack on mobile. */}
-                <Form.Item label="National ID / Passport" required>
-                  <Space.Compact style={{ width: '100%' }}>
-                    <Form.Item name="nationalId" noStyle rules={[{ required: true, message: 'Required' }]}>
-                      <Input placeholder="X-XXXX-XXXXX-XX-X" />
-                    </Form.Item>
-                    <Button onClick={handleLookupCustomer}>Look Up</Button>
-                  </Space.Compact>
-                </Form.Item>
+                <IdNumberField form={customerForm} onLookup={handleLookupCustomer} />
               </Col>
             </Row>
             {matchedCustomer?.blacklisted && (
@@ -743,7 +743,7 @@ export function EditContractPage() {
               <DetailDescriptions style={{ marginBottom: 24 }}
                 items={[
                   { label: 'Full Name', children: customerName(customerValues) },
-                  { label: 'National ID', children: customerValues.nationalId },
+                  { label: ID_TYPE_LABELS[readIdNumber(customerValues.nationalId).type ?? 'passport'], children: customerValues.nationalId },
                   { label: 'Phone', children: customerValues.phone },
                   { label: 'Email', children: customerValues.email || '—' },
                 ]}

@@ -2,6 +2,7 @@ import { Typography, theme } from 'antd'
 import type { CustomerSnapshot } from '../../../types/contract'
 import { DetailDescriptions } from '../../../components/DetailDescriptions'
 import { customerName } from '../../../utils/customer'
+import { ID_TYPE_LABELS } from '../../../utils/idNumber'
 
 interface Props {
   customer: CustomerSnapshot
@@ -30,7 +31,7 @@ export function CustomerTab({ customer }: Props) {
         <DetailDescriptions
           items={[
             { key: 'fullName', label: 'Full Name', children: customerName(customer) },
-            { key: 'nationalId', label: 'National ID / Passport', children: customer.nationalId },
+            { key: 'nationalId', label: ID_TYPE_LABELS[customer.idType], children: customer.nationalId },
             { key: 'phone', label: 'Phone', children: customer.phone },
             { key: 'dob', label: 'Date of Birth', children: customer.dateOfBirth },
             { key: 'email', label: 'Email', children: customer.email || <span style={{ color: token.colorTextDisabled }}>—</span> },
